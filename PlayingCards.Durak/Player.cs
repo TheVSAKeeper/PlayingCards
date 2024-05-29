@@ -54,6 +54,23 @@ namespace PlayingCards.Durak
         }
 
         /// <summary>
+        /// Сыграть картой.
+        /// </summary>
+        /// <param name="card">Карта.</param>
+        public void PlayCard(Card card)
+        {
+            if (_cards.Contains(card))
+            {
+                _cards.Remove(card);
+            }
+            else
+            {
+                throw new Exception("undefined card");
+            }
+        }
+
+
+        /// <summary>
         /// Очистить руку от карт.
         /// </summary>
         public void Clear()

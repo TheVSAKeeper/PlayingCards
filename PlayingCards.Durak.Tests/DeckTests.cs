@@ -82,5 +82,76 @@ namespace PlayingCards.Durak.Tests
                 }
             }
         }
+
+        /// <summary>
+        /// Проверка, на кого, первым ходят.
+        /// </summary>
+        /// <remarks>
+        /// Следующий после активного, защищается.
+        /// </remarks>
+        /// <param name="playerCount">Количество игроков в игре.</param>
+        [Test]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(6)]
+        public void DefencePlayerTest(int playerCount)
+        {
+            var game = new Game();
+            for (var i = 0; i < playerCount; i++)
+            {
+                game.AddPlayer(new Player { Name = "Player" + i });
+            }
+            game.InitCardDeck();
+
+            var activePlayerNumber = game.ActivePlayer.Name.Substring("Player".Length);
+            var defencePlayerNumber = Convert.ToInt32(activePlayerNumber) + 1;
+            if (defencePlayerNumber >= playerCount)
+            {
+                defencePlayerNumber = 0;
+            }
+            var defencePlayerName = "Player" + defencePlayerNumber;
+            Assert.IsNotNull(game.DefencePlayer);
+            Assert.That(game.DefencePlayer.Name, Is.EqualTo(defencePlayerName));
+        }
+
+        /// <summary>
+        /// Атакующая карта меньше чем та, которой пытаемся защититься.
+        /// </summary>
+        [Test]
+        public void SuccessDefenceTrumpSuitTest()
+        {
+            // шестёрка
+            var attackCard = CardsHolder.GetCards()[0];
+            // семёрка той же масти
+            var defenceCard = CardsHolder.GetCards()[1];
+            // козырный туз той же масти
+            var trumpCard = CardsHolder.GetCards()[8];
+            var game = new Game();
+            game.Deck = new Deck() { TrumpCard = trumpCard };
+
+            var attackTableCard = new TableCard(game, attackCard);
+            attackTableCard.Defence(defenceCard);
+        }
+
+        /// <summary>
+        /// Атакующая карта больше чем та, которой пытаемся защититься.
+        /// </summary>
+        [Test]
+        public void FailDefenceTrumpSuitTest()
+        {
+            // восьмёрка
+            var attackCard = CardsHolder.GetCards()[2];
+            // семёрка той же масти
+            var defenceCard = CardsHolder.GetCards()[1];
+            // козырный туз той же масти
+            var trumpCard = CardsHolder.GetCards()[8];
+            var game = new Game();
+            game.Deck = new Deck() { TrumpCard = trumpCard };
+
+            var attackTableCard = new TableCard(game, attackCard);
+            Assert.Throws<Exception>(() => attackTableCard.Defence(defenceCard));
+        }
     }
 }

@@ -6,25 +6,22 @@
     public class Game
     {
         private List<Player> _players;
+        private List<TableCard> _cards;
 
         /// <summary>
         /// Игра.
         /// </summary>
         public Game()
         {
-            _players = new List<Player>();
             Deck = new Deck();
+            _players = new List<Player>();
+            _cards = new List<TableCard>();
         }
 
         /// <summary>
         /// Игроки.
         /// </summary>
         public IEnumerable<Player> Players => _players;
-
-        /// <summary>
-        /// Колода.
-        /// </summary>
-        public Deck Deck { get; private set; }
 
         /// <summary>
         /// Индекс игрока, который сейчас ходит.
@@ -47,6 +44,74 @@
                     return (Player?)_players[_activePlayerIndex.Value];
                 }
             }
+        }
+
+        /// <summary>
+        /// Игрок, на которого, ходят.
+        /// </summary>
+        public Player? DefencePlayer
+        {
+            get
+            {
+                if (_activePlayerIndex == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    var defencePlayerIndex = _activePlayerIndex.Value + 1;
+                    if (defencePlayerIndex >= _players.Count)
+                    {
+                        defencePlayerIndex = 0;
+                    }
+                    return (Player?)_players[defencePlayerIndex];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Карты на столе.
+        /// </summary>
+        public IEnumerable<TableCard> Cards => _cards;
+
+        /// <summary>
+        /// Колода.
+        /// </summary>
+        public Deck Deck { get; set; }
+
+        /// <summary>
+        /// Сыграть карту.
+        /// </summary>
+        /// <param name="player">Игрок.</param>
+        /// <param name="card">Карта.</param>
+        public void Attack(Player player, Card card)
+        {
+            if (ActivePlayer != player)
+            {
+                throw new Exception("player is not active");
+            }
+            var tableCard = new TableCard(this, card);
+            _cards.Add(tableCard);
+        }
+
+        /// <summary>
+        /// Защититься от карты.
+        /// </summary>
+        /// <param name="player">Игрок.</param>
+        /// <param name="defenceCard">Карта, которой мы защищаемся.</param>
+        /// <param name="attackCard">Карта, от которой защищаемся.</param>
+        public void Defence(Player player, Card defenceCard, Card attackCard)
+        {
+            if (DefencePlayer != player)
+            {
+                throw new Exception("player is not defence player");
+            }
+            var card = _cards.FirstOrDefault(x => x.AttackCard == attackCard);
+            if (card == null)
+            {
+                throw new Exception("attack card not found");
+            }
+            card.Defence(defenceCard);
         }
 
         /// <summary>

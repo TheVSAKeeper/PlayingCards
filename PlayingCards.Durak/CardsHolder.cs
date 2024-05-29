@@ -39,9 +39,9 @@
             };
 
             var cards = new List<Card>();
-            foreach (var rank in ranks)
+            foreach (var suit in suits)
             {
-                foreach (var suit in suits)
+                foreach (var rank in ranks)
                 {
                     var card = new Card(rank, suit);
                     cards.Add(card);
