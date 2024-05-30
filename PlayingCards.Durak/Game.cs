@@ -13,7 +13,7 @@
         /// </summary>
         public Game()
         {
-            Deck = new Deck();
+            Deck = new Deck(new RandomDeckCardGenerator());
             _players = new List<Player>();
             _cards = new List<TableCard>();
         }
@@ -130,12 +130,18 @@
         public void InitCardDeck()
         {
             _activePlayerIndex = null;
-            var isSuccess = false;
-            while (!isSuccess)
+            for(var i = 0; i < 10; i++)
             {
-                isSuccess = ShuffleDeckAndTakeCards();
+                var isSuccess = ShuffleDeckAndTakeCards();
                 // козырей на руках нет, перетусуем колоду.
+                if (isSuccess)
+                {
+                    return;
+                }
             }
+
+            // никому не досталось козырей за 10 перемешиваний колоды, активным становится первый игрок.
+            _activePlayerIndex = 0;
         }
 
         private bool ShuffleDeckAndTakeCards()

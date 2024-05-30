@@ -37,9 +37,9 @@
         /// <param name="defenceCard">Карта для защиты.</param>
         public void Defence(Card defenceCard)
         {
-            if (defenceCard.Suit == Game.Deck.TrumpCard.Suit)
+            if (defenceCard.Suit.Value == Game.Deck.TrumpCard.Suit.Value)
             {
-                if (AttackCard.Suit == Game.Deck.TrumpCard.Suit)
+                if (AttackCard.Suit.Value == Game.Deck.TrumpCard.Suit.Value)
                 {
                     if (defenceCard.Rank.Value > AttackCard.Rank.Value)
                     {
@@ -57,20 +57,27 @@
             }
             else
             {
-                if (defenceCard.Suit == Game.Deck.TrumpCard.Suit)
+                if (AttackCard.Suit.Value == Game.Deck.TrumpCard.Suit.Value)
                 {
-                    if (defenceCard.Rank.Value > AttackCard.Rank.Value)
-                    {
-                        DefenceCard = defenceCard;
-                    }
-                    else
-                    {
-                        throw new Exception("defence card rank small");
-                    }
+                    throw new Exception("defence suit is not trump");
                 }
                 else
                 {
-                    throw new Exception("defence suit invalid");
+                    if(AttackCard.Suit.Value == defenceCard.Suit.Value)
+                    {
+                        if (defenceCard.Rank.Value > AttackCard.Rank.Value)
+                        {
+                            DefenceCard = defenceCard;
+                        }
+                        else
+                        {
+                            throw new Exception("defence card rank small");
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("defence suit invalid");
+                    }
                 }
             }
         }

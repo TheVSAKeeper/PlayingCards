@@ -37,5 +37,10 @@
         /// </summary>
         /// <remarks>♥/♦/♣/♠</remarks>
         public char IconChar { get; }
+
+        public override string ToString()
+        {
+            return IconChar.ToString();
+        }
     }
 }

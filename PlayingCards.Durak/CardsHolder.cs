@@ -5,18 +5,7 @@
     /// </summary>
     public static class CardsHolder
     {
-        private static List<Card>? _cards;
-
         public static List<Card> GetCards()
-        {
-            if (_cards == null)
-            {
-                _cards = InitCards();
-            }
-            return _cards;
-        }
-
-        private static List<Card> InitCards()
         {
             var ranks = new List<CardRank>()
             {

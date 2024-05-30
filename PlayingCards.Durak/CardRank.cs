@@ -31,5 +31,10 @@
         /// Например дама/queen, 9/деявятка.
         /// </remarks>
         public string Name { get; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

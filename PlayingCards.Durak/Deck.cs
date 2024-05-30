@@ -6,18 +6,16 @@ namespace PlayingCards.Durak
     /// </summary>
     public class Deck
     {
+        private RandomDeckCardGenerator _cardGenerator;
+
         /// <summary>
         /// Колода карт.
         /// </summary>
-        public Deck()
+        public Deck(RandomDeckCardGenerator cardGenerator)
         {
-            _cards = new List<Card>();
+            Cards = new List<Card>();
+            _cardGenerator = cardGenerator;
         }
-
-        /// <summary>
-        /// Карты.
-        /// </summary>
-        private List<Card> _cards { get; set; }
 
         /// <summary>
         /// Козырь.
@@ -27,7 +25,12 @@ namespace PlayingCards.Durak
         /// <summary>
         /// Количество карт в колоде.
         /// </summary>
-        public int CardsCount => _cards.Count;
+        public int CardsCount => Cards.Count;
+
+        /// <summary>
+        /// Карты.
+        /// </summary>
+        public List<Card> Cards { get; set; }
 
         /// <summary>
         /// Перетусовать колоду.
@@ -37,11 +40,8 @@ namespace PlayingCards.Durak
         /// </remarks>
         public void Shuffle()
         {
-            _cards = CardsHolder.GetCards()
-                .Select(x => new { Order = Globals.Random.Next(), Card = x })
-                .OrderBy(x => x.Order)
-                .Select(x => x.Card).ToList();
-            TrumpCard = _cards.First();
+            Cards = _cardGenerator.GetCards();
+            TrumpCard = Cards.First();
         }
 
         /// <summary>
@@ -50,12 +50,12 @@ namespace PlayingCards.Durak
         /// <returns></returns>
         public Card PullCard()
         {
-            var card = _cards.LastOrDefault();
+            var card = Cards.LastOrDefault();
             if (card == null)
             {
                 throw new Exception("deck empty");
             }
-            _cards.Remove(card);
+            Cards.Remove(card);
             return card;
         }
     }

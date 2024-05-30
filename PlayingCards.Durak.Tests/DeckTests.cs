@@ -8,7 +8,7 @@ namespace PlayingCards.Durak.Tests
         [Test]
         public void DeckCardsCountTest()
         {
-            var deck = new Deck();
+            var deck = new Deck(new RandomDeckCardGenerator());
             deck.Shuffle();
             var cards = new List<Card>();
             while (deck.CardsCount > 0)
@@ -117,41 +117,36 @@ namespace PlayingCards.Durak.Tests
         }
 
         /// <summary>
-        /// јтакующа€ карта меньше чем та, которой пытаемс€ защититьс€.
+        /// ќтбиваемс€ от карты.
         /// </summary>
         [Test]
-        public void SuccessDefenceTrumpSuitTest()
+        [TestCase(0, 1, 8, true, TestName = "ЅьЄм козырную шестЄрку, козырной семЄркой")]
+        [TestCase(2, 1, 8, false, TestName = "ЅьЄм козырную восьмЄрку, козырной семЄркой")]
+        [TestCase(0, 10, 8, false, TestName = "ЅьЄм козырную шестЄрку, некозырной семЄркой")]
+        [TestCase(0, 1, 9, true, TestName = "ЅьЄм некозырную шестЄрку, некозырной семЄркой той же масти")]
+        [TestCase(2, 1, 9, false, TestName = "ЅьЄм некозырную восьмЄрку, некозырной семЄркой той же масти")]
+        [TestCase(9, 1, 8, true, TestName = "ЅьЄм некозырную шестЄрку, козырной семЄркой")]
+        [TestCase(9, 1, 34, false, TestName = "ЅьЄм некозырную шестЄрку, некозырной семЄркой другой масти")]
+        public void SuccessDefenceTrumpSuitTest(
+            int attackCardIndex,
+            int defenceCardIndex,
+            int trumCardIndex,
+            bool isSuccess)
         {
-            // шестЄрка
-            var attackCard = CardsHolder.GetCards()[0];
-            // семЄрка той же масти
-            var defenceCard = CardsHolder.GetCards()[1];
-            // козырный туз той же масти
-            var trumpCard = CardsHolder.GetCards()[8];
+            var attackCard = CardsHolder.GetCards()[attackCardIndex];
+            var defenceCard = CardsHolder.GetCards()[defenceCardIndex];
+            var trumpCard = CardsHolder.GetCards()[trumCardIndex];
             var game = new Game();
-            game.Deck = new Deck() { TrumpCard = trumpCard };
-
+            game.Deck = new Deck(new EmptyDeckCardGenerator()) { TrumpCard = trumpCard };
             var attackTableCard = new TableCard(game, attackCard);
-            attackTableCard.Defence(defenceCard);
-        }
-
-        /// <summary>
-        /// јтакующа€ карта больше чем та, которой пытаемс€ защититьс€.
-        /// </summary>
-        [Test]
-        public void FailDefenceTrumpSuitTest()
-        {
-            // восьмЄрка
-            var attackCard = CardsHolder.GetCards()[2];
-            // семЄрка той же масти
-            var defenceCard = CardsHolder.GetCards()[1];
-            // козырный туз той же масти
-            var trumpCard = CardsHolder.GetCards()[8];
-            var game = new Game();
-            game.Deck = new Deck() { TrumpCard = trumpCard };
-
-            var attackTableCard = new TableCard(game, attackCard);
-            Assert.Throws<Exception>(() => attackTableCard.Defence(defenceCard));
+            if (isSuccess)
+            {
+                attackTableCard.Defence(defenceCard);
+            }
+            else
+            {
+                Assert.Throws<Exception>(() => attackTableCard.Defence(defenceCard));
+            }
         }
     }
 }

@@ -15,7 +15,7 @@
             Rank = rank;
             Suit = suit;
         }
-    
+
         /// <summary>
         /// Старшинство.
         /// </summary>
@@ -24,6 +24,11 @@
         /// <summary>
         /// Масть.
         /// </summary>
-        public CardSuit Suit { get;  }
+        public CardSuit Suit { get; }
+
+        public override string ToString()
+        {
+            return Rank?.Name + " " + Suit?.IconChar;
+        }
     }
 }
