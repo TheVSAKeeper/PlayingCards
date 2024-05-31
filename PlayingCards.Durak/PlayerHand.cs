@@ -1,0 +1,96 @@
+﻿
+namespace PlayingCards.Durak
+{
+    /// <summary>
+    /// Рука игрока с картами.
+    /// </summary>
+    public class PlayerHand
+    {
+        /// <summary>
+        /// Игра.
+        /// </summary>
+        private Game _game;
+
+        /// <summary>
+        /// Рука игрока с картами.
+        /// </summary>
+        public PlayerHand(Game game, Player player)
+        {
+            Cards = new List<Card>();
+            _game = game;
+            Player = player;
+        }
+
+        /// <summary>
+        /// Игрок.
+        /// </summary>
+        public Player Player { get; }
+
+        /// <summary>
+        /// Карты в руке.
+        /// </summary>
+        public List<Card> Cards { get; set; }
+
+        /// <summary>
+        /// Взять карту в руку.
+        /// </summary>
+        /// <param name="card">Карта.</param>
+        public void TakeCard(Card card)
+        {
+            Cards.Add(card);
+        }
+
+        /// <summary>
+        /// Начать играть раунд.
+        /// </summary>
+        /// <param name="cardIndex">Индекс карты.</param>
+        public void Attack(int cardIndex)
+        {
+            if (cardIndex < 0 || cardIndex >= Cards.Count)
+            {
+                throw new Exception("undefined card");
+            }
+            var card = Cards[cardIndex];
+            _game.Attack(Player, card);
+            Cards.Remove(card);
+        }
+
+        /// <summary>
+        /// Защититься.
+        /// </summary>
+        /// <param name="defenceCardIndex">Индекс карты.</param>
+        public void Defence(int defenceCardIndex, int attackCardIndex)
+        {
+            if (defenceCardIndex < 0 || defenceCardIndex >= Cards.Count)
+            {
+                throw new Exception("undefined card");
+            }
+            var card = Cards[defenceCardIndex];
+            var attackTableCard = _game.Cards[attackCardIndex];
+            _game.Defence(Player, card, attackTableCard.AttackCard);
+            Cards.Remove(card);
+        }
+
+
+        /// <summary>
+        /// Очистить руку от карт.
+        /// </summary>
+        public void Clear()
+        {
+            Cards = new List<Card>();
+        }
+
+        /// <summary>
+        /// Получить карту с минимальным значением козыря.
+        /// </summary>
+        /// <param name="suit">Масть козыря.</param>
+        /// <returns>Карту, если она есть, иначе null.</returns>
+        public Card? GetMinSuitCard(CardSuit suit)
+        {
+            return Cards
+               .Where(x => x.Suit.Value == suit.Value)
+               .OrderBy(x => x.Rank.Value)
+               .FirstOrDefault();
+        }
+    }
+}

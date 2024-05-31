@@ -5,23 +5,20 @@
     /// </summary>
     public class Game
     {
-        private List<Player> _players;
-        private List<TableCard> _cards;
-
         /// <summary>
         /// Игра.
         /// </summary>
         public Game()
         {
             Deck = new Deck(new RandomDeckCardGenerator());
-            _players = new List<Player>();
-            _cards = new List<TableCard>();
+            Cards = new List<TableCard>();
+            Players = new List<Player>();
         }
 
         /// <summary>
         /// Игроки.
         /// </summary>
-        public IEnumerable<Player> Players => _players;
+        public List<Player> Players { get; set; }
 
         /// <summary>
         /// Индекс игрока, который сейчас ходит.
@@ -41,7 +38,7 @@
                 }
                 else
                 {
-                    return (Player?)_players[_activePlayerIndex.Value];
+                    return (Player?)Players[_activePlayerIndex.Value];
                 }
             }
         }
@@ -60,11 +57,11 @@
                 else
                 {
                     var defencePlayerIndex = _activePlayerIndex.Value + 1;
-                    if (defencePlayerIndex >= _players.Count)
+                    if (defencePlayerIndex >= Players.Count)
                     {
                         defencePlayerIndex = 0;
                     }
-                    return (Player?)_players[defencePlayerIndex];
+                    return (Player?)Players[defencePlayerIndex];
                 }
             }
         }
@@ -72,7 +69,7 @@
         /// <summary>
         /// Карты на столе.
         /// </summary>
-        public IEnumerable<TableCard> Cards => _cards;
+        public List<TableCard> Cards { get; set; }
 
         /// <summary>
         /// Колода.
@@ -84,14 +81,14 @@
         /// </summary>
         /// <param name="player">Игрок.</param>
         /// <param name="card">Карта.</param>
-        public void Attack(Player player, Card card)
+        internal void Attack(Player player, Card card)
         {
             if (ActivePlayer != player)
             {
                 throw new Exception("player is not active");
             }
             var tableCard = new TableCard(this, card);
-            _cards.Add(tableCard);
+            Cards.Add(tableCard);
         }
 
         /// <summary>
@@ -100,13 +97,13 @@
         /// <param name="player">Игрок.</param>
         /// <param name="defenceCard">Карта, которой мы защищаемся.</param>
         /// <param name="attackCard">Карта, от которой защищаемся.</param>
-        public void Defence(Player player, Card defenceCard, Card attackCard)
+        internal void Defence(Player player, Card defenceCard, Card attackCard)
         {
             if (DefencePlayer != player)
             {
                 throw new Exception("player is not defence player");
             }
-            var card = _cards.FirstOrDefault(x => x.AttackCard == attackCard);
+            var card = Cards.FirstOrDefault(x => x.AttackCard == attackCard);
             if (card == null)
             {
                 throw new Exception("attack card not found");
@@ -117,20 +114,20 @@
         /// <summary>
         /// Добавить игрока в игру.
         /// </summary>
-        /// <param name="player"></param>
-        public void AddPlayer(Player player)
+        /// <param name="playerName">Имя игрока.</param>
+        public void AddPlayer(string playerName)
         {
-            if (_players.Count >= 6)
+            if (Players.Count >= 6)
             {
                 throw new Exception("max player count = 6");
             }
-            _players.Add(player);
+            Players.Add(new Player(this) { Name = playerName });
         }
 
         public void InitCardDeck()
         {
             _activePlayerIndex = null;
-            for(var i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 var isSuccess = ShuffleDeckAndTakeCards();
                 // козырей на руках нет, перетусуем колоду.
@@ -146,25 +143,25 @@
 
         private bool ShuffleDeckAndTakeCards()
         {
-            foreach (var player in _players)
+            foreach (var player in Players)
             {
                 player.Hand.Clear();
             }
 
             Deck.Shuffle();
-            if (_players.Count < 2)
+            if (Players.Count < 2)
             {
                 throw new Exception("need two or more players");
             }
 
-            if (_players.Count > 6)
+            if (Players.Count > 6)
             {
                 throw new Exception("need six players or less");
             }
 
             for (var i = 0; i < 6; i++)
             {
-                foreach (var player in _players)
+                foreach (var player in Players)
                 {
                     var card = Deck.PullCard();
                     player.Hand.TakeCard(card);
@@ -173,7 +170,7 @@
 
             var trumpSuitValue = Deck.TrumpCard.Suit.Value;
             var minHandTrumpSuits = new Dictionary<int, Player>();
-            foreach (var player in _players)
+            foreach (var player in Players)
             {
                 var minTrumpRank = player.Hand.Cards
                     .Where(x => x.Suit.Value == trumpSuitValue)
@@ -188,10 +185,67 @@
             var minTrumpSuitPlayer = minHandTrumpSuits.OrderBy(x => x.Key).FirstOrDefault().Value;
             if (minTrumpSuitPlayer != null)
             {
-                _activePlayerIndex = _players.IndexOf(minTrumpSuitPlayer);
+                _activePlayerIndex = Players.IndexOf(minTrumpSuitPlayer);
                 return true;
             }
             return false;
+        }
+
+        public void StopRound()
+        {
+            if (Cards.All(x => x.DefenceCard != null))
+            {
+                // защитились от всех карт, выкидываем их в отбой
+                Cards = new List<TableCard>();
+            }
+            else
+            {
+                foreach (var card in Cards)
+                {
+                    DefencePlayer.Hand.TakeCard(card.AttackCard);
+                    if (card.DefenceCard != null)
+                    {
+                        DefencePlayer.Hand.TakeCard(card.DefenceCard);
+                    }
+                }
+            }
+
+            TakeCardsAfterRound();
+        }
+
+        /// <summary>
+        /// Добрать до 6 карт после того, как раунд окончился, начиная с того, кто ходил по кругу.
+        /// </summary>
+        private void TakeCardsAfterRound()
+        {
+            for (var i = 0; i < Players.Count; i++)
+            {
+                if (Deck.CardsCount == 0)
+                {
+                    return;
+                }
+                var takeCardPlayer = Players[_activePlayerIndex.Value];
+                var handCount = takeCardPlayer.Hand.Cards.Count();
+                if (handCount < 6)
+                {
+                    var needTakeCount = 6 - handCount;
+                    for (var j = 0; j < needTakeCount; j++)
+                    {
+                        var takeCard = Deck.PullCard();
+                        takeCardPlayer.Hand.TakeCard(takeCard);
+
+                        if (Deck.CardsCount == 0)
+                        {
+                            return;
+                        }
+                    }
+                }
+                _activePlayerIndex++;
+                if (_activePlayerIndex >= Players.Count)
+                {
+                    _activePlayerIndex = 0;
+                }
+            }
         }
     }
 }

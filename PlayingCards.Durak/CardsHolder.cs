@@ -14,8 +14,8 @@
                 new CardRank(8, "8"),
                 new CardRank(9, "9"),
                 new CardRank(10, "10"),
-                new CardRank(11, "Queen"),
-                new CardRank(12, "Jack"),
+                new CardRank(11, "Jack"),
+                new CardRank(12, "Queen"),
                 new CardRank(13, "King"),
                 new CardRank(14, "Ace"),
             };

@@ -36,7 +36,7 @@ namespace PlayingCards.Durak.Tests
             var game = new Game();
             for (var i = 0; i < playerCount; i++)
             {
-                game.AddPlayer(new Player());
+                game.AddPlayer("player" + i);
             }
             game.InitCardDeck();
 
@@ -64,7 +64,7 @@ namespace PlayingCards.Durak.Tests
             var game = new Game();
             for (var i = 0; i < playerCount; i++)
             {
-                game.AddPlayer(new Player { Name = "Player" + i });
+                game.AddPlayer("Player" + i);
             }
             game.InitCardDeck();
 
@@ -101,7 +101,7 @@ namespace PlayingCards.Durak.Tests
             var game = new Game();
             for (var i = 0; i < playerCount; i++)
             {
-                game.AddPlayer(new Player { Name = "Player" + i });
+                game.AddPlayer("Player" + i);
             }
             game.InitCardDeck();
 
@@ -147,6 +147,64 @@ namespace PlayingCards.Durak.Tests
             {
                 Assert.Throws<Exception>(() => attackTableCard.Defence(defenceCard));
             }
+        }
+
+        /// <summary>
+        /// Сходили одну карту и отбили её.
+        /// </summary>
+        /// <remarks>
+        /// Проверили, что после первого раунда, все добрали карты на руки до 6.
+        /// Проверили, что в колоде стало на 2 карты меньше.
+        /// </remarks>
+        [Test]
+        public void PlayOneRoundOneCardDefenceTest()
+        {
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            var player1 = game.Players[0];
+            var player2 = game.Players[1];
+            game.Deck = new Deck(new NotSortedDeckCardGenerator());
+            game.InitCardDeck();
+            // ходим пиковой дамой
+            player1.Hand.Attack(1);
+            // отбиваемся пиковым королём
+            player2.Hand.Defence(0, 0);
+            game.StopRound();
+            Assert.That(player1.Hand.Cards.Count, Is.EqualTo(6));
+            Assert.That(player2.Hand.Cards.Count, Is.EqualTo(6));
+            Assert.That(game.Deck.CardsCount, Is.EqualTo(36 - 6 - 6 - 2));
+        }
+
+        /// <summary>
+        /// Сходили две карты, одну отбили, а вторую не отбили, и забираем всё на руки.
+        /// </summary>
+        /// <remarks>
+        /// Проверили, что атакующий добрал карты до 6.
+        /// Проверили, что защищающийся забрал себе обе карты атакующиего, и у него теперь их 8.
+        /// Проверили, что в колоде стало на 2 карты меньше.
+        /// </remarks>
+        [Test]
+        public void PlayOneRoundTwoCardAndNotDefenceTest()
+        {
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            var player1 = game.Players[0];
+            var player2 = game.Players[1];
+            game.Deck = new Deck(new NotSortedDeckCardGenerator());
+            game.InitCardDeck();
+            // ходим пиковым тузом
+            player1.Hand.Attack(0);
+            // ходим пиковой дамой
+            player1.Hand.Attack(0);
+            // отбиваемся пиковым королём от дамы
+            player2.Hand.Defence(0, 1);
+            // а туза мы отбить не можем, забираем на руки
+            game.StopRound();
+            Assert.That(player1.Hand.Cards.Count, Is.EqualTo(6));
+            Assert.That(player2.Hand.Cards.Count, Is.EqualTo(8));
+            Assert.That(game.Deck.CardsCount, Is.EqualTo(36 - 6 - 6 - 2));
         }
     }
 }

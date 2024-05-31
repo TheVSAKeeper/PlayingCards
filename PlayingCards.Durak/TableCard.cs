@@ -37,6 +37,10 @@
         /// <param name="defenceCard">Карта для защиты.</param>
         public void Defence(Card defenceCard)
         {
+            if(DefenceCard != null)
+            {
+                throw new Exception("defence card exist");
+            }
             if (defenceCard.Suit.Value == Game.Deck.TrumpCard.Suit.Value)
             {
                 if (AttackCard.Suit.Value == Game.Deck.TrumpCard.Suit.Value)
