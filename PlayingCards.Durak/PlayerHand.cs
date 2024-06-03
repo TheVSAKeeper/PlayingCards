@@ -41,7 +41,22 @@ namespace PlayingCards.Durak
         }
 
         /// <summary>
-        /// Начать играть раунд.
+        /// Начать раунд, сыграв карту.
+        /// </summary>
+        /// <param name="cardIndex">Индекс карты.</param>
+        public void StartAttack(int cardIndex)
+        {
+            if (cardIndex < 0 || cardIndex >= Cards.Count)
+            {
+                throw new Exception("undefined card");
+            }
+            var card = Cards[cardIndex];
+            _game.StartAttack(Player, card);
+            Cards.Remove(card);
+        }
+
+        /// <summary>
+        /// Подкинуть карту.
         /// </summary>
         /// <param name="cardIndex">Индекс карты.</param>
         public void Attack(int cardIndex)
@@ -54,6 +69,7 @@ namespace PlayingCards.Durak
             _game.Attack(Player, card);
             Cards.Remove(card);
         }
+
 
         /// <summary>
         /// Защититься.

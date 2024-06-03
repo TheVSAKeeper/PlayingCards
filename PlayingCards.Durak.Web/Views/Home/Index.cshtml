@@ -1,0 +1,106 @@
+﻿
+
+<label type="text" id="nameLabel"></label>
+<div id="loginBlock">
+    <input type="text" id="nameInput" placeholder="Имя" />
+    <button class="btn btn-info" onclick="login()">Войти</button>
+</div>
+<button class="btn btn-info" id="logoutBtn" onclick="logout()">Выйти</button>
+<div class="table">
+    <div class="play-card">
+        <div>6</div>
+        <div>♥</div>
+    </div>
+    <div class="play-card">
+        <div>7</div>
+        <div>♥</div>
+    </div>
+    <div class="play-card">
+        <div>J</div>
+        <div>♦</div>
+    </div>
+</div>
+<div class="hand">
+
+</div>
+<script>
+    var user = {};
+    var authCookieName = 'auth_cookie';
+    function init() {
+        let cookieAuth = getUserAlertCookie(authCookieName);
+        if (cookieAuth == null) {
+            document.getElementById('nameLabel').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            document.getElementById('loginBlock').classList.remove('hidden');
+        } else {
+            user.name = cookieAuth;
+            document.getElementById('nameLabel').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            document.getElementById('loginBlock').classList.add('hidden');
+        }
+        if (user.name) {
+            document.getElementById('nameLabel').innerHTML = user.name;
+        } else {
+            document.getElementById('nameLabel').innerHTML = '';
+        }
+    }
+
+    init();
+
+    function login() {
+        let name = document.getElementById('nameInput').value;
+        setUserAlertCookie(authCookieName, name, 1);
+        init();
+    }
+
+    function logout() {
+        deleteCookie(authCookieName);
+        init();
+    }
+
+    function setUserAlertCookie(name, value, days) {
+        var expires = "";
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
+    function deleteCookie(name) {
+        document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    }
+
+    function getUserAlertCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+</script>
+
+<style>
+    .hidden {
+        display: none;
+    }
+
+    .table{
+
+    }
+
+    .play-card {
+        width: 50px;
+        height: 100px;
+        border: 1px solid black;
+        display: inline-block;
+        font-size: 30px;
+    }
+
+        .play-card div {
+        display: inline-block;
+    }
+</style>

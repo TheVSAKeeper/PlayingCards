@@ -77,11 +77,11 @@
         public Deck Deck { get; set; }
 
         /// <summary>
-        /// Сыграть карту.
+        /// Начать раунд, сыграв карту.
         /// </summary>
         /// <param name="player">Игрок.</param>
         /// <param name="card">Карта.</param>
-        internal void Attack(Player player, Card card)
+        internal void StartAttack(Player player, Card card)
         {
             if (ActivePlayer != player)
             {
@@ -89,6 +89,36 @@
             }
             var tableCard = new TableCard(this, card);
             Cards.Add(tableCard);
+        }
+
+        /// <summary>
+        /// Подкинуть карту.
+        /// </summary>
+        /// <param name="player">Игрок.</param>
+        /// <param name="card">Карта.</param>
+        internal void Attack(Player player, Card card)
+        {
+            if (DefencePlayer == player)
+            {
+                throw new Exception("is defence player");
+            }
+
+            var cardRankExistsInTable = false;
+            foreach (var tableCard in Cards)
+            {
+                if (card.Rank.Value == tableCard.AttackCard.Rank.Value)
+                {
+                    cardRankExistsInTable = true;
+                    break;
+                }
+            }
+            if (!cardRankExistsInTable)
+            {
+                throw new Exception("this rank not found in table");
+            }
+
+            var addingTableCard = new TableCard(this, card);
+            Cards.Add(addingTableCard);
         }
 
         /// <summary>

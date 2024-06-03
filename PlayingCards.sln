@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PlayingCards.Durak", "Playi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PlayingCards.Durak.Tests", "PlayingCards.Durak.Tests\PlayingCards.Durak.Tests.csproj", "{91EDEA7A-80A2-4726-8840-0AA10DFC1CB1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlayingCards.Durak.Web", "PlayingCards.Durak.Web\PlayingCards.Durak.Web.csproj", "{DE4D525B-3331-43A1-98A4-401E92EF7650}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{91EDEA7A-80A2-4726-8840-0AA10DFC1CB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91EDEA7A-80A2-4726-8840-0AA10DFC1CB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91EDEA7A-80A2-4726-8840-0AA10DFC1CB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE4D525B-3331-43A1-98A4-401E92EF7650}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE4D525B-3331-43A1-98A4-401E92EF7650}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE4D525B-3331-43A1-98A4-401E92EF7650}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE4D525B-3331-43A1-98A4-401E92EF7650}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,9 +1,9 @@
-namespace PlayingCards.Durak.Tests
+п»їnamespace PlayingCards.Durak.Tests
 {
     public class DeckTests
     {
         /// <summary>
-        /// Перетусовали колоду и убедились что в ней 9 номиналов карт и 4 масти, и карт 36 штук.
+        /// РџРµСЂРµС‚СѓСЃРѕРІР°Р»Рё РєРѕР»РѕРґСѓ Рё СѓР±РµРґРёР»РёСЃСЊ С‡С‚Рѕ РІ РЅРµР№ 9 РЅРѕРјРёРЅР°Р»РѕРІ РєР°СЂС‚ Рё 4 РјР°СЃС‚Рё, Рё РєР°СЂС‚ 36 С€С‚СѓРє.
         /// </summary>
         [Test]
         public void DeckCardsCountTest()
@@ -22,9 +22,9 @@ namespace PlayingCards.Durak.Tests
         }
 
         /// <summary>
-        /// Раздали игрокам по 6 карт в начале игры.
+        /// Р Р°Р·РґР°Р»Рё РёРіСЂРѕРєР°Рј РїРѕ 6 РєР°СЂС‚ РІ РЅР°С‡Р°Р»Рµ РёРіСЂС‹.
         /// </summary>
-        /// <param name="playerCount">Количество игроков.</param>
+        /// <param name="playerCount">РљРѕР»РёС‡РµСЃС‚РІРѕ РёРіСЂРѕРєРѕРІ.</param>
         [Test]
         [TestCase(2)]
         [TestCase(3)]
@@ -47,12 +47,12 @@ namespace PlayingCards.Durak.Tests
         }
 
         /// <summary>
-        /// Проверка, кто первый ходит.
+        /// РџСЂРѕРІРµСЂРєР°, РєС‚Рѕ РїРµСЂРІС‹Р№ С…РѕРґРёС‚.
         /// </summary>
         /// <remarks>
-        /// У первого ходящего должен быть козырь наименьшего номинала на руке, чем у других.
+        /// РЈ РїРµСЂРІРѕРіРѕ С…РѕРґСЏС‰РµРіРѕ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РєРѕР·С‹СЂСЊ РЅР°РёРјРµРЅСЊС€РµРіРѕ РЅРѕРјРёРЅР°Р»Р° РЅР° СЂСѓРєРµ, С‡РµРј Сѓ РґСЂСѓРіРёС….
         /// </remarks>
-        /// <param name="playerCount">Количество игроков в игре.</param>
+        /// <param name="playerCount">РљРѕР»РёС‡РµСЃС‚РІРѕ РёРіСЂРѕРєРѕРІ РІ РёРіСЂРµ.</param>
         [Test]
         [TestCase(2)]
         [TestCase(3)]
@@ -84,12 +84,12 @@ namespace PlayingCards.Durak.Tests
         }
 
         /// <summary>
-        /// Проверка, на кого, первым ходят.
+        /// РџСЂРѕРІРµСЂРєР°, РЅР° РєРѕРіРѕ, РїРµСЂРІС‹Рј С…РѕРґСЏС‚.
         /// </summary>
         /// <remarks>
-        /// Следующий после активного, защищается.
+        /// РЎР»РµРґСѓСЋС‰РёР№ РїРѕСЃР»Рµ Р°РєС‚РёРІРЅРѕРіРѕ, Р·Р°С‰РёС‰Р°РµС‚СЃСЏ.
         /// </remarks>
-        /// <param name="playerCount">Количество игроков в игре.</param>
+        /// <param name="playerCount">РљРѕР»РёС‡РµСЃС‚РІРѕ РёРіСЂРѕРєРѕРІ РІ РёРіСЂРµ.</param>
         [Test]
         [TestCase(2)]
         [TestCase(3)]
@@ -117,16 +117,16 @@ namespace PlayingCards.Durak.Tests
         }
 
         /// <summary>
-        /// Отбиваемся от карты.
+        /// РћС‚Р±РёРІР°РµРјСЃСЏ РѕС‚ РєР°СЂС‚С‹.
         /// </summary>
         [Test]
-        [TestCase(0, 1, 8, true, TestName = "Бьём козырную шестёрку, козырной семёркой")]
-        [TestCase(2, 1, 8, false, TestName = "Бьём козырную восьмёрку, козырной семёркой")]
-        [TestCase(0, 10, 8, false, TestName = "Бьём козырную шестёрку, некозырной семёркой")]
-        [TestCase(0, 1, 9, true, TestName = "Бьём некозырную шестёрку, некозырной семёркой той же масти")]
-        [TestCase(2, 1, 9, false, TestName = "Бьём некозырную восьмёрку, некозырной семёркой той же масти")]
-        [TestCase(9, 1, 8, true, TestName = "Бьём некозырную шестёрку, козырной семёркой")]
-        [TestCase(9, 1, 34, false, TestName = "Бьём некозырную шестёрку, некозырной семёркой другой масти")]
+        [TestCase(0, 1, 8, true, TestName = "Р‘СЊС‘Рј РєРѕР·С‹СЂРЅСѓСЋ С€РµСЃС‚С‘СЂРєСѓ, РєРѕР·С‹СЂРЅРѕР№ СЃРµРјС‘СЂРєРѕР№")]
+        [TestCase(2, 1, 8, false, TestName = "Р‘СЊС‘Рј РєРѕР·С‹СЂРЅСѓСЋ РІРѕСЃСЊРјС‘СЂРєСѓ, РєРѕР·С‹СЂРЅРѕР№ СЃРµРјС‘СЂРєРѕР№")]
+        [TestCase(0, 10, 8, false, TestName = "Р‘СЊС‘Рј РєРѕР·С‹СЂРЅСѓСЋ С€РµСЃС‚С‘СЂРєСѓ, РЅРµРєРѕР·С‹СЂРЅРѕР№ СЃРµРјС‘СЂРєРѕР№")]
+        [TestCase(0, 1, 9, true, TestName = "Р‘СЊС‘Рј РЅРµРєРѕР·С‹СЂРЅСѓСЋ С€РµСЃС‚С‘СЂРєСѓ, РЅРµРєРѕР·С‹СЂРЅРѕР№ СЃРµРјС‘СЂРєРѕР№ С‚РѕР№ Р¶Рµ РјР°СЃС‚Рё")]
+        [TestCase(2, 1, 9, false, TestName = "Р‘СЊС‘Рј РЅРµРєРѕР·С‹СЂРЅСѓСЋ РІРѕСЃСЊРјС‘СЂРєСѓ, РЅРµРєРѕР·С‹СЂРЅРѕР№ СЃРµРјС‘СЂРєРѕР№ С‚РѕР№ Р¶Рµ РјР°СЃС‚Рё")]
+        [TestCase(9, 1, 8, true, TestName = "Р‘СЊС‘Рј РЅРµРєРѕР·С‹СЂРЅСѓСЋ С€РµСЃС‚С‘СЂРєСѓ, РєРѕР·С‹СЂРЅРѕР№ СЃРµРјС‘СЂРєРѕР№")]
+        [TestCase(9, 1, 34, false, TestName = "Р‘СЊС‘Рј РЅРµРєРѕР·С‹СЂРЅСѓСЋ С€РµСЃС‚С‘СЂРєСѓ, РЅРµРєРѕР·С‹СЂРЅРѕР№ СЃРµРјС‘СЂРєРѕР№ РґСЂСѓРіРѕР№ РјР°СЃС‚Рё")]
         public void SuccessDefenceTrumpSuitTest(
             int attackCardIndex,
             int defenceCardIndex,
@@ -150,11 +150,11 @@ namespace PlayingCards.Durak.Tests
         }
 
         /// <summary>
-        /// Сходили одну карту и отбили её.
+        /// РЎС…РѕРґРёР»Рё РѕРґРЅСѓ РєР°СЂС‚Сѓ Рё РѕС‚Р±РёР»Рё РµС‘.
         /// </summary>
         /// <remarks>
-        /// Проверили, что после первого раунда, все добрали карты на руки до 6.
-        /// Проверили, что в колоде стало на 2 карты меньше.
+        /// РџСЂРѕРІРµСЂРёР»Рё, С‡С‚Рѕ РїРѕСЃР»Рµ РїРµСЂРІРѕРіРѕ СЂР°СѓРЅРґР°, РІСЃРµ РґРѕР±СЂР°Р»Рё РєР°СЂС‚С‹ РЅР° СЂСѓРєРё РґРѕ 6.
+        /// РџСЂРѕРІРµСЂРёР»Рё, С‡С‚Рѕ РІ РєРѕР»РѕРґРµ СЃС‚Р°Р»Рѕ РЅР° 2 РєР°СЂС‚С‹ РјРµРЅСЊС€Рµ.
         /// </remarks>
         [Test]
         public void PlayOneRoundOneCardDefenceTest()
@@ -166,9 +166,9 @@ namespace PlayingCards.Durak.Tests
             var player2 = game.Players[1];
             game.Deck = new Deck(new NotSortedDeckCardGenerator());
             game.InitCardDeck();
-            // ходим пиковой дамой
-            player1.Hand.Attack(1);
-            // отбиваемся пиковым королём
+            // С…РѕРґРёРј РїРёРєРѕРІРѕР№ РґР°РјРѕР№
+            player1.Hand.StartAttack(1);
+            // РѕС‚Р±РёРІР°РµРјСЃСЏ РїРёРєРѕРІС‹Рј РєРѕСЂРѕР»С‘Рј
             player2.Hand.Defence(0, 0);
             game.StopRound();
             Assert.That(player1.Hand.Cards.Count, Is.EqualTo(6));
@@ -177,12 +177,12 @@ namespace PlayingCards.Durak.Tests
         }
 
         /// <summary>
-        /// Сходили две карты, одну отбили, а вторую не отбили, и забираем всё на руки.
+        /// РЎС…РѕРґРёР»Рё РґРІРµ РєР°СЂС‚С‹, РѕРґРЅСѓ РѕС‚Р±РёР»Рё, Р° РІС‚РѕСЂСѓСЋ РЅРµ РѕС‚Р±РёР»Рё, Рё Р·Р°Р±РёСЂР°РµРј РІСЃС‘ РЅР° СЂСѓРєРё.
         /// </summary>
         /// <remarks>
-        /// Проверили, что атакующий добрал карты до 6.
-        /// Проверили, что защищающийся забрал себе обе карты атакующиего, и у него теперь их 8.
-        /// Проверили, что в колоде стало на 2 карты меньше.
+        /// РџСЂРѕРІРµСЂРёР»Рё, С‡С‚Рѕ Р°С‚Р°РєСѓСЋС‰РёР№ РґРѕР±СЂР°Р» РєР°СЂС‚С‹ РґРѕ 6.
+        /// РџСЂРѕРІРµСЂРёР»Рё, С‡С‚Рѕ Р·Р°С‰РёС‰Р°СЋС‰РёР№СЃСЏ Р·Р°Р±СЂР°Р» СЃРµР±Рµ РѕР±Рµ РєР°СЂС‚С‹ Р°С‚Р°РєСѓСЋС‰РёРµРіРѕ, Рё Сѓ РЅРµРіРѕ С‚РµРїРµСЂСЊ РёС… 8.
+        /// РџСЂРѕРІРµСЂРёР»Рё, С‡С‚Рѕ РІ РєРѕР»РѕРґРµ СЃС‚Р°Р»Рѕ РЅР° 2 РєР°СЂС‚С‹ РјРµРЅСЊС€Рµ.
         /// </remarks>
         [Test]
         public void PlayOneRoundTwoCardAndNotDefenceTest()
@@ -194,17 +194,51 @@ namespace PlayingCards.Durak.Tests
             var player2 = game.Players[1];
             game.Deck = new Deck(new NotSortedDeckCardGenerator());
             game.InitCardDeck();
-            // ходим пиковым тузом
-            player1.Hand.Attack(0);
-            // ходим пиковой дамой
-            player1.Hand.Attack(0);
-            // отбиваемся пиковым королём от дамы
+            // С…РѕРґРёРј РїРёРєРѕРІС‹Рј С‚СѓР·РѕРј
+            player1.Hand.StartAttack(0);
+            // С…РѕРґРёРј РїРёРєРѕРІРѕР№ РґР°РјРѕР№
+            player1.Hand.StartAttack(0);
+            // РѕС‚Р±РёРІР°РµРјСЃСЏ РїРёРєРѕРІС‹Рј РєРѕСЂРѕР»С‘Рј РѕС‚ РґР°РјС‹
             player2.Hand.Defence(0, 1);
-            // а туза мы отбить не можем, забираем на руки
+            // Р° С‚СѓР·Р° РјС‹ РѕС‚Р±РёС‚СЊ РЅРµ РјРѕР¶РµРј, Р·Р°Р±РёСЂР°РµРј РЅР° СЂСѓРєРё
             game.StopRound();
             Assert.That(player1.Hand.Cards.Count, Is.EqualTo(6));
             Assert.That(player2.Hand.Cards.Count, Is.EqualTo(8));
             Assert.That(game.Deck.CardsCount, Is.EqualTo(36 - 6 - 6 - 2));
+        }
+
+        /// <summary>
+        /// РРіСЂРѕРє 1 РЅР°С‡РёРЅР°РµС‚ СЂР°СѓРЅРґ, РёРіСЂРѕРє 3 РїРѕРґРєРёРґС‹РІР°РµС‚, РёРіСЂРѕРє 2 РѕС‚Р±РёРІР°РµС‚ РІСЃРµ РєР°СЂС‚С‹.
+        /// </summary>
+        /// <remarks>
+        /// РџСЂРѕРІРµСЂРёР»Рё, С‡С‚Рѕ РјРѕР¶РЅРѕ РїРѕРґРєРёРЅСѓС‚СЊ РєР°СЂС‚Сѓ.
+        /// </remarks>
+        [Test]
+        public void StartAttackAndAttackCardTest()
+        {
+            var game = new Game();
+            game.AddPlayer("1"); //Aв™  10в™  6в™  Jв™Ґ Wв™Ґ Qв™¦
+            game.AddPlayer("2"); //Kв™  9в™  Aв™Ґ 10в™Ґ 6в™Ґ Jв™¦
+            game.AddPlayer("3"); //Qв™  8в™  Kв™Ґ 9в™Ґ Aв™¦ 10в™¦
+            game.AddPlayer("4"); //Jв™  7в™  Qв™Ґ 8в™Ґ Kв™¦ 9в™¦
+            var startAttackPlayer = game.Players[0];
+            var defencePlayer = game.Players[1];
+            var attackPlayer = game.Players[2];
+            game.Deck = new Deck(new NotSortedDeckCardGenerator());
+            game.InitCardDeck();
+            // С…РѕРґРёРј 10в™ 
+            startAttackPlayer.Hand.StartAttack(1);
+            // РїРѕРґРєРёРґС‹РІР°РµРј 10в™¦
+            attackPlayer.Hand.Attack(5);
+            // РѕС‚Р±РёРІР°РµРјСЃСЏ Kв™  РѕС‚ 10в™ 
+            defencePlayer.Hand.Defence(0, 0);
+            // РѕС‚Р±РёРІР°РµРјСЃСЏ Jв™¦ РѕС‚ 10в™¦
+            defencePlayer.Hand.Defence(4, 1);
+            game.StopRound();
+            Assert.That(startAttackPlayer.Hand.Cards.Count, Is.EqualTo(6));
+            Assert.That(defencePlayer.Hand.Cards.Count, Is.EqualTo(6));
+            Assert.That(attackPlayer.Hand.Cards.Count, Is.EqualTo(6));
+            Assert.That(game.Deck.CardsCount, Is.EqualTo(36 - 6 * 4 - 2 * 2));
         }
     }
 }
