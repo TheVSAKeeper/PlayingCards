@@ -145,13 +145,15 @@
         /// Добавить игрока в игру.
         /// </summary>
         /// <param name="playerName">Имя игрока.</param>
-        public void AddPlayer(string playerName)
+        public Player AddPlayer(string playerName)
         {
             if (Players.Count >= 6)
             {
                 throw new Exception("max player count = 6");
             }
-            Players.Add(new Player(this) { Name = playerName });
+            var player = new Player(this) { Name = playerName };
+            Players.Add(player);
+            return player;
         }
 
         public void InitCardDeck()

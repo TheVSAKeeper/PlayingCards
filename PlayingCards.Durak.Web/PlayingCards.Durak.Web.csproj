@@ -6,4 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PlayingCards.Durak\PlayingCards.Durak.csproj" />
+  </ItemGroup>
+
 </Project>
