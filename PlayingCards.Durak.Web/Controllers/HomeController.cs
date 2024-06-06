@@ -102,6 +102,22 @@ namespace PlayingCards.Durak.Web.Controllers
             }
         }
 
+        [HttpPost]
+        public void Attack(AttackModel model)
+        {
+            Table? playerTable = null;
+            Player? player = null;
+            foreach (var table in _tables.Values)
+            {
+                if (table.PlayerSecrets.ContainsKey(model.PlayerSecret))
+                {
+                    playerTable = table;
+                    player = table.PlayerSecrets[model.PlayerSecret];
+                }
+            }
+            player.Hand.Attack(model.CardIndex);
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

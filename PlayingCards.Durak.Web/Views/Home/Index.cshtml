@@ -7,17 +7,20 @@
 
 <div id="main" class="hidden">
     <button class="btn btn-success" onclick="createTable()">Создать стол</button>
-    <div id="table">
-        <div id="deck"></div>
-        <div id="field"></div>
-    </div>
     <div id="hand">
+    </div>
+    <button id="moveCards" class="btn btn-info hidden" onclick="move()">Сходить</button>
+    <div id="table">
+        <div id="field"></div>
+        <div id="deck"><div id="trumpInfo"></div></div>
     </div>
 </div>
 <div class="hidden">
     <div class="play-card template-card">
         <div class="card-rank">J</div>
         <div class="card-suit">♦</div>
+    </div>
+    <div class="card-back template-card-back">
     </div>
 </div>
 <script>
@@ -85,12 +88,14 @@
         });
     }
 
+    var gameStatus = null;
     function getStatus() {
         SendRequest({
             method: 'Get',
-            url: '/Home/GetStatus?playerSecret='+user.secret,
+            url: '/Home/GetStatus?playerSecret=' + user.secret,
             success: function (data) {
                 let status = JSON.parse(data.responseText);
+                gameStatus = status;
                 if (status.table == null) {
                     // draw tables
                 } else {
@@ -99,16 +104,35 @@
                         let card = status.table.myCards[i];
                         let cardDiv = document.getElementsByClassName('template-card')[0].cloneNode(true);
                         cardDiv.classList.remove('template-card');
-                        cardDiv.getElementsByClassName('card-rank')[0].innerHTML = card.rank;
-                        cardDiv.getElementsByClassName('card-suit')[0].innerHTML = card.suit;
+                        cardDiv.getElementsByClassName('card-rank')[0].innerHTML = getRank(card.suit, card.rank);
+                        cardDiv.getElementsByClassName('card-suit')[0].innerHTML = getSuit(card.suit);
+                        cardDiv.addEventListener('click', function (event) {
+                            if (event.target.classList.contains('active')) {
+                                event.target.classList.remove('active');
+                            } else {
+                                event.target.classList.add('active');
+                            }
+                            checkMove();
+                        });
                         document.getElementById('hand').appendChild(cardDiv);
                     }
+
                     let trump = status.table.trump;
                     if (trump != null) {
-                        let cardDiv = document.getElementsByClassName('template-card')[0].cloneNode(true);
+                        if (status.table.deckCardsCount > 0) {
+                            let cardDiv = document.getElementsByClassName('template-card')[0].cloneNode(true);
+                            cardDiv.classList.remove('template-card');
+                            cardDiv.getElementsByClassName('card-rank')[0].innerHTML = getRank(trump.suit, trump.rank);
+                            cardDiv.getElementsByClassName('card-suit')[0].innerHTML = getSuit(trump.suit);
+                            document.getElementById('deck').appendChild(cardDiv);
+                        } else {
+                            document.getElementById('trumpInfo').innerHTML = 'Козырь: ' + getSuit(trump.suit);
+                        }
+                    }
+                    if (status.table.deckCardsCount > 1) {
+                        let cardDiv = document.getElementsByClassName('template-card-back')[0].cloneNode(true);
                         cardDiv.classList.remove('template-card');
-                        cardDiv.getElementsByClassName('card-rank')[0].innerHTML = trump.rank;
-                        cardDiv.getElementsByClassName('card-suit')[0].innerHTML = trump.suit;
+                        cardDiv.innerHTML = status.table.deckCardsCount;
                         document.getElementById('deck').appendChild(cardDiv);
                     }
                 }
@@ -117,6 +141,37 @@
                 alert('чтото пошло не так');
             }
         });
+    }
+
+    function checkMove() {
+        let activeCards = document.querySelectorAll("#hand .play-card.active");
+        if (activeCards.length > 0) {
+            document.getElementById('moveCards').classList.remove('hidden');
+        } else {
+            document.getElementById('moveCards').classList.add('hidden');
+        }
+    }
+
+    function move() {
+        let activeCards = document.querySelectorAll("#hand .play-card.active");
+        if (activeCards.length > 0) {
+            SendRequest({
+                method: 'Post',
+                url: '/Home/Attack',
+                body: {
+                    tableId: gameStatus.table.id,
+                    playerSecret: user.secret,
+                    playerName: user.name,
+                    cardIndex: 1 // todo взять выбранные карты
+                },
+                success: function (data) {
+                    getStatus();
+                },
+                error: function (data) {
+                    alert('чтото пошло не так');
+                }
+            });
+        }
     }
 
     function login() {
@@ -162,10 +217,46 @@
             (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
         );
     }
+
+    function getRank(suitValue, value) {
+        if (suitValue == 2 || suitValue == 1) {
+            return "<label style='color:red'>" + ranks[value] + "<label>";
+        } else {
+            return "<label>" + ranks[value] + "<label>";
+        }
+        return 1;
+    }
+
+    function getSuit(value) {
+        if (value == 2 || value == 1) {
+            return "<label style='color:red'>" + suits[value] + "<label>";
+        } else {
+            return "<label>" + suits[value] + "<label>";
+        }
+    }
+
+    var ranks = {
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "10": "10",
+        "11": "J",
+        "12": "Q",
+        "13": "K",
+        "14": "A",
+    };
+
+    var suits = {
+        "0": "♣",
+        "1": "♦",
+        "2": "♥",
+        "3": "♠",
+    }
 </script>
 
 <style>
-    #main{
+    #main {
         padding: 10px 0;
     }
 
@@ -176,15 +267,62 @@
     .table {
     }
 
+    #hand {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    #deck {
+        margin-top: 20px;
+        position: relative;
+        text-align: center;
+    }
+
+    #field {
+        min-height: 100px;
+    }
+
+    #trumpInfo {
+        display: inline-block;
+    }
+
     .play-card {
-        width: 50px;
+        width: 60px;
         height: 100px;
         border: 1px solid black;
         display: inline-block;
-        font-size: 30px;
+        margin-top: 10px;
     }
 
         .play-card div {
             display: inline-block;
         }
+
+        .play-card .card-suit {
+            font-size: 30px;
+        }
+
+        .play-card .card-rank {
+            font-size: 28px;
+        }
+
+        .play-card.active {
+            border: 2px solid blue;
+            margin-top: 5px;
+        }
+
+    .card-back {
+        border: 1px solid black;
+        background: repeating-linear-gradient(45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px);
+    }
+
+    #deck .card-back {
+        color: white;
+        font-size: 36px;
+        height: 60px;
+        width: 100px;
+        position: absolute;
+        top: 50px;
+        left: calc(50% - 50px);
+    }
 </style>
