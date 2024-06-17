@@ -100,6 +100,7 @@
                     // draw tables
                 } else {
                     // draw currentGame
+                    document.getElementById('hand').innerHTML = "";
                     for (let i = 0; i < status.table.myCards.length; i++) {
                         let card = status.table.myCards[i];
                         let cardDiv = document.getElementsByClassName('template-card')[0].cloneNode(true);
@@ -117,6 +118,7 @@
                         document.getElementById('hand').appendChild(cardDiv);
                     }
 
+                    document.getElementById('deck').innerHTML = "";
                     let trump = status.table.trump;
                     if (trump != null) {
                         if (status.table.deckCardsCount > 0) {
@@ -157,12 +159,12 @@
         if (activeCards.length > 0) {
             SendRequest({
                 method: 'Post',
-                url: '/Home/Attack',
+                url: '/Home/StartAttack',
                 body: {
                     tableId: gameStatus.table.id,
                     playerSecret: user.secret,
                     playerName: user.name,
-                    cardIndex: 1 // todo взять выбранные карты
+                    cardIndexes: [1] // todo взять выбранные карты
                 },
                 success: function (data) {
                     getStatus();

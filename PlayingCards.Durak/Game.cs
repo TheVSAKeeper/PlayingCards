@@ -26,6 +26,11 @@
         private int? _activePlayerIndex;
 
         /// <summary>
+        /// Игровой раунд в процессе.
+        /// </summary>
+        private bool _roundInProcess;
+
+        /// <summary>
         /// Игрок, который сейчас ходит.
         /// </summary>
         public Player? ActivePlayer
@@ -80,45 +85,67 @@
         /// Начать раунд, сыграв карту.
         /// </summary>
         /// <param name="player">Игрок.</param>
-        /// <param name="card">Карта.</param>
-        internal void StartAttack(Player player, Card card)
+        /// <param name="cards">Карты.</param>
+        internal void StartAttack(Player player, List<Card> cards)
         {
+            if (_roundInProcess)
+            {
+                throw new Exception("round started");
+            }
+            _roundInProcess = true;
             if (ActivePlayer != player)
             {
                 throw new Exception("player is not active");
             }
-            var tableCard = new TableCard(this, card);
-            Cards.Add(tableCard);
+            if (cards.GroupBy(x => x.Rank.Value).Count() > 1)
+            {
+                throw new Exception("only one rank");
+            }
+            foreach (var card in cards)
+            {
+                var tableCard = new TableCard(this, card);
+                Cards.Add(tableCard);
+            }
         }
 
         /// <summary>
-        /// Подкинуть карту.
+        /// Подкинуть карты.
         /// </summary>
         /// <param name="player">Игрок.</param>
-        /// <param name="card">Карта.</param>
-        internal void Attack(Player player, Card card)
+        /// <param name="cards">Карты.</param>
+        internal void Attack(Player player, List<Card> cards)
         {
+            // todo добавить lock(object) в рамках одной игры, тут потоконебезопасно.
+            if(_roundInProcess == false)
+            {
+                throw new Exception("round not started");
+            }
             if (DefencePlayer == player)
             {
                 throw new Exception("is defence player");
             }
 
             var cardRankExistsInTable = false;
-            foreach (var tableCard in Cards)
+            foreach (var card in cards)
             {
-                if (card.Rank.Value == tableCard.AttackCard.Rank.Value)
+                foreach (var tableCard in Cards)
                 {
-                    cardRankExistsInTable = true;
-                    break;
+                    if (card.Rank.Value == tableCard.AttackCard.Rank.Value)
+                    {
+                        cardRankExistsInTable = true;
+                        break;
+                    }
+                }
+                if (!cardRankExistsInTable)
+                {
+                    throw new Exception("this rank not found in table");
                 }
             }
-            if (!cardRankExistsInTable)
+            foreach (var card in cards)
             {
-                throw new Exception("this rank not found in table");
+                var addingTableCard = new TableCard(this, card);
+                Cards.Add(addingTableCard);
             }
-
-            var addingTableCard = new TableCard(this, card);
-            Cards.Add(addingTableCard);
         }
 
         /// <summary>
@@ -129,6 +156,10 @@
         /// <param name="attackCard">Карта, от которой защищаемся.</param>
         internal void Defence(Player player, Card defenceCard, Card attackCard)
         {
+            if (_roundInProcess == false)
+            {
+                throw new Exception("round not started");
+            }
             if (DefencePlayer != player)
             {
                 throw new Exception("player is not defence player");
@@ -243,6 +274,7 @@
             }
 
             TakeCardsAfterRound();
+            _roundInProcess = false;
         }
 
         /// <summary>

@@ -10,6 +10,6 @@ namespace PlayingCards.Durak.Web.Models
 
         public Guid TableId { get; set; }
 
-        public int CardIndex { get; set; }
+        public int[] CardIndexes { get; set; }
     }
 }

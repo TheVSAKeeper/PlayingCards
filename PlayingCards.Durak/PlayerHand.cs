@@ -44,30 +44,46 @@ namespace PlayingCards.Durak
         /// Начать раунд, сыграв карту.
         /// </summary>
         /// <param name="cardIndex">Индекс карты.</param>
-        public void StartAttack(int cardIndex)
+        public void StartAttack(int[] cardIndexes)
         {
-            if (cardIndex < 0 || cardIndex >= Cards.Count)
+            List<Card> cards = new List<Card>();
+            foreach (var cardIndex in cardIndexes)
             {
-                throw new Exception("undefined card");
+                if (cardIndex < 0 || cardIndex >= Cards.Count)
+                {
+                    throw new Exception("undefined card");
+                }
+                var card = Cards[cardIndex];
+                cards.Add(card);
             }
-            var card = Cards[cardIndex];
-            _game.StartAttack(Player, card);
-            Cards.Remove(card);
+            _game.StartAttack(Player, cards);
+            foreach (var cardIndex in cardIndexes.OrderByDescending(x => x))
+            {
+                Cards.RemoveAt(cardIndex);
+            }
         }
 
         /// <summary>
         /// Подкинуть карту.
         /// </summary>
         /// <param name="cardIndex">Индекс карты.</param>
-        public void Attack(int cardIndex)
+        public void Attack(int[] cardIndexes)
         {
-            if (cardIndex < 0 || cardIndex >= Cards.Count)
+            List<Card> cards = new List<Card>();
+            foreach (var cardIndex in cardIndexes)
             {
-                throw new Exception("undefined card");
+                if (cardIndex < 0 || cardIndex >= Cards.Count)
+                {
+                    throw new Exception("undefined card");
+                }
+                var card = Cards[cardIndex];
+                cards.Add(card);
             }
-            var card = Cards[cardIndex];
-            _game.Attack(Player, card);
-            Cards.Remove(card);
+            _game.Attack(Player, cards);
+            foreach (var cardIndex in cardIndexes.OrderByDescending(x => x))
+            {
+                Cards.RemoveAt(cardIndex);
+            }
         }
 
 
