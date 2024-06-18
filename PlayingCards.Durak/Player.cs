@@ -18,7 +18,7 @@ namespace PlayingCards.Durak
         /// <summary>
         /// Имя.
         /// </summary>
-        public string? Name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// Рука.

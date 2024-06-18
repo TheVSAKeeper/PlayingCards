@@ -1,8 +1,8 @@
 using System.Diagnostics;
-using System.Numerics;
 using Microsoft.AspNetCore.Mvc;
 using PlayingCards.Durak.Web.Business;
 using PlayingCards.Durak.Web.Models;
+using static PlayingCards.Durak.Web.Models.GetStatusModel;
 
 namespace PlayingCards.Durak.Web.Controllers
 {
@@ -50,32 +50,34 @@ namespace PlayingCards.Durak.Web.Controllers
                     player = table.PlayerSecrets[playerSecret];
                 }
             }
-            var result = new
+            var result = new GetStatusModel
             {
                 Table = playerTable == null ? null :
-                new
+                new TableModel
                 {
                     Id = playerTable.Id,
                     MyCards = playerTable.Game.Players.First(x => x == player).Hand.Cards
-                        .Select(x => new { Rank = x.Rank.Value, Suit = x.Suit.Value }),
+                        .Select(x => new CardModel(x)).ToArray(),
                     DeckCardsCount = playerTable.Game.Deck.CardsCount,
                     Trump = playerTable.Game.Deck.TrumpCard == null ? null :
-                    new
+                    new CardModel(playerTable.Game.Deck.TrumpCard),
+                    Cards = playerTable.Game.Cards.Select(x => new TableCardModel
                     {
-                        Rank = playerTable.Game.Deck.TrumpCard.Rank.Value,
-                        Suit = playerTable.Game.Deck.TrumpCard.Suit.Value,
-                    }
+                        AttackCard = new CardModel(x.AttackCard),
+                        DefenceCard = x.DefenceCard == null ? null : new CardModel(x.DefenceCard),
+                    }).ToArray(),
+                    Players = playerTable.Game.Players.Select(x => new PlayerModel { Name = x.Name, CardsCount = x.Hand.Cards.Count }).ToArray(),
                 },
-                Tables = playerTable != null ? null : _tables.Select(x => new
+                Tables = playerTable != null ? null : _tables.Select(x => new TableModel
                 {
                     Id = x.Value.Id
-                }),
+                }).ToArray(),
             };
             return Json(result);
         }
 
         [HttpPost]
-        public void Join(JoinModel model)
+        public void Join([FromBody] JoinModel model)
         {
             foreach (var table2 in _tables.Values)
             {
@@ -103,7 +105,7 @@ namespace PlayingCards.Durak.Web.Controllers
         }
 
         [HttpPost]
-        public void StartAttack(AttackModel model)
+        public void StartAttack([FromBody] AttackModel model)
         {
             Table? playerTable = null;
             Player? player = null;
@@ -119,7 +121,7 @@ namespace PlayingCards.Durak.Web.Controllers
         }
 
         [HttpPost]
-        public void Attack(AttackModel model)
+        public void Attack([FromBody] AttackModel model)
         {
             Table? playerTable = null;
             Player? player = null;

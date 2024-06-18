@@ -12,20 +12,9 @@ function SendRequest(options) {
     _this.options = Object.assign({}, defaultOptions, options);
 
     _this.Send = function () {
-        let bodyString = '';
-        let first = true;
-
-        for (var prop in _this.options.body) {
-            if (first == false) {
-                bodyString += "&";
-            }
-            bodyString += prop + "=" + _this.options.body[prop];
-            first = false;
-        }
-
         let xhr = new XMLHttpRequest();
         xhr.open(_this.options.method, _this.options.url, true);
-        xhr.setRequestHeader('Content-Type', "application/x-www-form-urlencoded");
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         xhr.onreadystatechange = function () {
             if (this.readyState != 4) {
                 return;
@@ -43,7 +32,7 @@ function SendRequest(options) {
                 _this.options.always(this);
             }
         };
-        xhr.send(bodyString);
+        xhr.send(JSON.stringify(_this.options.body));
     }
     _this.Send();
 }

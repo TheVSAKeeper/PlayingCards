@@ -5,15 +5,19 @@
 </div>
 <button class="btn btn-info" id="logoutBtn" onclick="logout()">Выйти</button>
 
-<div id="main" class="hidden">
+<div id="tableMain">
     <button class="btn btn-success" onclick="createTable()">Создать стол</button>
-    <div id="hand">
+    <div id="tables">
     </div>
+</div>
+<div id="main" class="hidden">
+    <div id="hand"></div>
     <button id="moveCards" class="btn btn-info hidden" onclick="move()">Сходить</button>
-    <div id="table">
-        <div id="field"></div>
-        <div id="deck"><div id="trumpInfo"></div></div>
+    <div id="field"></div>
+    <div id="deck">
+        <div id="trumpInfo"></div>
     </div>
+    <div id="players"></div>
 </div>
 <div class="hidden">
     <div class="play-card template-card">
@@ -21,6 +25,11 @@
         <div class="card-suit">♦</div>
     </div>
     <div class="card-back template-card-back">
+    </div>
+    <div class="table template-table">
+    </div>
+    <div class="player template-player">
+        <img src="player-icon.png" />
     </div>
 </div>
 <script>
@@ -96,11 +105,19 @@
             success: function (data) {
                 let status = JSON.parse(data.responseText);
                 gameStatus = status;
+                document.getElementById('hand').innerHTML = "";
+                document.getElementById('deck').innerHTML = "";
+                document.getElementById('field').innerHTML = "";
+                document.getElementById('tables').innerHTML = "";
                 if (status.table == null) {
-                    // draw tables
+                    for (let i = 0; i < status.tables.length; i++) {
+                        let table = status.tables[i];
+                        let tableDiv = document.getElementsByClassName('template-table')[0].cloneNode(true);
+                        cardDiv.classList.remove('template-table');
+                        document.getElementById('tables').appendChild(tableDiv);
+                    }
                 } else {
                     // draw currentGame
-                    document.getElementById('hand').innerHTML = "";
                     for (let i = 0; i < status.table.myCards.length; i++) {
                         let card = status.table.myCards[i];
                         let cardDiv = document.getElementsByClassName('template-card')[0].cloneNode(true);
@@ -118,7 +135,6 @@
                         document.getElementById('hand').appendChild(cardDiv);
                     }
 
-                    document.getElementById('deck').innerHTML = "";
                     let trump = status.table.trump;
                     if (trump != null) {
                         if (status.table.deckCardsCount > 0) {
@@ -133,9 +149,34 @@
                     }
                     if (status.table.deckCardsCount > 1) {
                         let cardDiv = document.getElementsByClassName('template-card-back')[0].cloneNode(true);
-                        cardDiv.classList.remove('template-card');
+                        cardDiv.classList.remove('template-card-back');
                         cardDiv.innerHTML = status.table.deckCardsCount;
                         document.getElementById('deck').appendChild(cardDiv);
+                    }
+
+                    for (let i = 0; i < status.table.cards.length; i++) {
+                        let card = status.table.cards[i];
+                        let attackCard = card.attackCard;
+                        // todo отрисовку карты вынести в метод
+                        let cardDiv = document.getElementsByClassName('template-card')[0].cloneNode(true);
+                        cardDiv.classList.remove('template-card');
+                        cardDiv.getElementsByClassName('card-rank')[0].innerHTML = getRank(attackCard.suit, attackCard.rank);
+                        cardDiv.getElementsByClassName('card-suit')[0].innerHTML = getSuit(attackCard.suit);
+                        // cardDiv.addEventListener('click', function (event) {
+                        //     if (event.target.classList.contains('active')) {
+                        //         event.target.classList.remove('active');
+                        //     } else {
+                        //         event.target.classList.add('active');
+                        //     }
+                        //     checkMove();
+                        // });
+                        document.getElementById('field').appendChild(cardDiv);
+                    }
+
+                    for (let i = 0; i < status.table.players.length;i++){
+                        let playerDiv = document.getElementsByClassName('template-player')[0].cloneNode(true);
+                        playerDiv.classList.remove('template-player');
+                        document.getElementById('players').appendChild(playerDiv);
                     }
                 }
             },
@@ -155,8 +196,14 @@
     }
 
     function move() {
-        let activeCards = document.querySelectorAll("#hand .play-card.active");
-        if (activeCards.length > 0) {
+        let cards = document.querySelectorAll("#hand .play-card");
+        let cardIndexes = [];
+        for (let i = 0; i < cards.length; i++) {
+            if (cards[i].classList.contains('active')) {
+                cardIndexes.push(i);
+            }
+        }
+        if (cardIndexes.length > 0) {
             SendRequest({
                 method: 'Post',
                 url: '/Home/StartAttack',
@@ -164,7 +211,7 @@
                     tableId: gameStatus.table.id,
                     playerSecret: user.secret,
                     playerName: user.name,
-                    cardIndexes: [1] // todo взять выбранные карты
+                    cardIndexes: cardIndexes,
                 },
                 success: function (data) {
                     getStatus();
@@ -267,7 +314,17 @@
     }
 
     .table {
+        height: 100px;
+        width: 100px;
+        border: 1px solid darkgray;
+        background-color: lightgray;
+        margin: 10px;
+        display:inline-block;
     }
+
+        .table.active {
+            border: 1px solid blue;
+        }
 
     #hand {
         margin-top: 20px;
@@ -282,6 +339,9 @@
 
     #field {
         min-height: 100px;
+        margin-top: 20px;
+        position: relative;
+        text-align: center;
     }
 
     #trumpInfo {

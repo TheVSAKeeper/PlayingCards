@@ -46,6 +46,10 @@ namespace PlayingCards.Durak
         /// <param name="cardIndex">Индекс карты.</param>
         public void StartAttack(int[] cardIndexes)
         {
+            if(cardIndexes.Length == 0)
+            {
+                throw new Exception("need one or more card");
+            }
             List<Card> cards = new List<Card>();
             foreach (var cardIndex in cardIndexes)
             {

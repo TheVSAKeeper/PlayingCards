@@ -92,7 +92,6 @@
             {
                 throw new Exception("round started");
             }
-            _roundInProcess = true;
             if (ActivePlayer != player)
             {
                 throw new Exception("player is not active");
@@ -106,6 +105,7 @@
                 var tableCard = new TableCard(this, card);
                 Cards.Add(tableCard);
             }
+            _roundInProcess = true;
         }
 
         /// <summary>
@@ -116,7 +116,7 @@
         internal void Attack(Player player, List<Card> cards)
         {
             // todo добавить lock(object) в рамках одной игры, тут потоконебезопасно.
-            if(_roundInProcess == false)
+            if (_roundInProcess == false)
             {
                 throw new Exception("round not started");
             }
