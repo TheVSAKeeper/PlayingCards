@@ -21,6 +21,10 @@ namespace PlayingCards.Durak.Web.Models
             public TableCardModel[]? Cards { get; set; }
 
             public PlayerModel[] Players { get; set; }
+
+            public int MyIndex { get; set; }
+
+            public int ActivePlayerIndex { get; set; }
         }
 
         public class CardModel
@@ -45,6 +49,8 @@ namespace PlayingCards.Durak.Web.Models
 
         public class PlayerModel
         {
+            public int Index { get; set; }
+
             public string Name { get; set; }
 
             public int CardsCount { get; set; }

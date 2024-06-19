@@ -56,6 +56,8 @@ namespace PlayingCards.Durak.Web.Controllers
                 new TableModel
                 {
                     Id = playerTable.Id,
+                    ActivePlayerIndex = playerTable.Game.Players.IndexOf(playerTable.Game.ActivePlayer),
+                    MyIndex = playerTable.Game.Players.IndexOf(player),
                     MyCards = playerTable.Game.Players.First(x => x == player).Hand.Cards
                         .Select(x => new CardModel(x)).ToArray(),
                     DeckCardsCount = playerTable.Game.Deck.CardsCount,
@@ -66,7 +68,9 @@ namespace PlayingCards.Durak.Web.Controllers
                         AttackCard = new CardModel(x.AttackCard),
                         DefenceCard = x.DefenceCard == null ? null : new CardModel(x.DefenceCard),
                     }).ToArray(),
-                    Players = playerTable.Game.Players.Select(x => new PlayerModel { Name = x.Name, CardsCount = x.Hand.Cards.Count }).ToArray(),
+                    Players = playerTable.Game.Players.Where(x => x != player)
+                        .Select((x, i) => new PlayerModel { Index = i, Name = x.Name, CardsCount = x.Hand.Cards.Count })
+                        .ToArray(),
                 },
                 Tables = playerTable != null ? null : _tables.Select(x => new TableModel
                 {
@@ -89,13 +93,20 @@ namespace PlayingCards.Durak.Web.Controllers
 
             if (_tables.TryGetValue(model.TableId, out var table))
             {
-                var player = table.Game.AddPlayer(model.PlayerName);
-                table.PlayerSecrets.Add(model.PlayerSecret, player);
                 var debug = true;
                 if (debug)
                 {
-                    table.Game.AddPlayer("противник");
+                    table.Game.AddPlayer("1 Вася");
+                    table.Game.AddPlayer("2 Петя");
+                }
+                var player = table.Game.AddPlayer(model.PlayerName);
+                table.PlayerSecrets.Add(model.PlayerSecret, player);
+                if (debug)
+                {
+                    table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
+                    table.Game.AddPlayer("5 Лучик света продуктовой разработки");
                     table.Game.InitCardDeck();
+                    table.Game.ActivePlayer.Hand.StartAttack([3]);
                 }
             }
             else

@@ -4,7 +4,6 @@
     <button class="btn btn-info" onclick="login()">Войти</button>
 </div>
 <button class="btn btn-info" id="logoutBtn" onclick="logout()">Выйти</button>
-
 <div id="tableMain">
     <button class="btn btn-success" onclick="createTable()">Создать стол</button>
     <div id="tables">
@@ -15,6 +14,7 @@
     <button id="moveCards" class="btn btn-info hidden" onclick="move()">Сходить</button>
     <div id="field"></div>
     <div id="deck">
+        <div id="deckCards"></div>
         <div id="trumpInfo"></div>
     </div>
     <div id="players"></div>
@@ -29,7 +29,9 @@
     <div class="table template-table">
     </div>
     <div class="player template-player">
-        <img src="player-icon.png" />
+        <img src="~/images/player.png" />
+        <label class="player-name"></label>
+        <div class="player-cards"></div>
     </div>
 </div>
 <script>
@@ -106,9 +108,12 @@
                 let status = JSON.parse(data.responseText);
                 gameStatus = status;
                 document.getElementById('hand').innerHTML = "";
-                document.getElementById('deck').innerHTML = "";
                 document.getElementById('field').innerHTML = "";
                 document.getElementById('tables').innerHTML = "";
+                document.getElementById('deckCards').innerHTML = "";
+                document.getElementById('trumpInfo').innerHTML = "";
+                document.getElementById('players').innerHTML = "";
+                
                 if (status.table == null) {
                     for (let i = 0; i < status.tables.length; i++) {
                         let table = status.tables[i];
@@ -142,7 +147,7 @@
                             cardDiv.classList.remove('template-card');
                             cardDiv.getElementsByClassName('card-rank')[0].innerHTML = getRank(trump.suit, trump.rank);
                             cardDiv.getElementsByClassName('card-suit')[0].innerHTML = getSuit(trump.suit);
-                            document.getElementById('deck').appendChild(cardDiv);
+                            document.getElementById('deckCards').appendChild(cardDiv);
                         } else {
                             document.getElementById('trumpInfo').innerHTML = 'Козырь: ' + getSuit(trump.suit);
                         }
@@ -151,7 +156,7 @@
                         let cardDiv = document.getElementsByClassName('template-card-back')[0].cloneNode(true);
                         cardDiv.classList.remove('template-card-back');
                         cardDiv.innerHTML = status.table.deckCardsCount;
-                        document.getElementById('deck').appendChild(cardDiv);
+                        document.getElementById('deckCards').appendChild(cardDiv);
                     }
 
                     for (let i = 0; i < status.table.cards.length; i++) {
@@ -173,10 +178,33 @@
                         document.getElementById('field').appendChild(cardDiv);
                     }
 
-                    for (let i = 0; i < status.table.players.length;i++){
+                    let playerIndexes = [];
+                    for (let i = status.table.myIndex - 1; i >= 0; i--) {
+                        playerIndexes.push( { index: i, gameIndex: i });
+                    }
+                    for (let i = status.table.players.length - 1; i >= status.table.myIndex; i--) {
+                        playerIndexes.push({ index: i, gameIndex: i + 1 });
+                    }
+
+                    for (let i = 0; i < playerIndexes.length; i++) {
+
+                        let playerIndex = playerIndexes[i].index;
+                        //я третий 2 1 5 4
+                        let player = status.table.players[playerIndex];
                         let playerDiv = document.getElementsByClassName('template-player')[0].cloneNode(true);
                         playerDiv.classList.remove('template-player');
+                        playerDiv.getElementsByClassName('player-name')[0].innerHTML = player.name;
+                        playerDiv.getElementsByClassName('player-name')[0].title = player.name;
+                        if (playerIndexes[i].gameIndex == status.table.activePlayerIndex) {
+                            playerDiv.classList.add('active-player');
+                        }
                         document.getElementById('players').appendChild(playerDiv);
+
+                        for (var j = 0; j < player.cardsCount; j++) {
+                            let cardDiv = document.getElementsByClassName('template-card-back')[0].cloneNode(true);
+                            cardDiv.classList.remove('template-card-back');
+                            playerDiv.getElementsByClassName('player-cards')[0].appendChild(cardDiv);
+                        }
                     }
                 }
             },
@@ -319,7 +347,7 @@
         border: 1px solid darkgray;
         background-color: lightgray;
         margin: 10px;
-        display:inline-block;
+        display: inline-block;
     }
 
         .table.active {
@@ -387,4 +415,40 @@
         top: 50px;
         left: calc(50% - 50px);
     }
+
+    #players {
+        text-align: center;
+    }
+
+    .player {
+        display: inline-block;
+        margin: 20px;
+    }
+
+        .player img {
+            max-width: 64px;
+            max-height: 64px;
+        }
+
+        .player .player-name {
+            display: block;
+            max-width: 120px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+    .player .card-back {
+        height: 50px;
+        width: 15px;
+        display: inline-block
+    }
+
+        .player .card-back:last-child{
+            width:30px;
+        }
+
+        .player.active-player img{
+            border: 1px solid gray;
+        }
 </style>
