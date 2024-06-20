@@ -32,7 +32,7 @@ namespace PlayingCards.Durak.Web.Controllers
         {
             var tableId = Guid.NewGuid();
             var game = new Game();
-            var table = new Table { Game = game, PlayerSecrets = new Dictionary<string, Player>() };
+            var table = new Table { Id = tableId, Game = game, PlayerSecrets = new Dictionary<string, Player>() };
             _tables.Add(tableId, table);
             return tableId;
         }
@@ -58,6 +58,7 @@ namespace PlayingCards.Durak.Web.Controllers
                     Id = playerTable.Id,
                     ActivePlayerIndex = playerTable.Game.Players.IndexOf(playerTable.Game.ActivePlayer),
                     MyIndex = playerTable.Game.Players.IndexOf(player),
+                    OwnerIndex = playerTable.Game.Players.IndexOf(playerTable.Owner),
                     MyCards = playerTable.Game.Players.First(x => x == player).Hand.Cards
                         .Select(x => new CardModel(x)).ToArray(),
                     DeckCardsCount = playerTable.Game.Deck.CardsCount,
@@ -71,10 +72,13 @@ namespace PlayingCards.Durak.Web.Controllers
                     Players = playerTable.Game.Players.Where(x => x != player)
                         .Select((x, i) => new PlayerModel { Index = i, Name = x.Name, CardsCount = x.Hand.Cards.Count })
                         .ToArray(),
+                    Status = (int)playerTable.Game.Status,
                 },
                 Tables = playerTable != null ? null : _tables.Select(x => new TableModel
                 {
-                    Id = x.Value.Id
+                    Id = x.Value.Id,
+                    Players = x.Value.PlayerSecrets.Select(x => x.Value)
+                    .Select(x => new PlayerModel { Name = x.Name }).ToArray(),
                 }).ToArray(),
             };
             return Json(result);
@@ -93,14 +97,24 @@ namespace PlayingCards.Durak.Web.Controllers
 
             if (_tables.TryGetValue(model.TableId, out var table))
             {
-                var debug = true;
+                var debug = false;
                 if (debug)
                 {
                     table.Game.AddPlayer("1 Вася");
                     table.Game.AddPlayer("2 Петя");
                 }
+
+
                 var player = table.Game.AddPlayer(model.PlayerName);
                 table.PlayerSecrets.Add(model.PlayerSecret, player);
+                if (table.PlayerSecrets.Values.Count == 1)
+                {
+                    // кто первый сел за стол, тот и главный
+                    // когда будет функция выйти из за стола, будем думать, кому отдать главенство
+                    // если вышел последний игрок из за стола, то и уничтожим стол
+                    table.Owner = player;
+                }
+
                 if (debug)
                 {
                     table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
@@ -116,34 +130,30 @@ namespace PlayingCards.Durak.Web.Controllers
         }
 
         [HttpPost]
+        public void StartGame([FromBody] StartGameModel model)
+        {
+            var table = _tables[model.TableId];
+            var player = table.PlayerSecrets[model.PlayerSecret];
+            if(table.Owner != player)
+            {
+                throw new Exception("you are not owner");
+            }
+            table.Game.InitCardDeck();
+        }
+
+        [HttpPost]
         public void StartAttack([FromBody] AttackModel model)
         {
-            Table? playerTable = null;
-            Player? player = null;
-            foreach (var table in _tables.Values)
-            {
-                if (table.PlayerSecrets.ContainsKey(model.PlayerSecret))
-                {
-                    playerTable = table;
-                    player = table.PlayerSecrets[model.PlayerSecret];
-                }
-            }
+            var table = _tables[model.TableId];
+            var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.StartAttack(model.CardIndexes);
         }
 
         [HttpPost]
         public void Attack([FromBody] AttackModel model)
         {
-            Table? playerTable = null;
-            Player? player = null;
-            foreach (var table in _tables.Values)
-            {
-                if (table.PlayerSecrets.ContainsKey(model.PlayerSecret))
-                {
-                    playerTable = table;
-                    player = table.PlayerSecrets[model.PlayerSecret];
-                }
-            }
+            var table = _tables[model.TableId];
+            var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.Attack(model.CardIndexes);
         }
 

@@ -10,6 +10,7 @@
     </div>
 </div>
 <div id="main" class="hidden">
+    <button id="startGame" class="btn btn-info hidden" onclick="startGame()">Начать игру</button>
     <div id="hand"></div>
     <button id="moveCards" class="btn btn-info hidden" onclick="move()">Сходить</button>
     <div id="field"></div>
@@ -27,6 +28,7 @@
     <div class="card-back template-card-back">
     </div>
     <div class="table template-table">
+        <button class="btn btn-info" onclick="joinToTableClick(this)">Подсесть</button>
     </div>
     <div class="player template-player">
         <img src="~/images/player.png" />
@@ -81,6 +83,11 @@
         });
     }
 
+    function joinToTableClick(elem){
+        let tableId = elem.closest('.table').getAttribute('table-id');
+        joinToTable(tableId);
+    }
+
     function joinToTable(tableId) {
         SendRequest({
             method: 'Post',
@@ -89,6 +96,23 @@
                 tableId: tableId,
                 playerSecret: user.secret,
                 playerName: user.name,
+            },
+            success: function (data) {
+                getStatus();
+            },
+            error: function (data) {
+                alert('чтото пошло не так');
+            }
+        });
+    }
+
+    function startGame() {
+        SendRequest({
+            method: 'Post',
+            url: '/Home/StartGame',
+            body: {
+                tableId: gameStatus.table.id,
+                playerSecret: user.secret,
             },
             success: function (data) {
                 getStatus();
@@ -113,15 +137,33 @@
                 document.getElementById('deckCards').innerHTML = "";
                 document.getElementById('trumpInfo').innerHTML = "";
                 document.getElementById('players').innerHTML = "";
-                
+
+
+
                 if (status.table == null) {
                     for (let i = 0; i < status.tables.length; i++) {
                         let table = status.tables[i];
                         let tableDiv = document.getElementsByClassName('template-table')[0].cloneNode(true);
-                        cardDiv.classList.remove('template-table');
+                        tableDiv.classList.remove('template-table');
+                        tableDiv.setAttribute('table-id', table.id);
+                        for (var j = 0; j < table.players.length; j++) {
+                            let player = table.players[j];
+                            let playerLabel = document.createElement("label");
+                            playerLabel.innerHTML = player.name;
+                            tableDiv.appendChild(playerLabel);
+
+                        }
                         document.getElementById('tables').appendChild(tableDiv);
                     }
                 } else {
+                    if (status.table.status != gameStatusList.inProcess
+                        && status.table.players.length > 0
+                        && status.table.myIndex == status.table.ownerIndex) {
+                        document.getElementById('startGame').classList.remove('hidden');
+                    }else{
+                        document.getElementById('startGame').classList.add('hidden');
+                    }
+
                     // draw currentGame
                     for (let i = 0; i < status.table.myCards.length; i++) {
                         let card = status.table.myCards[i];
@@ -180,7 +222,7 @@
 
                     let playerIndexes = [];
                     for (let i = status.table.myIndex - 1; i >= 0; i--) {
-                        playerIndexes.push( { index: i, gameIndex: i });
+                        playerIndexes.push({ index: i, gameIndex: i });
                     }
                     for (let i = status.table.players.length - 1; i >= status.table.myIndex; i--) {
                         playerIndexes.push({ index: i, gameIndex: i + 1 });
@@ -330,6 +372,13 @@
         "2": "♥",
         "3": "♠",
     }
+
+    var gameStatusList = {
+        waitPlayers: 0,
+        readyToStart: 1,
+        inProcess: 2,
+        finish: 3,
+    }
 </script>
 
 <style>
@@ -438,17 +487,17 @@
             overflow: hidden;
         }
 
-    .player .card-back {
-        height: 50px;
-        width: 15px;
-        display: inline-block
-    }
-
-        .player .card-back:last-child{
-            width:30px;
+        .player .card-back {
+            height: 50px;
+            width: 15px;
+            display: inline-block
         }
 
-        .player.active-player img{
+            .player .card-back:last-child {
+                width: 30px;
+            }
+
+        .player.active-player img {
             border: 1px solid gray;
         }
 </style>

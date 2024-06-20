@@ -19,5 +19,10 @@
         /// Секреты игроков, чтоб понять, кто есть кто.
         /// </summary>
         public Dictionary<string, Player> PlayerSecrets { get; set; }
+
+        /// <summary>
+        /// Хозяин стола.
+        /// </summary>
+        public Player Owner { get; set; }
     }
 }

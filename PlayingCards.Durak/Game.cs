@@ -13,12 +13,18 @@
             Deck = new Deck(new RandomDeckCardGenerator());
             Cards = new List<TableCard>();
             Players = new List<Player>();
+            Status = GameStatus.WaitPlayers;
         }
 
         /// <summary>
         /// Игроки.
         /// </summary>
         public List<Player> Players { get; set; }
+
+        /// <summary>
+        /// Статус.
+        /// </summary>
+        public GameStatus Status { get; private set; }
 
         /// <summary>
         /// Индекс игрока, который сейчас ходит.
@@ -182,14 +188,31 @@
             {
                 throw new Exception("max player count = 6");
             }
+
+            if (Status == GameStatus.InProcess)
+            {
+                throw new Exception("bad status for join: " + Status);
+            }
+
             var player = new Player(this) { Name = playerName };
             Players.Add(player);
+            if (Players.Count >= 2)
+            {
+                Status = GameStatus.ReadyToStart;
+            }
             return player;
         }
 
         public void InitCardDeck()
         {
+            if (Status != GameStatus.ReadyToStart && Status != GameStatus.Finish)
+            {
+                throw new Exception("bad status for start: " + Status);
+            }
             _activePlayerIndex = null;
+            _roundInProcess = false;
+            Cards = new List<TableCard>();
+            Status = GameStatus.InProcess;
             for (var i = 0; i < 10; i++)
             {
                 var isSuccess = ShuffleDeckAndTakeCards();
@@ -202,6 +225,7 @@
 
             // никому не досталось козырей за 10 перемешиваний колоды, активным становится первый игрок.
             _activePlayerIndex = 0;
+
         }
 
         private bool ShuffleDeckAndTakeCards()
