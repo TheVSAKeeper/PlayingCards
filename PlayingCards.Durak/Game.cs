@@ -280,12 +280,9 @@
 
         public void StopRound()
         {
-            if (Cards.All(x => x.DefenceCard != null))
-            {
-                // защитились от всех карт, выкидываем их в отбой
-                Cards = new List<TableCard>();
-            }
-            else
+            bool isDefenceSuccess = Cards.All(x => x.DefenceCard != null);
+            // если защитился не от всех карт, то забирает себе, иначе всё в отбой и следующий раунд.
+            if (!isDefenceSuccess)
             {
                 foreach (var card in Cards)
                 {
@@ -297,7 +294,24 @@
                 }
             }
 
+            Cards = new List<TableCard>();
+
             TakeCardsAfterRound();
+
+            if (isDefenceSuccess)
+            {
+                _activePlayerIndex++;
+            }
+            else
+            {
+                _activePlayerIndex += 2;
+            }
+
+            if (_activePlayerIndex >= Players.Count)
+            {
+                _activePlayerIndex = _activePlayerIndex - Players.Count;
+            }
+
             _roundInProcess = false;
         }
 
@@ -306,13 +320,14 @@
         /// </summary>
         private void TakeCardsAfterRound()
         {
+            var startPlayerIndex = _activePlayerIndex.Value;
             for (var i = 0; i < Players.Count; i++)
             {
                 if (Deck.CardsCount == 0)
                 {
                     return;
                 }
-                var takeCardPlayer = Players[_activePlayerIndex.Value];
+                var takeCardPlayer = Players[startPlayerIndex];
                 var handCount = takeCardPlayer.Hand.Cards.Count();
                 if (handCount < 6)
                 {
@@ -328,10 +343,10 @@
                         }
                     }
                 }
-                _activePlayerIndex++;
-                if (_activePlayerIndex >= Players.Count)
+                startPlayerIndex++;
+                if(startPlayerIndex >= Players.Count)
                 {
-                    _activePlayerIndex = 0;
+                    startPlayerIndex = 0;
                 }
             }
         }

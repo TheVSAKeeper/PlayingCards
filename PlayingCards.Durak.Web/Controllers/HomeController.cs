@@ -134,7 +134,7 @@ namespace PlayingCards.Durak.Web.Controllers
         {
             var table = _tables[model.TableId];
             var player = table.PlayerSecrets[model.PlayerSecret];
-            if(table.Owner != player)
+            if (table.Owner != player)
             {
                 throw new Exception("you are not owner");
             }
@@ -155,6 +155,26 @@ namespace PlayingCards.Durak.Web.Controllers
             var table = _tables[model.TableId];
             var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.Attack(model.CardIndexes);
+        }
+
+        [HttpPost]
+        public void Defence([FromBody] DefenceModel model)
+        {
+            var table = _tables[model.TableId];
+            var player = table.PlayerSecrets[model.PlayerSecret];
+            player.Hand.Defence(model.DefenceCardIndex, model.AttackCardIndex);
+        }
+
+        [HttpPost]
+        public void Take([FromBody] TakeModel model)
+        {
+            var table = _tables[model.TableId];
+            var player = table.PlayerSecrets[model.PlayerSecret];
+            if (table.Game.DefencePlayer != player)
+            {
+                throw new Exception("you are not defence player");
+            }
+            table.Game.StopRound();
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

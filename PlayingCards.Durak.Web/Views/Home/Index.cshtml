@@ -12,7 +12,11 @@
 <div id="main" class="hidden">
     <button id="startGame" class="btn btn-info hidden" onclick="startGame()">Начать игру</button>
     <div id="hand"></div>
-    <button id="moveCards" class="btn btn-info hidden" onclick="move()">Сходить</button>
+    <div id="actions">
+        <button id="moveCards" class="btn btn-info hidden" onclick="move()">Сходить</button>
+        <button id="defenceCards" class="btn btn-info hidden" onclick="defence()">Отбить</button>
+        <button id="takeCards" class="btn btn-info hidden" onclick="take()">Забрать карты</button>
+    </div>
     <div id="field"></div>
     <div id="deck">
         <div id="deckCards"></div>
@@ -83,7 +87,7 @@
         });
     }
 
-    function joinToTableClick(elem){
+    function joinToTableClick(elem) {
         let tableId = elem.closest('.table').getAttribute('table-id');
         joinToTable(tableId);
     }
@@ -160,17 +164,14 @@
                         && status.table.players.length > 0
                         && status.table.myIndex == status.table.ownerIndex) {
                         document.getElementById('startGame').classList.remove('hidden');
-                    }else{
+                    } else {
                         document.getElementById('startGame').classList.add('hidden');
                     }
 
                     // draw currentGame
                     for (let i = 0; i < status.table.myCards.length; i++) {
                         let card = status.table.myCards[i];
-                        let cardDiv = document.getElementsByClassName('template-card')[0].cloneNode(true);
-                        cardDiv.classList.remove('template-card');
-                        cardDiv.getElementsByClassName('card-rank')[0].innerHTML = getRank(card.suit, card.rank);
-                        cardDiv.getElementsByClassName('card-suit')[0].innerHTML = getSuit(card.suit);
+                        let cardDiv = getCardDiv(card);
                         cardDiv.addEventListener('click', function (event) {
                             if (event.target.classList.contains('active')) {
                                 event.target.classList.remove('active');
@@ -185,10 +186,7 @@
                     let trump = status.table.trump;
                     if (trump != null) {
                         if (status.table.deckCardsCount > 0) {
-                            let cardDiv = document.getElementsByClassName('template-card')[0].cloneNode(true);
-                            cardDiv.classList.remove('template-card');
-                            cardDiv.getElementsByClassName('card-rank')[0].innerHTML = getRank(trump.suit, trump.rank);
-                            cardDiv.getElementsByClassName('card-suit')[0].innerHTML = getSuit(trump.suit);
+                            let cardDiv = getCardDiv(trump);
                             document.getElementById('deckCards').appendChild(cardDiv);
                         } else {
                             document.getElementById('trumpInfo').innerHTML = 'Козырь: ' + getSuit(trump.suit);
@@ -202,22 +200,31 @@
                     }
 
                     for (let i = 0; i < status.table.cards.length; i++) {
+                        let fieldCard = document.createElement("div");
+                        fieldCard.classList.add('field-card');
                         let card = status.table.cards[i];
                         let attackCard = card.attackCard;
-                        // todo отрисовку карты вынести в метод
-                        let cardDiv = document.getElementsByClassName('template-card')[0].cloneNode(true);
-                        cardDiv.classList.remove('template-card');
-                        cardDiv.getElementsByClassName('card-rank')[0].innerHTML = getRank(attackCard.suit, attackCard.rank);
-                        cardDiv.getElementsByClassName('card-suit')[0].innerHTML = getSuit(attackCard.suit);
-                        // cardDiv.addEventListener('click', function (event) {
-                        //     if (event.target.classList.contains('active')) {
-                        //         event.target.classList.remove('active');
-                        //     } else {
-                        //         event.target.classList.add('active');
-                        //     }
-                        //     checkMove();
-                        // });
-                        document.getElementById('field').appendChild(cardDiv);
+                        let defenceCard = card.defenceCard;
+                        let attackCardDiv = getCardDiv(attackCard);
+                        if (defenceCard == null) {
+                            attackCardDiv.addEventListener('click', function (event) {
+                                if (event.target.classList.contains('active')) {
+                                    event.target.classList.remove('active');
+                                } else {
+                                    event.target.classList.add('active');
+                                }
+                                checkMove();
+                            });
+                        }
+
+                        fieldCard.appendChild(attackCardDiv);
+
+                        if (defenceCard != null) {
+                            let defenceCardDiv = getCardDiv(defenceCard);
+                            defenceCardDiv.classList.add('defence-card');
+                            fieldCard.appendChild(defenceCardDiv);
+                        }
+                        document.getElementById('field').appendChild(fieldCard);
                     }
 
                     let playerIndexes = [];
@@ -248,6 +255,21 @@
                             playerDiv.getElementsByClassName('player-cards')[0].appendChild(cardDiv);
                         }
                     }
+
+                    document.getElementById('takeCards').classList.add('hidden');
+                    console.log(1);
+                    if (status.table.cards.length > 0) {
+                        let hasNotDefencedCard = false;
+                        for (let i = 0; i < status.table.cards.length; i++) {
+                            if (status.table.cards[i].defenceCard == null) {
+                                hasNotDefencedCard = true;
+                                break;
+                            }
+                        }
+                        if (hasNotDefencedCard){
+                            document.getElementById('takeCards').classList.remove('hidden');
+                        }
+                    }
                 }
             },
             error: function (data) {
@@ -256,12 +278,27 @@
         });
     }
 
+    function getCardDiv(card) {
+        let cardDiv = document.getElementsByClassName('template-card')[0].cloneNode(true);
+        cardDiv.classList.remove('template-card');
+        cardDiv.getElementsByClassName('card-rank')[0].innerHTML = getRank(card.suit, card.rank);
+        cardDiv.getElementsByClassName('card-suit')[0].innerHTML = getSuit(card.suit);
+        return cardDiv;
+    }
+
     function checkMove() {
-        let activeCards = document.querySelectorAll("#hand .play-card.active");
-        if (activeCards.length > 0) {
+        let handActiveCards = document.querySelectorAll("#hand .play-card.active");
+        if (handActiveCards.length > 0) {
             document.getElementById('moveCards').classList.remove('hidden');
         } else {
             document.getElementById('moveCards').classList.add('hidden');
+        }
+
+        let deckActiveCards = document.querySelectorAll("#field .play-card.active");
+        if (deckActiveCards.length == 1 && handActiveCards.length == 1) {
+            document.getElementById('defenceCards').classList.remove('hidden');
+        } else {
+            document.getElementById('defenceCards').classList.add('hidden');
         }
     }
 
@@ -280,7 +317,6 @@
                 body: {
                     tableId: gameStatus.table.id,
                     playerSecret: user.secret,
-                    playerName: user.name,
                     cardIndexes: cardIndexes,
                 },
                 success: function (data) {
@@ -291,6 +327,58 @@
                 }
             });
         }
+    }
+
+    function defence() {
+        let attackCards = document.querySelectorAll("#field .play-card");
+        let attackCardIndexes = [];
+        for (let i = 0; i < attackCards.length; i++) {
+            if (attackCards[i].classList.contains('active')) {
+                attackCardIndexes.push(i);
+            }
+        }
+        let defenceCards = document.querySelectorAll("#hand .play-card");
+        let defenceCardIndexes = [];
+        for (let i = 0; i < defenceCards.length; i++) {
+            if (defenceCards[i].classList.contains('active')) {
+                defenceCardIndexes.push(i);
+            }
+        }
+        if (attackCardIndexes.length == 1 && defenceCardIndexes.length == 1) {
+            SendRequest({
+                method: 'Post',
+                url: '/Home/Defence',
+                body: {
+                    tableId: gameStatus.table.id,
+                    playerSecret: user.secret,
+                    defenceCardIndex: defenceCardIndexes[0],
+                    attackCardIndex: attackCardIndexes[0],
+                },
+                success: function (data) {
+                    getStatus();
+                },
+                error: function (data) {
+                    alert('чтото пошло не так');
+                }
+            });
+        }
+    }
+
+    function take() {
+        SendRequest({
+            method: 'Post',
+            url: '/Home/Take',
+            body: {
+                tableId: gameStatus.table.id,
+                playerSecret: user.secret,
+            },
+            success: function (data) {
+                getStatus();
+            },
+            error: function (data) {
+                alert('чтото пошло не так');
+            }
+        });
     }
 
     function login() {
@@ -415,7 +503,7 @@
     }
 
     #field {
-        min-height: 100px;
+        min-height: 150px;
         margin-top: 20px;
         position: relative;
         text-align: center;
@@ -425,12 +513,29 @@
         display: inline-block;
     }
 
+    #actions {
+        text-align: center;
+    }
+
+    .field-card {
+        display: inline-block;
+        margin-right: 15px;
+        position: relative;
+    }
+
+    .defence-card {
+        position: absolute;
+        top: 40px;
+        left: 10px;
+    }
+
     .play-card {
         width: 60px;
         height: 100px;
         border: 1px solid black;
         display: inline-block;
         margin-top: 10px;
+        background: skyblue;
     }
 
         .play-card div {

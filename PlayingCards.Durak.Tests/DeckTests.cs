@@ -187,20 +187,26 @@
         [Test]
         public void PlayOneRoundTwoCardAndNotDefenceTest()
         {
+            var playerCards = new string[]
+            {
+                "A♠ Q♦ Q♣ Q♥ 10♥ 7♦",
+                "Q♠ A♦ A♣ A♥ 10♣ 10♠",
+            };
+            var trumpValue = "6♦";
             var game = new Game();
             game.AddPlayer("1");
             game.AddPlayer("2");
             var player1 = game.Players[0];
             var player2 = game.Players[1];
-            game.Deck = new Deck(new NotSortedDeckCardGenerator());
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
             game.InitCardDeck();
-            // ходим пиковым тузом
-            player1.Hand.StartAttack([0]);
-            // ходим пиковой дамой
-            player1.Hand.StartAttack([0]);
-            // отбиваемся пиковым королём от дамы
-            player2.Hand.Defence(0, 1);
-            // а туза мы отбить не можем, забираем на руки
+            // ходим Q♦
+            player1.Hand.StartAttack([1]);
+            // подкинули Q♣
+            player1.Hand.Attack([1]);
+            // отбиваемся A♣ от Q♣
+            player2.Hand.Defence(2, 1);
+            // решаем не отбиваться, забираем на руки
             game.StopRound();
             Assert.That(player1.Hand.Cards.Count, Is.EqualTo(6));
             Assert.That(player2.Hand.Cards.Count, Is.EqualTo(8));
@@ -306,6 +312,64 @@
             Assert.That(attackPlayer.Hand.Cards.Count, Is.EqualTo(6));
             Assert.That(defencePlayer.Hand.Cards.Count, Is.EqualTo(6 + 4));
             Assert.That(game.Deck.CardsCount, Is.EqualTo(36 - 6 * 3 - 4));
+        }
+
+        /// <summary>
+        /// Проверка, что в игре на двоих, после того, как игрок забрал карты. ход остаётся у атакующего.
+        /// </summary>
+        [Test]
+        public void CorrectChangeActivePlayerTest()
+        {
+            var playerCards = new string[]
+            {
+                "A♠ Q♦ Q♣ Q♥ 10♥ 7♦",
+                "Q♠ A♦ A♣ A♥ 10♣ 10♠",
+            };
+            var trumpValue = "6♦";
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            var attackPlayer = game.Players[0];
+            var defencePlayer = game.Players[1];
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            game.InitCardDeck();
+            // ходим Q♣
+            attackPlayer.Hand.StartAttack([2]);
+            game.StopRound();
+            Assert.That(game.ActivePlayer.Name, Is.EqualTo(attackPlayer.Name));
+        }
+
+        /// <summary>
+        /// Проверка, что в игре на двоих, после отбивания. ход переходит второму игроку.
+        /// </summary>
+        /// <remarks>
+        /// Если один из игроков, не берёт карту из колоды, то активный игрок неверно определялся.
+        /// </remarks>
+        [Test]
+        public void CorrectChangeActiveAfterDefencePlayerTest()
+        {
+            var playerCards = new string[]
+            {
+                "A♠ Q♦ Q♣ Q♥ 10♥ 7♦",
+                "Q♠ A♦ A♣ A♥ 10♣ 10♠",
+            };
+            var trumpValue = "6♦";
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            var attackPlayer = game.Players[0];
+            var defencePlayer = game.Players[1];
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            game.InitCardDeck();
+            // ходим Q♣
+            attackPlayer.Hand.StartAttack([2]);
+            game.StopRound();
+            // ходим Q♦
+            attackPlayer.Hand.StartAttack([1]);
+            // отбиаемся A♦
+            defencePlayer.Hand.Defence(1, 0);
+            game.StopRound();
+            Assert.That(game.ActivePlayer.Name, Is.EqualTo(defencePlayer.Name));
         }
     }
 }

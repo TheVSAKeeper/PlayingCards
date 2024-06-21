@@ -128,5 +128,15 @@ namespace PlayingCards.Durak
                .OrderBy(x => x.Rank.Value)
                .FirstOrDefault();
         }
+
+        public void Defence(object defenceCardIndex, object attackCardIndex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Defence(int defenceCardIndex, object attackCardIndex)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
