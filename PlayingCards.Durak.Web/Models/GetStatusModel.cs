@@ -26,6 +26,8 @@ namespace PlayingCards.Durak.Web.Models
 
             public int ActivePlayerIndex { get; set; }
 
+            public int DefencePlayerIndex { get; set; }
+
             public int Status { get; set; }
 
             public int OwnerIndex { get; set; }

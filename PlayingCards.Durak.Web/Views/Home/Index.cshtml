@@ -16,6 +16,7 @@
         <button id="moveCards" class="btn btn-info hidden" onclick="move()">Сходить</button>
         <button id="defenceCards" class="btn btn-info hidden" onclick="defence()">Отбить</button>
         <button id="takeCards" class="btn btn-info hidden" onclick="take()">Забрать карты</button>
+        <button id="successDefenceCards" class="btn btn-info hidden" onclick="successDefence()">Конец раунда</button>
     </div>
     <div id="field"></div>
     <div id="deck">
@@ -195,7 +196,7 @@
                     if (status.table.deckCardsCount > 1) {
                         let cardDiv = document.getElementsByClassName('template-card-back')[0].cloneNode(true);
                         cardDiv.classList.remove('template-card-back');
-                        cardDiv.innerHTML = status.table.deckCardsCount;
+                        cardDiv.innerHTML = status.table.deckCardsCount - 1;
                         document.getElementById('deckCards').appendChild(cardDiv);
                     }
 
@@ -206,6 +207,7 @@
                         let attackCard = card.attackCard;
                         let defenceCard = card.defenceCard;
                         let attackCardDiv = getCardDiv(attackCard);
+                        attackCardDiv.classList.add('attack-card');
                         if (defenceCard == null) {
                             attackCardDiv.addEventListener('click', function (event) {
                                 if (event.target.classList.contains('active')) {
@@ -257,8 +259,9 @@
                     }
 
                     document.getElementById('takeCards').classList.add('hidden');
-                    console.log(1);
-                    if (status.table.cards.length > 0) {
+                    document.getElementById('successDefenceCards').classList.add('hidden');
+                    if (status.table.cards.length > 0
+                        && status.table.myIndex == status.table.defencePlayerIndex) {
                         let hasNotDefencedCard = false;
                         for (let i = 0; i < status.table.cards.length; i++) {
                             if (status.table.cards[i].defenceCard == null) {
@@ -266,8 +269,11 @@
                                 break;
                             }
                         }
-                        if (hasNotDefencedCard){
+                        if (hasNotDefencedCard) {
                             document.getElementById('takeCards').classList.remove('hidden');
+                        }
+                        if (!hasNotDefencedCard) {
+                            document.getElementById('successDefenceCards').classList.remove('hidden');
                         }
                     }
                 }
@@ -330,7 +336,7 @@
     }
 
     function defence() {
-        let attackCards = document.querySelectorAll("#field .play-card");
+        let attackCards = document.querySelectorAll("#field .attack-card");
         let attackCardIndexes = [];
         for (let i = 0; i < attackCards.length; i++) {
             if (attackCards[i].classList.contains('active')) {
@@ -368,6 +374,23 @@
         SendRequest({
             method: 'Post',
             url: '/Home/Take',
+            body: {
+                tableId: gameStatus.table.id,
+                playerSecret: user.secret,
+            },
+            success: function (data) {
+                getStatus();
+            },
+            error: function (data) {
+                alert('чтото пошло не так');
+            }
+        });
+    }
+
+    function successDefence() {
+        SendRequest({
+            method: 'Post',
+            url: '/Home/SuccessDefence',
             body: {
                 tableId: gameStatus.table.id,
                 playerSecret: user.secret,

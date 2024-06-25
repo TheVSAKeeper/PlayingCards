@@ -8,13 +8,13 @@ namespace PlayingCards.Durak.Web.Controllers
 {
     public class HomeController : Controller
     {
-        private static Dictionary<Guid, Table> _tables = new Dictionary<Guid, Table>();
-
         private readonly ILogger<HomeController> _logger;
+        private readonly TableHolder _tableHolder;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, TableHolder tableHolder)
         {
             _logger = logger;
+            _tableHolder = tableHolder;
         }
 
         public IActionResult Index()
@@ -30,26 +30,20 @@ namespace PlayingCards.Durak.Web.Controllers
         [HttpPost]
         public Guid CreateTable()
         {
-            var tableId = Guid.NewGuid();
-            var game = new Game();
-            var table = new Table { Id = tableId, Game = game, PlayerSecrets = new Dictionary<string, Player>() };
-            _tables.Add(tableId, table);
-            return tableId;
+            var table = _tableHolder.CreateTable();
+            return table.Id;
+        }
+
+        [HttpPost]
+        public void Join([FromBody] JoinModel model)
+        {
+            _tableHolder.Join(model.TableId, model.PlayerSecret, model.PlayerName);
         }
 
         [HttpGet]
         public JsonResult GetStatus(string playerSecret)
         {
-            Table? playerTable = null;
-            Player? player = null;
-            foreach (var table in _tables.Values)
-            {
-                if (table.PlayerSecrets.ContainsKey(playerSecret))
-                {
-                    playerTable = table;
-                    player = table.PlayerSecrets[playerSecret];
-                }
-            }
+            var playerTable = _tableHolder.GetBySecret(playerSecret, out Player player);
             var result = new GetStatusModel
             {
                 Table = playerTable == null ? null :
@@ -57,6 +51,7 @@ namespace PlayingCards.Durak.Web.Controllers
                 {
                     Id = playerTable.Id,
                     ActivePlayerIndex = playerTable.Game.Players.IndexOf(playerTable.Game.ActivePlayer),
+                    DefencePlayerIndex = playerTable.Game.Players.IndexOf(playerTable.Game.DefencePlayer),
                     MyIndex = playerTable.Game.Players.IndexOf(player),
                     OwnerIndex = playerTable.Game.Players.IndexOf(playerTable.Owner),
                     MyCards = playerTable.Game.Players.First(x => x == player).Hand.Cards
@@ -74,10 +69,10 @@ namespace PlayingCards.Durak.Web.Controllers
                         .ToArray(),
                     Status = (int)playerTable.Game.Status,
                 },
-                Tables = playerTable != null ? null : _tables.Select(x => new TableModel
+                Tables = playerTable != null ? null : _tableHolder.GetTables().Select(x => new TableModel
                 {
-                    Id = x.Value.Id,
-                    Players = x.Value.PlayerSecrets.Select(x => x.Value)
+                    Id = x.Id,
+                    Players = x.PlayerSecrets.Select(x => x.Value)
                     .Select(x => new PlayerModel { Name = x.Name }).ToArray(),
                 }).ToArray(),
             };
@@ -85,54 +80,9 @@ namespace PlayingCards.Durak.Web.Controllers
         }
 
         [HttpPost]
-        public void Join([FromBody] JoinModel model)
+        public void StartGame([FromBody] BaseTableModel model)
         {
-            foreach (var table2 in _tables.Values)
-            {
-                if (table2.PlayerSecrets.ContainsKey(model.PlayerSecret))
-                {
-                    throw new Exception("Вы уже сидите за столиком");
-                }
-            }
-
-            if (_tables.TryGetValue(model.TableId, out var table))
-            {
-                var debug = false;
-                if (debug)
-                {
-                    table.Game.AddPlayer("1 Вася");
-                    table.Game.AddPlayer("2 Петя");
-                }
-
-
-                var player = table.Game.AddPlayer(model.PlayerName);
-                table.PlayerSecrets.Add(model.PlayerSecret, player);
-                if (table.PlayerSecrets.Values.Count == 1)
-                {
-                    // кто первый сел за стол, тот и главный
-                    // когда будет функция выйти из за стола, будем думать, кому отдать главенство
-                    // если вышел последний игрок из за стола, то и уничтожим стол
-                    table.Owner = player;
-                }
-
-                if (debug)
-                {
-                    table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
-                    table.Game.AddPlayer("5 Лучик света продуктовой разработки");
-                    table.Game.InitCardDeck();
-                    table.Game.ActivePlayer.Hand.StartAttack([3]);
-                }
-            }
-            else
-            {
-                throw new Exception("table not found");
-            }
-        }
-
-        [HttpPost]
-        public void StartGame([FromBody] StartGameModel model)
-        {
-            var table = _tables[model.TableId];
+            var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
             if (table.Owner != player)
             {
@@ -144,7 +94,7 @@ namespace PlayingCards.Durak.Web.Controllers
         [HttpPost]
         public void StartAttack([FromBody] AttackModel model)
         {
-            var table = _tables[model.TableId];
+            var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.StartAttack(model.CardIndexes);
         }
@@ -152,35 +102,81 @@ namespace PlayingCards.Durak.Web.Controllers
         [HttpPost]
         public void Attack([FromBody] AttackModel model)
         {
-            var table = _tables[model.TableId];
+            var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.Attack(model.CardIndexes);
+
+            if (table.StopRoundStatus == StopRoundStatus.SuccessDefence)
+            {
+                table.StopRoundBeginDate = null;
+                table.StopRoundStatus = null;
+            }
+            else if (table.StopRoundStatus == StopRoundStatus.Take)
+            {
+                table.StopRoundBeginDate = DateTime.UtcNow;
+            }
+            else
+            {
+                throw new Exception("undefined " + table.StopRoundStatus);
+            }
         }
 
         [HttpPost]
         public void Defence([FromBody] DefenceModel model)
         {
-            var table = _tables[model.TableId];
+            var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.Defence(model.DefenceCardIndex, model.AttackCardIndex);
         }
 
         [HttpPost]
-        public void Take([FromBody] TakeModel model)
+        public void Take([FromBody] BaseTableModel model)
         {
-            var table = _tables[model.TableId];
+            var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
             if (table.Game.DefencePlayer != player)
             {
                 throw new Exception("you are not defence player");
             }
-            table.Game.StopRound();
+
+            CheckStopRoundBeginDate(table);
+            table.StopRoundStatus = StopRoundStatus.Take;
+        }
+
+        [HttpPost]
+        public void SuccessDefence([FromBody] BaseTableModel model)
+        {
+            var table = _tableHolder.Get(model.TableId);
+            var player = table.PlayerSecrets[model.PlayerSecret];
+            if (table.Game.DefencePlayer != player)
+            {
+                throw new Exception("you are not defence player");
+            }
+            if (table.Game.Cards.Any(x => x.DefenceCard == null))
+            {
+                throw new Exception("not all cards defenced");
+            }
+
+            CheckStopRoundBeginDate(table);
+            table.StopRoundStatus = StopRoundStatus.SuccessDefence;
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        private void CheckStopRoundBeginDate(Table table)
+        {
+            if (table.StopRoundBeginDate != null)
+            {
+                throw new Exception("stop round in process");
+            }
+            else
+            {
+                table.StopRoundBeginDate = DateTime.UtcNow;
+            }
         }
     }
 }

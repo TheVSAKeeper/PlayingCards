@@ -24,5 +24,15 @@
         /// Хозяин стола.
         /// </summary>
         public Player Owner { get; set; }
+
+        /// <summary>
+        /// Время начала отсчёта об окончании раунда.
+        /// </summary>
+        public DateTime? StopRoundBeginDate { get; set; }
+
+        /// <summary>
+        /// Причина окончания раунда.
+        /// </summary>
+        public StopRoundStatus? StopRoundStatus { get; set; }
     }
 }

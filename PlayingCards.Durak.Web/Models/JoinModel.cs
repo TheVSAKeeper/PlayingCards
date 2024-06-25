@@ -2,10 +2,8 @@
 
 namespace PlayingCards.Durak.Web.Models
 {
-    public class JoinModel : AuthModel
+    public class JoinModel : BaseTableModel
     {
         public string PlayerName { get; set; }
-
-        public Guid TableId { get; set; }
     }
 }
