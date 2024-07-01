@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using PlayingCards.Durak.Web.Business;
 using PlayingCards.Durak.Web.Models;
+using PlayingCards.Durak.Web.SignalR.Hubs;
 using static PlayingCards.Durak.Web.Models.GetStatusModel;
 
 namespace PlayingCards.Durak.Web.Controllers
@@ -10,11 +12,17 @@ namespace PlayingCards.Durak.Web.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly TableHolder _tableHolder;
+        private readonly IHubContext<GameHub> _hubContext;
+        private readonly IHubContext<ChatHub>  _chatHub;
 
-        public HomeController(ILogger<HomeController> logger, TableHolder tableHolder)
+        public HomeController(ILogger<HomeController> logger, TableHolder tableHolder,
+            IHubContext<GameHub> hubContext,
+            IHubContext<ChatHub> chatHub)
         {
             _logger = logger;
             _tableHolder = tableHolder;
+            _hubContext = hubContext;
+            _chatHub = chatHub;
         }
 
         public IActionResult Index()
@@ -28,16 +36,18 @@ namespace PlayingCards.Durak.Web.Controllers
         }
 
         [HttpPost]
-        public Guid CreateTable()
+        public async Task<Guid> CreateTable()
         {
             var table = _tableHolder.CreateTable();
+            await _hubContext.Clients.All.SendAsync("ChangeStatus");
             return table.Id;
         }
 
         [HttpPost]
-        public void Join([FromBody] JoinModel model)
+        public async Task Join([FromBody] JoinModel model)
         {
             _tableHolder.Join(model.TableId, model.PlayerSecret, model.PlayerName);
+            await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
         [HttpGet]
@@ -80,7 +90,7 @@ namespace PlayingCards.Durak.Web.Controllers
         }
 
         [HttpPost]
-        public void StartGame([FromBody] BaseTableModel model)
+        public async Task StartGame([FromBody] BaseTableModel model)
         {
             var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
@@ -89,6 +99,7 @@ namespace PlayingCards.Durak.Web.Controllers
                 throw new Exception("you are not owner");
             }
             table.Game.InitCardDeck();
+            await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
         [HttpPost]
