@@ -1,5 +1,6 @@
 ﻿
-using System.Reflection;
+using Microsoft.AspNetCore.SignalR;
+using PlayingCards.Durak.Web.SignalR.Hubs;
 
 namespace PlayingCards.Durak.Web.Business
 {
@@ -83,8 +84,9 @@ namespace PlayingCards.Durak.Web.Business
             return _tables.Values.ToArray();
         }
 
-        public void CheckStopRound()
+        public bool CheckStopRound()
         {
+            var hasChanges = false;
             // todo потокобезопасность натянуть
             foreach (var table in _tables)
             {
@@ -96,9 +98,12 @@ namespace PlayingCards.Durak.Web.Business
                         table.Value.StopRoundStatus = null;
                         table.Value.StopRoundBeginDate = null;
                         table.Value.Game.StopRound();
+                        hasChanges = true;
                     }
                 }
             }
+
+            return hasChanges;
         }
     }
 }

@@ -103,45 +103,51 @@ namespace PlayingCards.Durak.Web.Controllers
         }
 
         [HttpPost]
-        public void StartAttack([FromBody] AttackModel model)
+        public async Task StartAttack([FromBody] AttackModel model)
         {
             var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.StartAttack(model.CardIndexes);
+            await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
         [HttpPost]
-        public void Attack([FromBody] AttackModel model)
+        public async Task Attack([FromBody] AttackModel model)
         {
             var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.Attack(model.CardIndexes);
 
-            if (table.StopRoundStatus == StopRoundStatus.SuccessDefence)
+            if (table.StopRoundStatus != null)
             {
-                table.StopRoundBeginDate = null;
-                table.StopRoundStatus = null;
+                if (table.StopRoundStatus == StopRoundStatus.SuccessDefence)
+                {
+                    table.StopRoundBeginDate = null;
+                    table.StopRoundStatus = null;
+                }
+                else if (table.StopRoundStatus == StopRoundStatus.Take)
+                {
+                    table.StopRoundBeginDate = DateTime.UtcNow;
+                }
+                else
+                {
+                    throw new Exception("undefined " + table.StopRoundStatus);
+                }
             }
-            else if (table.StopRoundStatus == StopRoundStatus.Take)
-            {
-                table.StopRoundBeginDate = DateTime.UtcNow;
-            }
-            else
-            {
-                throw new Exception("undefined " + table.StopRoundStatus);
-            }
+            await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
         [HttpPost]
-        public void Defence([FromBody] DefenceModel model)
+        public async Task Defence([FromBody] DefenceModel model)
         {
             var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.Defence(model.DefenceCardIndex, model.AttackCardIndex);
+            await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
         [HttpPost]
-        public void Take([FromBody] BaseTableModel model)
+        public async Task Take([FromBody] BaseTableModel model)
         {
             var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
@@ -152,10 +158,11 @@ namespace PlayingCards.Durak.Web.Controllers
 
             CheckStopRoundBeginDate(table);
             table.StopRoundStatus = StopRoundStatus.Take;
+            await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
         [HttpPost]
-        public void SuccessDefence([FromBody] BaseTableModel model)
+        public async Task SuccessDefence([FromBody] BaseTableModel model)
         {
             var table = _tableHolder.Get(model.TableId);
             var player = table.PlayerSecrets[model.PlayerSecret];
@@ -170,6 +177,7 @@ namespace PlayingCards.Durak.Web.Controllers
 
             CheckStopRoundBeginDate(table);
             table.StopRoundStatus = StopRoundStatus.SuccessDefence;
+            await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

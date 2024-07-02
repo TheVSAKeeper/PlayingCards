@@ -11,9 +11,11 @@
 </div>
 <div id="main" class="hidden">
     <button id="startGame" class="btn btn-info hidden" onclick="startGame()">Начать игру</button>
+    <div id="myIcon"></div>
     <div id="hand"></div>
     <div id="actions">
-        <button id="moveCards" class="btn btn-info hidden" onclick="move()">Сходить</button>
+        <button id="startattackCards" class="btn btn-info hidden" onclick="startAttack()">Сходить</button>
+        <button id="attackCards" class="btn btn-info hidden" onclick="attack()">Подкинуть</button>
         <button id="defenceCards" class="btn btn-info hidden" onclick="defence()">Отбить</button>
         <button id="takeCards" class="btn btn-info hidden" onclick="take()">Забрать карты</button>
         <button id="successDefenceCards" class="btn btn-info hidden" onclick="successDefence()">Конец раунда</button>
@@ -160,8 +162,9 @@
             success: function (data) {
                 let status = JSON.parse(data.responseText);
                 gameStatus = status;
-                document.getElementById('hand').innerHTML = "";
-                document.getElementById('field').innerHTML = "";
+                document.getElementById('myIcon').innerHTML = "";
+                document.getElementById('hand').innerHTML = ""; // todo запомнить выделенные карты, и после перерисовки выделить их снова
+                document.getElementById('field').innerHTML = ""; // todo  запомнить выделенные карты, и после перерисовки выделить их снова
                 document.getElementById('tables').innerHTML = "";
                 document.getElementById('deckCards').innerHTML = "";
                 document.getElementById('trumpInfo').innerHTML = "";
@@ -273,6 +276,9 @@
                         if (playerIndexes[i].gameIndex == status.table.activePlayerIndex) {
                             playerDiv.classList.add('active-player');
                         }
+                        if (playerIndexes[i].gameIndex == status.table.defencePlayerIndex) {
+                            playerDiv.classList.add('defence-player');
+                        }
                         document.getElementById('players').appendChild(playerDiv);
 
                         for (var j = 0; j < player.cardsCount; j++) {
@@ -281,6 +287,17 @@
                             playerDiv.getElementsByClassName('player-cards')[0].appendChild(cardDiv);
                         }
                     }
+                    let myPlayerDiv = document.getElementsByClassName('template-player')[0].cloneNode(true);
+                    myPlayerDiv.classList.remove('template-player');
+                    myPlayerDiv.getElementsByClassName('player-name')[0].innerHTML = user.name;
+                    myPlayerDiv.getElementsByClassName('player-name')[0].title = user.name;
+                    if (status.table.myIndex == status.table.activePlayerIndex) {
+                        myPlayerDiv.classList.add('active-player');
+                    }
+                    if (status.table.myIndex == status.table.defencePlayerIndex) {
+                        myPlayerDiv.classList.add('defence-player');
+                    }
+                    document.getElementById('myIcon').appendChild(myPlayerDiv);
 
                     document.getElementById('takeCards').classList.add('hidden');
                     document.getElementById('successDefenceCards').classList.add('hidden');
@@ -300,6 +317,7 @@
                             document.getElementById('successDefenceCards').classList.remove('hidden');
                         }
                     }
+                    checkMove();
                 }
             },
             error: function (data) {
@@ -317,29 +335,67 @@
     }
 
     function checkMove() {
-        let handActiveCards = document.querySelectorAll("#hand .play-card.active");
-        if (handActiveCards.length > 0) {
-            document.getElementById('moveCards').classList.remove('hidden');
+        let fieldCardIndexes = getFieldActiveCardIndexes();
+        let handCardIndexes = getHandActiveCardIndexes();
+
+        if (handCardIndexes.length > 0
+            && gameStatus.table.activePlayerIndex == gameStatus.table.myIndex) {
+            document.getElementById('startattackCards').classList.remove('hidden');
+            document.getElementById('attackCards').classList.remove('hidden');
         } else {
-            document.getElementById('moveCards').classList.add('hidden');
+            document.getElementById('startattackCards').classList.add('hidden');
+            document.getElementById('attackCards').classList.add('hidden');
         }
 
-        let deckActiveCards = document.querySelectorAll("#field .play-card.active");
-        if (deckActiveCards.length == 1 && handActiveCards.length == 1) {
+        if (handCardIndexes.length == 1
+            && fieldCardIndexes.length == 1
+            && gameStatus.table.defencePlayerIndex == gameStatus.table.myIndex
+            && isValidDefence(fieldCardIndexes[0], handCardIndexes[0])) {
             document.getElementById('defenceCards').classList.remove('hidden');
         } else {
             document.getElementById('defenceCards').classList.add('hidden');
         }
     }
 
-    function move() {
-        let cards = document.querySelectorAll("#hand .play-card");
-        let cardIndexes = [];
-        for (let i = 0; i < cards.length; i++) {
-            if (cards[i].classList.contains('active')) {
-                cardIndexes.push(i);
+    function isValidDefence(attackCardIndex, defenceCardIndex) {
+        let defenceCard = gameStatus.table.myCards[defenceCardIndex];
+        let attackCard = gameStatus.table.cards[attackCardIndex].attackCard;
+        let trump = gameStatus.table.trump;
+        if (defenceCard.suit == trump.suit) {
+            if (attackCard.suit == trump.suit) {
+                if (defenceCard.rank > attackCard.rank) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            else {
+                return true;
             }
         }
+        else {
+            if (attackCard.suit == trump.suit) {
+                return false;
+            }
+            else {
+                if (attackCard.suit == defenceCard.suit) {
+                    if (defenceCard.rank > attackCard.rank) {
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+    }
+
+    function startAttack() {
+        let cardIndexes = getHandActiveCardIndexes();
         if (cardIndexes.length > 0) {
             SendRequest({
                 method: 'Post',
@@ -359,21 +415,31 @@
         }
     }
 
+
+    function attack() {
+        let cardIndexes = getHandActiveCardIndexes();
+        if (cardIndexes.length > 0) {
+            SendRequest({
+                method: 'Post',
+                url: '/Home/Attack',
+                body: {
+                    tableId: gameStatus.table.id,
+                    playerSecret: user.secret,
+                    cardIndexes: cardIndexes,
+                },
+                success: function (data) {
+                    getStatus();
+                },
+                error: function (data) {
+                    alert('чтото пошло не так');
+                }
+            });
+        }
+    }
+
     function defence() {
-        let attackCards = document.querySelectorAll("#field .attack-card");
-        let attackCardIndexes = [];
-        for (let i = 0; i < attackCards.length; i++) {
-            if (attackCards[i].classList.contains('active')) {
-                attackCardIndexes.push(i);
-            }
-        }
-        let defenceCards = document.querySelectorAll("#hand .play-card");
-        let defenceCardIndexes = [];
-        for (let i = 0; i < defenceCards.length; i++) {
-            if (defenceCards[i].classList.contains('active')) {
-                defenceCardIndexes.push(i);
-            }
-        }
+        let attackCardIndexes = getFieldActiveCardIndexes();
+        let defenceCardIndexes = getHandActiveCardIndexes();
         if (attackCardIndexes.length == 1 && defenceCardIndexes.length == 1) {
             SendRequest({
                 method: 'Post',
@@ -392,6 +458,27 @@
                 }
             });
         }
+    }
+    function getFieldActiveCardIndexes() {
+        let cards = document.querySelectorAll("#field .attack-card");
+        let cardIndexes = [];
+        for (let i = 0; i < cards.length; i++) {
+            if (cards[i].classList.contains('active')) {
+                cardIndexes.push(i);
+            }
+        }
+        return cardIndexes;
+    }
+
+    function getHandActiveCardIndexes() {
+        let cards = document.querySelectorAll("#hand .play-card");
+        let cardIndexes = [];
+        for (let i = 0; i < cards.length; i++) {
+            if (cards[i].classList.contains('active')) {
+                cardIndexes.push(i);
+            }
+        }
+        return cardIndexes;
     }
 
     function take() {
@@ -539,7 +626,6 @@
         }
 
     #hand {
-        margin-top: 20px;
         text-align: center;
     }
 
@@ -650,6 +736,20 @@
             }
 
         .player.active-player img {
-            border: 1px solid gray;
+            border: 1px solid rgb(1, 222, 1);
+            background: rgba(1, 222, 1, 0.3);
+        }
+
+        .player.defence-player img {
+            border: 1px solid rgb(222, 1, 1);
+            background: rgba(222, 1, 1, 0.3);
+        }
+
+    #myIcon {
+        text-align: center;
+    }
+
+        #myIcon .player {
+            margin: 0;
         }
 </style>
