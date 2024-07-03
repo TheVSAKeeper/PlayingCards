@@ -337,13 +337,20 @@
     function checkMove() {
         let fieldCardIndexes = getFieldActiveCardIndexes();
         let handCardIndexes = getHandActiveCardIndexes();
-
+        let tableCardsCount = gameStatus.table.cards.length;
         if (handCardIndexes.length > 0
-            && gameStatus.table.activePlayerIndex == gameStatus.table.myIndex) {
+            && gameStatus.table.activePlayerIndex == gameStatus.table.myIndex
+            && tableCardsCount == 0) {
             document.getElementById('startattackCards').classList.remove('hidden');
-            document.getElementById('attackCards').classList.remove('hidden');
         } else {
             document.getElementById('startattackCards').classList.add('hidden');
+        }
+
+        if (handCardIndexes.length > 0
+            && gameStatus.table.activePlayerIndex == gameStatus.table.myIndex
+            && tableCardsCount > 0) {
+            document.getElementById('attackCards').classList.remove('hidden');
+        } else {
             document.getElementById('attackCards').classList.add('hidden');
         }
 

@@ -315,6 +315,40 @@
         }
 
         /// <summary>
+        /// Подкинем карту, ранг которой, равен рангу защитной карты.
+        /// </summary>
+        /// <remarks>
+        /// Была ошибка, если вальта отбить дамой, то даму нельзя было поддать.
+        /// </remarks>
+        [Test]
+        public void AttackCardsWithDefencedCardRankTest()
+        {
+            var playerCards = new string[]
+            {
+                "A♠ Q♦ J♣ J♥ 10♥ 7♦",
+                "J♠ J♦ Q♣ Q♥ 9♣ 9♠",
+            };
+            var trumpValue = "6♦";
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            var attackPlayer = game.Players[0];
+            var defencePlayer = game.Players[1];
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            game.InitCardDeck();
+            // ходим J♣
+            attackPlayer.Hand.StartAttack([2]);
+            // отбиваем Q♣->J♣
+            defencePlayer.Hand.Defence(2, 0);
+            // подкидываем Q♦
+            attackPlayer.Hand.Attack([1]);
+            game.StopRound();
+            Assert.That(attackPlayer.Hand.Cards.Count, Is.EqualTo(6));
+            Assert.That(defencePlayer.Hand.Cards.Count, Is.EqualTo(6 + 2));
+            Assert.That(game.Deck.CardsCount, Is.EqualTo(36 - 6 * 2 - 2));
+        }
+
+        /// <summary>
         /// Проверка, что в игре на двоих, после того, как игрок забрал карты. ход остаётся у атакующего.
         /// </summary>
         [Test]
@@ -370,6 +404,54 @@
             defencePlayer.Hand.Defence(1, 0);
             game.StopRound();
             Assert.That(game.ActivePlayer.Name, Is.EqualTo(defencePlayer.Name));
+        }
+
+        /// <summary>
+        /// Ошибка, если сходить количеством карт, больше, чем у защищающегося.
+        /// </summary>
+        [Test]
+        public void StartAttackOverflowTest()
+        {
+            var playerCards = new string[]
+            {
+                "A♠ Q♦ J♣ J♥ 10♥ 9♠",
+                "J♠ J♦ Q♣ Q♥ 9♣ 10♠", // 10♠ будет козырем
+            };
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            var attackPlayer = game.Players[0];
+            var defencePlayer = game.Players[1];
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, null, 24));
+            game.InitCardDeck();
+            defencePlayer.Hand.Cards.RemoveRange(1, 5); // удалим из руки все карты, кроме одной
+            // ходим J♣ J♥
+            Assert.Throws<Exception>(() => attackPlayer.Hand.StartAttack([2, 3]));
+        }
+
+        /// <summary>
+        /// Ошибка, если поддаваемое количеством карт плюс карт на столе, больше, чем у защищающегося.
+        /// </summary>
+        [Test]
+        public void AttackOverflowTest()
+        {
+            var playerCards = new string[]
+            {
+                "J♠ J♦ J♣ J♥ 10♥ 9♠",
+                "A♠ Q♦ Q♣ Q♥ 9♣ 10♠", // 10♠ будет козырем
+            };
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            var attackPlayer = game.Players[0];
+            var defencePlayer = game.Players[1];
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, null, 24));
+            game.InitCardDeck();
+            defencePlayer.Hand.Cards.RemoveRange(3, 3); // оставим в руке 3 карты
+            // ходим J♠ J♦
+            attackPlayer.Hand.StartAttack([0, 1]);
+            // поддаём J♣ J♥
+            Assert.Throws<Exception>(() => attackPlayer.Hand.StartAttack([0, 1]));
         }
     }
 }

@@ -32,11 +32,6 @@
         private int? _activePlayerIndex;
 
         /// <summary>
-        /// Игровой раунд в процессе.
-        /// </summary>
-        private bool _roundInProcess;
-
-        /// <summary>
         /// Игрок, который сейчас ходит.
         /// </summary>
         public Player? ActivePlayer
@@ -94,7 +89,7 @@
         /// <param name="cards">Карты.</param>
         internal void StartAttack(Player player, List<Card> cards)
         {
-            if (_roundInProcess)
+            if (IsRoundStarted())
             {
                 throw new Exception("round started");
             }
@@ -106,12 +101,15 @@
             {
                 throw new Exception("only one rank");
             }
+            if(cards.Count > DefencePlayer.Hand.Cards.Count)
+            {
+                throw new Exception("defence player cards count less that attack cards count");
+            }
             foreach (var card in cards)
             {
                 var tableCard = new TableCard(this, card);
                 Cards.Add(tableCard);
             }
-            _roundInProcess = true;
         }
 
         /// <summary>
@@ -122,13 +120,19 @@
         internal void Attack(Player player, List<Card> cards)
         {
             // todo добавить lock(object) в рамках одной игры, тут потоконебезопасно.
-            if (_roundInProcess == false)
+            if (IsRoundStarted() == false)
             {
                 throw new Exception("round not started");
             }
+
             if (DefencePlayer == player)
             {
                 throw new Exception("is defence player");
+            }
+
+            if (cards.Count + Cards.Count > DefencePlayer.Hand.Cards.Count)
+            {
+                throw new Exception("defence player cards count less that attack cards count");
             }
 
             var cardRankExistsInTable = false;
@@ -140,6 +144,14 @@
                     {
                         cardRankExistsInTable = true;
                         break;
+                    }
+                    if (tableCard.DefenceCard != null)
+                    {
+                        if (card.Rank.Value == tableCard.DefenceCard.Rank.Value)
+                        {
+                            cardRankExistsInTable = true;
+                            break;
+                        }
                     }
                 }
                 if (!cardRankExistsInTable)
@@ -162,7 +174,7 @@
         /// <param name="attackCard">Карта, от которой защищаемся.</param>
         internal void Defence(Player player, Card defenceCard, Card attackCard)
         {
-            if (_roundInProcess == false)
+            if (IsRoundStarted() == false)
             {
                 throw new Exception("round not started");
             }
@@ -210,7 +222,6 @@
                 throw new Exception("bad status for start: " + Status);
             }
             _activePlayerIndex = null;
-            _roundInProcess = false;
             Cards = new List<TableCard>();
             Status = GameStatus.InProcess;
             for (var i = 0; i < 10; i++)
@@ -311,8 +322,6 @@
             {
                 _activePlayerIndex = _activePlayerIndex - Players.Count;
             }
-
-            _roundInProcess = false;
         }
 
         /// <summary>
@@ -344,11 +353,16 @@
                     }
                 }
                 startPlayerIndex++;
-                if(startPlayerIndex >= Players.Count)
+                if (startPlayerIndex >= Players.Count)
                 {
                     startPlayerIndex = 0;
                 }
             }
+        }
+
+        private bool IsRoundStarted()
+        {
+            return Cards.Count > 0;
         }
     }
 }

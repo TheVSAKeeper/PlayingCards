@@ -5,7 +5,8 @@ namespace PlayingCards.Durak.Tests
     public class SortedDeckCardGenerator : RandomDeckCardGenerator
     {
         private string[] _cardValues;
-        private string _trumpValue;
+        private string? _trumpValue;
+        private int _skipCardCount;
 
         /// <summary>
         /// 
@@ -18,10 +19,14 @@ namespace PlayingCards.Durak.Tests
         /// <param name="trumpValue">
         /// Козырь. В формате "6♦"
         /// </param>
-        public SortedDeckCardGenerator(string[] cardValues, string trumpValue)
+        /// <param name="skipCardCount">
+        /// Сколько кард из колоды, сразу выкинуть в отбой.
+        /// </param>
+        public SortedDeckCardGenerator(string[] cardValues, string? trumpValue, int skipCardCount = 0)
         {
             _cardValues = cardValues;
             _trumpValue = trumpValue;
+            _skipCardCount = skipCardCount;
         }
 
         public override List<Card> GetCards()
@@ -51,9 +56,16 @@ namespace PlayingCards.Durak.Tests
                 }
             }
 
-            var trumpCard = GetCard(deckCards, _trumpValue);
-            returnCards.Insert(0, trumpCard);
-            returnCards.InsertRange(1, deckCards);
+            var trumpCard = _trumpValue == null ? null : GetCard(deckCards, _trumpValue);
+            if (_skipCardCount > 0)
+            {
+                deckCards = deckCards.Skip(_skipCardCount).ToList();
+            }
+            returnCards.InsertRange(0, deckCards);
+            if (trumpCard != null)
+            {
+                returnCards.Insert(0, trumpCard);
+            }
 
             return returnCards;
         }
