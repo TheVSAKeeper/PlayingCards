@@ -1,0 +1,158 @@
+#main {
+    padding: 10px 0;
+}
+
+.hidden {
+    display: none;
+}
+
+.table {
+    height: 100px;
+    width: 100px;
+    border: 1px solid darkgray;
+    background-color: lightgray;
+    margin: 10px;
+    display: inline-block;
+}
+
+    .table.active {
+        border: 1px solid blue;
+    }
+
+#hand {
+    text-align: center;
+}
+
+#deck {
+    margin-top: 20px;
+    position: relative;
+    text-align: center;
+}
+
+#field {
+    min-height: 150px;
+    margin-top: 20px;
+    position: relative;
+    text-align: center;
+}
+
+#trumpInfo {
+    display: inline-block;
+}
+
+#actions {
+    text-align: center;
+}
+
+.field-card {
+    display: inline-block;
+    margin-right: 15px;
+    position: relative;
+}
+
+.defence-card {
+    position: absolute;
+    top: 40px;
+    left: 10px;
+}
+
+.play-card {
+    width: 60px;
+    height: 100px;
+    border: 1px solid black;
+    display: inline-block;
+    margin-top: 10px;
+    background: skyblue;
+}
+
+    .play-card div {
+        display: inline-block;
+    }
+
+    .play-card .card-suit {
+        font-size: 30px;
+    }
+
+    .play-card .card-rank {
+        font-size: 28px;
+    }
+
+    .play-card.active {
+        border: 2px solid blue;
+        margin-top: 5px;
+    }
+
+.card-back {
+    border: 1px solid black;
+    background: repeating-linear-gradient(45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px);
+}
+
+#deck .card-back {
+    color: white;
+    font-size: 36px;
+    height: 60px;
+    width: 100px;
+    position: absolute;
+    top: 50px;
+    left: calc(50% - 50px);
+}
+
+#players {
+    text-align: center;
+}
+
+.player {
+    display: inline-block;
+    margin: 20px;
+}
+
+    .player img {
+        max-width: 64px;
+        max-height: 64px;
+    }
+
+    .player .player-name {
+        display: block;
+        max-width: 180px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .player .card-back {
+        height: 50px;
+        width: 15px;
+        display: inline-block
+    }
+
+        .player .card-back:last-child {
+            width: 30px;
+        }
+
+    .player.active-player img {
+        border: 1px solid rgb(1, 222, 1);
+        background: rgba(1, 222, 1, 0.3);
+    }
+
+    .player.defence-player img {
+        border: 1px solid rgb(222, 1, 1);
+        background: rgba(222, 1, 1, 0.3);
+    }
+
+    .player .speak-text {
+        font-size: 15px;
+        display: block;
+        margin-bottom: 7px;
+        border: 1px solid black;
+        padding: 3px;
+        border-radius: 5px;
+        background-color: lightcoral;
+    }
+
+#myIcon {
+    text-align: center;
+}
+
+    #myIcon .player {
+        margin: 0;
+    }

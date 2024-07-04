@@ -453,5 +453,32 @@
             // поддаём J♣ J♥
             Assert.Throws<Exception>(() => attackPlayer.Hand.StartAttack([0, 1]));
         }
+
+        /// <summary>
+        /// Проверка, что нельзя до первого отбоя атаковать больше 5 картами.
+        /// </summary>
+        [Test]
+        public void FirstDefenceMaxFiveAttackCardsTest()
+        {
+            var playerCards = new string[]
+            {
+                "J♠ J♦ J♣ J♥ Q♣ Q♦",
+                "A♠ 10♥ 9♠ Q♥ 9♣ 10♠",
+            };
+            var trumpValue = "6♦";
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            var attackPlayer = game.Players[0];
+            var defencePlayer = game.Players[1];
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            game.InitCardDeck();
+            // ходим J♠ J♦ J♣ J♥
+            attackPlayer.Hand.StartAttack([0, 1, 2, 3]);
+            // отбиваем  Q♥->J♥
+            defencePlayer.Hand.Defence(3, 3);
+            // поддаём Q♣ Q♦
+            Assert.Throws<Exception>(() => attackPlayer.Hand.Attack([0, 1]));
+        }
     }
 }

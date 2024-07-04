@@ -31,6 +31,10 @@ namespace PlayingCards.Durak.Web.Models
             public int Status { get; set; }
 
             public int OwnerIndex { get; set; }
+
+            public int? StopRoundStatus { get; set; }
+
+            public DateTime? StopRoundEndDate { get; set; }
         }
 
         public class CardModel

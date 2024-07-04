@@ -32,6 +32,11 @@
         private int? _activePlayerIndex;
 
         /// <summary>
+        /// Есть первый отбой.
+        /// </summary>
+        private bool _isSuccessDefenceExists;
+        
+        /// <summary>
         /// Игрок, который сейчас ходит.
         /// </summary>
         public Player? ActivePlayer
@@ -101,10 +106,7 @@
             {
                 throw new Exception("only one rank");
             }
-            if(cards.Count > DefencePlayer.Hand.Cards.Count)
-            {
-                throw new Exception("defence player cards count less that attack cards count");
-            }
+            CheckDeskCardCount(cards.Count);
             foreach (var card in cards)
             {
                 var tableCard = new TableCard(this, card);
@@ -130,10 +132,7 @@
                 throw new Exception("is defence player");
             }
 
-            if (cards.Count + Cards.Count > DefencePlayer.Hand.Cards.Count)
-            {
-                throw new Exception("defence player cards count less that attack cards count");
-            }
+            CheckDeskCardCount(cards.Count);
 
             var cardRankExistsInTable = false;
             foreach (var card in cards)
@@ -163,6 +162,20 @@
             {
                 var addingTableCard = new TableCard(this, card);
                 Cards.Add(addingTableCard);
+            }
+        }
+
+        private void CheckDeskCardCount(int cardsCount)
+        {
+            if (cardsCount + Cards.Count(x => x.DefenceCard == null) > DefencePlayer.Hand.Cards.Count)
+            {
+                throw new Exception("defence player cards count less that attack cards count");
+            }
+
+            var maxCardsCount = _isSuccessDefenceExists ? 6 : 5;
+            if (cardsCount + Cards.Count > maxCardsCount)
+            {
+                throw new Exception("max cards equals " + maxCardsCount);
             }
         }
 
@@ -222,6 +235,7 @@
                 throw new Exception("bad status for start: " + Status);
             }
             _activePlayerIndex = null;
+            _isSuccessDefenceExists = false;
             Cards = new List<TableCard>();
             Status = GameStatus.InProcess;
             for (var i = 0; i < 10; i++)
@@ -303,6 +317,10 @@
                         DefencePlayer.Hand.TakeCard(card.DefenceCard);
                     }
                 }
+            }
+            else
+            {
+                _isSuccessDefenceExists = true;
             }
 
             Cards = new List<TableCard>();

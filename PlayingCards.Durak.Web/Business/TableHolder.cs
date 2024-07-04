@@ -6,6 +6,11 @@ namespace PlayingCards.Durak.Web.Business
 {
     public class TableHolder
     {
+        /// <summary>
+        /// Время на окончание раунда.
+        /// </summary>
+        public const int STOP_ROUND_SECONDS = 7;
+
         private static Dictionary<Guid, Table> _tables = new Dictionary<Guid, Table>();
 
         public Table CreateTable()
@@ -92,7 +97,7 @@ namespace PlayingCards.Durak.Web.Business
             {
                 if (table.Value.StopRoundBeginDate != null)
                 {
-                    var finishTime = table.Value.StopRoundBeginDate.Value.AddSeconds(5);
+                    var finishTime = table.Value.StopRoundBeginDate.Value.AddSeconds(STOP_ROUND_SECONDS);
                     if (DateTime.UtcNow >= finishTime)
                     {
                         table.Value.StopRoundStatus = null;

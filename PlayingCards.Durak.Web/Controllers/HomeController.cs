@@ -13,16 +13,13 @@ namespace PlayingCards.Durak.Web.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly TableHolder _tableHolder;
         private readonly IHubContext<GameHub> _hubContext;
-        private readonly IHubContext<ChatHub>  _chatHub;
 
         public HomeController(ILogger<HomeController> logger, TableHolder tableHolder,
-            IHubContext<GameHub> hubContext,
-            IHubContext<ChatHub> chatHub)
+            IHubContext<GameHub> hubContext)
         {
             _logger = logger;
             _tableHolder = tableHolder;
             _hubContext = hubContext;
-            _chatHub = chatHub;
         }
 
         public IActionResult Index()
@@ -78,6 +75,8 @@ namespace PlayingCards.Durak.Web.Controllers
                         .Select((x, i) => new PlayerModel { Index = i, Name = x.Name, CardsCount = x.Hand.Cards.Count })
                         .ToArray(),
                     Status = (int)playerTable.Game.Status,
+                    StopRoundStatus = playerTable.StopRoundStatus == null ? null : (int)playerTable.StopRoundStatus,
+                    StopRoundEndDate = playerTable.StopRoundBeginDate == null ? null : playerTable.StopRoundBeginDate.Value.AddSeconds(TableHolder.STOP_ROUND_SECONDS),
                 },
                 Tables = playerTable != null ? null : _tableHolder.GetTables().Select(x => new TableModel
                 {
