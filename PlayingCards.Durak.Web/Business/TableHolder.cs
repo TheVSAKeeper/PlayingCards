@@ -54,8 +54,7 @@ namespace PlayingCards.Durak.Web.Business
                 {
                     table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
                     table.Game.AddPlayer("5 Лучик света продуктовой разработки");
-                    table.Game.InitCardDeck();
-                    table.Game.ActivePlayer.Hand.StartAttack([3]);
+                    table.Game.StartGame();
                 }
             }
             else

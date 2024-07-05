@@ -51,40 +51,46 @@ namespace PlayingCards.Durak.Web.Controllers
         public JsonResult GetStatus(string playerSecret)
         {
             var playerTable = _tableHolder.GetBySecret(playerSecret, out Player player);
-            var result = new GetStatusModel
+            var result = new GetStatusModel();
+            if (playerTable != null)
             {
-                Table = playerTable == null ? null :
-                new TableModel
+                var game = playerTable.Game;
+                var table = new TableModel();
+                table.Id = playerTable.Id;
+                table.ActivePlayerIndex = game.Players.IndexOf(game.ActivePlayer);
+                table.DefencePlayerIndex = game.Players.IndexOf(game.DefencePlayer);
+                table.MyPlayerIndex = game.Players.IndexOf(player);
+                table.OwnerIndex = game.Players.IndexOf(playerTable.Owner);
+                table.LooserPlayerIndex = game.LooserPlayer == null ? null : game.Players.IndexOf(game.LooserPlayer);
+                table.NeedShowCardMinTrumpValue = game.NeedShowCardMinTrumpValue;
+                table.MyCards = game.Players.First(x => x == player).Hand.Cards
+                            .Select(x => new CardModel(x)).ToArray();
+                table.DeckCardsCount = game.Deck.CardsCount;
+                table.Trump = game.Deck.TrumpCard == null ? null :
+                        new CardModel(game.Deck.TrumpCard);
+                table.Cards = game.Cards.Select(x => new TableCardModel
                 {
-                    Id = playerTable.Id,
-                    ActivePlayerIndex = playerTable.Game.Players.IndexOf(playerTable.Game.ActivePlayer),
-                    DefencePlayerIndex = playerTable.Game.Players.IndexOf(playerTable.Game.DefencePlayer),
-                    MyIndex = playerTable.Game.Players.IndexOf(player),
-                    OwnerIndex = playerTable.Game.Players.IndexOf(playerTable.Owner),
-                    MyCards = playerTable.Game.Players.First(x => x == player).Hand.Cards
-                        .Select(x => new CardModel(x)).ToArray(),
-                    DeckCardsCount = playerTable.Game.Deck.CardsCount,
-                    Trump = playerTable.Game.Deck.TrumpCard == null ? null :
-                    new CardModel(playerTable.Game.Deck.TrumpCard),
-                    Cards = playerTable.Game.Cards.Select(x => new TableCardModel
-                    {
-                        AttackCard = new CardModel(x.AttackCard),
-                        DefenceCard = x.DefenceCard == null ? null : new CardModel(x.DefenceCard),
-                    }).ToArray(),
-                    Players = playerTable.Game.Players.Where(x => x != player)
-                        .Select((x, i) => new PlayerModel { Index = i, Name = x.Name, CardsCount = x.Hand.Cards.Count })
-                        .ToArray(),
-                    Status = (int)playerTable.Game.Status,
-                    StopRoundStatus = playerTable.StopRoundStatus == null ? null : (int)playerTable.StopRoundStatus,
-                    StopRoundEndDate = playerTable.StopRoundBeginDate == null ? null : playerTable.StopRoundBeginDate.Value.AddSeconds(TableHolder.STOP_ROUND_SECONDS),
-                },
-                Tables = playerTable != null ? null : _tableHolder.GetTables().Select(x => new TableModel
-                {
-                    Id = x.Id,
-                    Players = x.PlayerSecrets.Select(x => x.Value)
+                    AttackCard = new CardModel(x.AttackCard),
+                    DefenceCard = x.DefenceCard == null ? null : new CardModel(x.DefenceCard),
+                }).ToArray();
+                table.Players = game.Players.Where(x => x != player)
+                                .Select((x, i) => new PlayerModel
+                                {
+                                    Index = i,
+                                    Name = x.Name,
+                                    CardsCount = x.Hand.Cards.Count
+                                }).ToArray();
+                table.Status = (int)game.Status;
+                table.StopRoundStatus = playerTable.StopRoundStatus == null ? null : (int)playerTable.StopRoundStatus;
+                table.StopRoundEndDate = playerTable.StopRoundBeginDate == null ? null : playerTable.StopRoundBeginDate.Value.AddSeconds(TableHolder.STOP_ROUND_SECONDS);
+                result.Table = table;
+            }
+            result.Tables = playerTable != null ? null : _tableHolder.GetTables().Select(x => new TableModel
+            {
+                Id = x.Id,
+                Players = x.PlayerSecrets.Select(x => x.Value)
                     .Select(x => new PlayerModel { Name = x.Name }).ToArray(),
-                }).ToArray(),
-            };
+            }).ToArray();
             return Json(result);
         }
 
@@ -97,7 +103,7 @@ namespace PlayingCards.Durak.Web.Controllers
             {
                 throw new Exception("you are not owner");
             }
-            table.Game.InitCardDeck();
+            table.Game.StartGame();
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 

@@ -121,7 +121,7 @@ function getStatus() {
             } else {
                 if (status.table.status != gameStatusList.inProcess
                     && status.table.players.length > 0
-                    && status.table.myIndex == status.table.ownerIndex) {
+                    && status.table.myPlayerIndex == status.table.ownerIndex) {
                     document.getElementById('startGame').classList.remove('hidden');
                 } else {
                     document.getElementById('startGame').classList.add('hidden');
@@ -188,10 +188,10 @@ function getStatus() {
                 }
 
                 let playerIndexes = [];
-                for (let i = status.table.myIndex - 1; i >= 0; i--) {
+                for (let i = status.table.myPlayerIndex - 1; i >= 0; i--) {
                     playerIndexes.push({ index: i, gameIndex: i });
                 }
-                for (let i = status.table.players.length - 1; i >= status.table.myIndex; i--) {
+                for (let i = status.table.players.length - 1; i >= status.table.myPlayerIndex; i--) {
                     playerIndexes.push({ index: i, gameIndex: i + 1 });
                 }
 
@@ -199,6 +199,7 @@ function getStatus() {
                 for (let i = 0; i < playerIndexes.length; i++) {
 
                     let playerIndex = playerIndexes[i].index;
+                    let needShowCard = status.table.needShowCardMinTrumpValue != null && playerIndexes[i].gameIndex == status.table.activePlayerIndex;
                     //я третий 2 1 5 4
                     let player = status.table.players[playerIndex];
                     let playerDiv = document.getElementsByClassName('template-player')[0].cloneNode(true);
@@ -215,19 +216,31 @@ function getStatus() {
                     document.getElementById('players').appendChild(playerDiv);
 
                     for (var j = 0; j < player.cardsCount; j++) {
-                        let cardDiv = document.getElementsByClassName('template-card-back')[0].cloneNode(true);
-                        cardDiv.classList.remove('template-card-back');
-                        playerDiv.getElementsByClassName('player-cards')[0].appendChild(cardDiv);
+                        if (needShowCard && j == player.cardsCount - 1) {
+                            let cardDiv = getCardDiv({
+                                suit: status.table.trump.suit,
+                                rank: status.table.needShowCardMinTrumpValue,
+                            });
+                            cardDiv.classList.add('show-card');
+                            cardDiv.classList.remove('play-card');
+                            cardDiv.classList.add('card-back');
+
+                            playerDiv.getElementsByClassName('player-cards')[0].appendChild(cardDiv);
+                        } else {
+                            let cardDiv = document.getElementsByClassName('template-card-back')[0].cloneNode(true);
+                            cardDiv.classList.remove('template-card-back');
+                            playerDiv.getElementsByClassName('player-cards')[0].appendChild(cardDiv);
+                        }
                     }
                 }
                 let myPlayerDiv = document.getElementsByClassName('template-player')[0].cloneNode(true);
                 myPlayerDiv.classList.remove('template-player');
                 myPlayerDiv.getElementsByClassName('player-name')[0].innerHTML = user.name;
                 myPlayerDiv.getElementsByClassName('player-name')[0].title = user.name;
-                if (status.table.myIndex == status.table.activePlayerIndex) {
+                if (status.table.myPlayerIndex == status.table.activePlayerIndex) {
                     myPlayerDiv.classList.add('active-player');
                 }
-                if (status.table.myIndex == status.table.defencePlayerIndex) {
+                if (status.table.myPlayerIndex == status.table.defencePlayerIndex) {
                     myPlayerDiv.classList.add('defence-player');
                     defencePlayerDiv = myPlayerDiv;
                 }
@@ -263,7 +276,7 @@ function getStatus() {
                 document.getElementById('takeCards').classList.add('hidden');
                 document.getElementById('successDefenceCards').classList.add('hidden');
                 if (status.table.cards.length > 0
-                    && status.table.myIndex == status.table.defencePlayerIndex) {
+                    && status.table.myPlayerIndex == status.table.defencePlayerIndex) {
                     let hasNotDefencedCard = false;
                     for (let i = 0; i < status.table.cards.length; i++) {
                         if (status.table.cards[i].defenceCard == null) {
@@ -301,7 +314,7 @@ function checkMove() {
     let handCardIndexes = getHandActiveCardIndexes();
     let tableCardsCount = gameStatus.table.cards.length;
     if (handCardIndexes.length > 0
-        && gameStatus.table.activePlayerIndex == gameStatus.table.myIndex
+        && gameStatus.table.activePlayerIndex == gameStatus.table.myPlayerIndex
         && tableCardsCount == 0) {
         document.getElementById('startattackCards').classList.remove('hidden');
     } else {
@@ -309,7 +322,7 @@ function checkMove() {
     }
 
     if (handCardIndexes.length > 0
-        && gameStatus.table.activePlayerIndex == gameStatus.table.myIndex
+        && gameStatus.table.activePlayerIndex == gameStatus.table.myPlayerIndex
         && tableCardsCount > 0) {
         document.getElementById('attackCards').classList.remove('hidden');
     } else {
@@ -318,7 +331,7 @@ function checkMove() {
 
     if (handCardIndexes.length == 1
         && fieldCardIndexes.length == 1
-        && gameStatus.table.defencePlayerIndex == gameStatus.table.myIndex
+        && gameStatus.table.defencePlayerIndex == gameStatus.table.myPlayerIndex
         && isValidDefence(fieldCardIndexes[0], handCardIndexes[0])) {
         document.getElementById('defenceCards').classList.remove('hidden');
     } else {
@@ -528,20 +541,20 @@ function uuidv4() {
     );
 }
 
-function getRank(suitValue, value) {
+function getRank(suitValue, rankValue) {
     if (suitValue == 2 || suitValue == 1) {
-        return "<label style='color:red'>" + ranks[value] + "<label>";
+        return "<label style='color:red'>" + ranks[rankValue] + "<label>";
     } else {
-        return "<label>" + ranks[value] + "<label>";
+        return "<label>" + ranks[rankValue] + "<label>";
     }
     return 1;
 }
 
-function getSuit(value) {
-    if (value == 2 || value == 1) {
-        return "<label style='color:red'>" + suits[value] + "<label>";
+function getSuit(suitValue) {
+    if (suitValue == 2 || suitValue == 1) {
+        return "<label style='color:red'>" + suits[suitValue] + "<label>";
     } else {
-        return "<label>" + suits[value] + "<label>";
+        return "<label>" + suits[suitValue] + "<label>";
     }
 }
 

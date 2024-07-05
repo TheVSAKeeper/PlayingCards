@@ -32,10 +32,18 @@
         private int? _activePlayerIndex;
 
         /// <summary>
+        /// Номинал карты, минимального козыря.
+        /// </summary>
+        /// <remarks>
+        /// Игрок, который ходит первый (с минимальным козырем), должен показать его другим игрокам.
+        /// </remarks>
+        public int? NeedShowCardMinTrumpValue { get; set; }
+
+        /// <summary>
         /// Есть первый отбой.
         /// </summary>
         private bool _isSuccessDefenceExists;
-        
+
         /// <summary>
         /// Игрок, который сейчас ходит.
         /// </summary>
@@ -78,6 +86,11 @@
         }
 
         /// <summary>
+        /// Проигравший.
+        /// </summary>
+        public Player? LooserPlayer { get; set; }
+
+        /// <summary>
         /// Карты на столе.
         /// </summary>
         public List<TableCard> Cards { get; set; }
@@ -94,24 +107,32 @@
         /// <param name="cards">Карты.</param>
         internal void StartAttack(Player player, List<Card> cards)
         {
+            CheckLooser();
+
             if (IsRoundStarted())
             {
                 throw new Exception("round started");
             }
+
             if (ActivePlayer != player)
             {
                 throw new Exception("player is not active");
             }
+
             if (cards.GroupBy(x => x.Rank.Value).Count() > 1)
             {
                 throw new Exception("only one rank");
             }
+
             CheckDeskCardCount(cards.Count);
             foreach (var card in cards)
             {
                 var tableCard = new TableCard(this, card);
                 Cards.Add(tableCard);
+                player.Hand.Cards.Remove(card);
             }
+            NeedShowCardMinTrumpValue = null;
+            CheckWin();
         }
 
         /// <summary>
@@ -121,6 +142,8 @@
         /// <param name="cards">Карты.</param>
         internal void Attack(Player player, List<Card> cards)
         {
+            CheckLooser();
+
             // todo добавить lock(object) в рамках одной игры, тут потоконебезопасно.
             if (IsRoundStarted() == false)
             {
@@ -162,6 +185,18 @@
             {
                 var addingTableCard = new TableCard(this, card);
                 Cards.Add(addingTableCard);
+                player.Hand.Cards.Remove(card);
+            }
+            CheckWin();
+        }
+
+        private void CheckWin()
+        {
+            var playersWithoutCards = Players.Where(x => x.Hand.Cards.Count > 0);
+            if (playersWithoutCards.Count() == 1)
+            {
+                LooserPlayer = playersWithoutCards.First();
+                Status = GameStatus.Finish;
             }
         }
 
@@ -187,6 +222,8 @@
         /// <param name="attackCard">Карта, от которой защищаемся.</param>
         internal void Defence(Player player, Card defenceCard, Card attackCard)
         {
+            CheckLooser();
+
             if (IsRoundStarted() == false)
             {
                 throw new Exception("round not started");
@@ -228,7 +265,7 @@
             return player;
         }
 
-        public void InitCardDeck()
+        public void StartGame()
         {
             if (Status != GameStatus.ReadyToStart && Status != GameStatus.Finish)
             {
@@ -238,9 +275,15 @@
             _isSuccessDefenceExists = false;
             Cards = new List<TableCard>();
             Status = GameStatus.InProcess;
+            int? looserPlayerIndex = null;
+            if (LooserPlayer != null)
+            {
+                looserPlayerIndex = Players.IndexOf(LooserPlayer);
+                LooserPlayer = null;
+            }
             for (var i = 0; i < 10; i++)
             {
-                var isSuccess = ShuffleDeckAndTakeCards();
+                var isSuccess = ShuffleDeckAndTakeCards(looserPlayerIndex);
                 // козырей на руках нет, перетусуем колоду.
                 if (isSuccess)
                 {
@@ -250,10 +293,9 @@
 
             // никому не досталось козырей за 10 перемешиваний колоды, активным становится первый игрок.
             _activePlayerIndex = 0;
-
         }
 
-        private bool ShuffleDeckAndTakeCards()
+        private bool ShuffleDeckAndTakeCards(int? looserPlayerIndex)
         {
             foreach (var player in Players)
             {
@@ -294,10 +336,22 @@
                 }
             }
 
-            var minTrumpSuitPlayer = minHandTrumpSuits.OrderBy(x => x.Key).FirstOrDefault().Value;
+            if (looserPlayerIndex != null)
+            {
+                _activePlayerIndex = looserPlayerIndex - 1;
+                if (_activePlayerIndex < 0)
+                {
+                    _activePlayerIndex = Players.Count - 1;
+                }
+                return true;
+            }
+
+            var minTrumpSuitPlayerSuit = minHandTrumpSuits.OrderBy(x => x.Key).FirstOrDefault();
+            var minTrumpSuitPlayer = minTrumpSuitPlayerSuit.Value;
             if (minTrumpSuitPlayer != null)
             {
                 _activePlayerIndex = Players.IndexOf(minTrumpSuitPlayer);
+                NeedShowCardMinTrumpValue = minTrumpSuitPlayerSuit.Key;
                 return true;
             }
             return false;
@@ -305,6 +359,8 @@
 
         public void StopRound()
         {
+            CheckLooser();
+
             bool isDefenceSuccess = Cards.All(x => x.DefenceCard != null);
             // если защитился не от всех карт, то забирает себе, иначе всё в отбой и следующий раунд.
             if (!isDefenceSuccess)
@@ -381,6 +437,14 @@
         private bool IsRoundStarted()
         {
             return Cards.Count > 0;
+        }
+
+        private void CheckLooser()
+        {
+            if (LooserPlayer != null)
+            {
+                throw new Exception("looser is ready");
+            }
         }
     }
 }

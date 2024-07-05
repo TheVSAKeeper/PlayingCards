@@ -38,7 +38,7 @@
             {
                 game.AddPlayer("player" + i);
             }
-            game.InitCardDeck();
+            game.StartGame();
 
             foreach (var player in game.Players)
             {
@@ -66,7 +66,7 @@
             {
                 game.AddPlayer("Player" + i);
             }
-            game.InitCardDeck();
+            game.StartGame();
 
             Assert.IsNotNull(game.ActivePlayer);
             var activePlayerMinSuitCard = game.ActivePlayer.Hand.GetMinSuitCard(game.Deck.TrumpCard.Suit);
@@ -103,7 +103,7 @@
             {
                 game.AddPlayer("Player" + i);
             }
-            game.InitCardDeck();
+            game.StartGame();
 
             var activePlayerNumber = game.ActivePlayer.Name.Substring("Player".Length);
             var defencePlayerNumber = Convert.ToInt32(activePlayerNumber) + 1;
@@ -165,7 +165,7 @@
             var player1 = game.Players[0];
             var player2 = game.Players[1];
             game.Deck = new Deck(new NotSortedDeckCardGenerator());
-            game.InitCardDeck();
+            game.StartGame();
             // ходим пиковой дамой
             player1.Hand.StartAttack([1]);
             // отбиваемся пиковым королём
@@ -199,7 +199,7 @@
             var player1 = game.Players[0];
             var player2 = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
-            game.InitCardDeck();
+            game.StartGame();
             // ходим Q♦
             player1.Hand.StartAttack([1]);
             // подкинули Q♣
@@ -231,7 +231,7 @@
             var defencePlayer = game.Players[1];
             var attackPlayer = game.Players[2];
             game.Deck = new Deck(new NotSortedDeckCardGenerator());
-            game.InitCardDeck();
+            game.StartGame();
             // ходим 10♠
             startAttackPlayer.Hand.StartAttack([1]);
             // подкидываем 10♦
@@ -269,7 +269,7 @@
             var startAttackPlayer = game.Players[0];
             var defencePlayer = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
-            game.InitCardDeck();
+            game.StartGame();
             // ходим A♠ A♦ A♣ A♥
             startAttackPlayer.Hand.StartAttack([0, 1, 2, 3]);
             game.StopRound();
@@ -302,7 +302,7 @@
             var defencePlayer = game.Players[1];
             var attackPlayer = game.Players[2];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
-            game.InitCardDeck();
+            game.StartGame();
             // ходим A♠
             startAttackPlayer.Hand.StartAttack([0]);
             // подкидываем A♦ A♣ A♥
@@ -335,7 +335,7 @@
             var attackPlayer = game.Players[0];
             var defencePlayer = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
-            game.InitCardDeck();
+            game.StartGame();
             // ходим J♣
             attackPlayer.Hand.StartAttack([2]);
             // отбиваем Q♣->J♣
@@ -366,7 +366,7 @@
             var attackPlayer = game.Players[0];
             var defencePlayer = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
-            game.InitCardDeck();
+            game.StartGame();
             // ходим Q♣
             attackPlayer.Hand.StartAttack([2]);
             game.StopRound();
@@ -394,7 +394,7 @@
             var attackPlayer = game.Players[0];
             var defencePlayer = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
-            game.InitCardDeck();
+            game.StartGame();
             // ходим Q♣
             attackPlayer.Hand.StartAttack([2]);
             game.StopRound();
@@ -423,7 +423,7 @@
             var attackPlayer = game.Players[0];
             var defencePlayer = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, null, 24));
-            game.InitCardDeck();
+            game.StartGame();
             defencePlayer.Hand.Cards.RemoveRange(1, 5); // удалим из руки все карты, кроме одной
             // ходим J♣ J♥
             Assert.Throws<Exception>(() => attackPlayer.Hand.StartAttack([2, 3]));
@@ -446,7 +446,7 @@
             var attackPlayer = game.Players[0];
             var defencePlayer = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, null, 24));
-            game.InitCardDeck();
+            game.StartGame();
             defencePlayer.Hand.Cards.RemoveRange(3, 3); // оставим в руке 3 карты
             // ходим J♠ J♦
             attackPlayer.Hand.StartAttack([0, 1]);
@@ -472,13 +472,38 @@
             var attackPlayer = game.Players[0];
             var defencePlayer = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
-            game.InitCardDeck();
+            game.StartGame();
             // ходим J♠ J♦ J♣ J♥
             attackPlayer.Hand.StartAttack([0, 1, 2, 3]);
             // отбиваем  Q♥->J♥
             defencePlayer.Hand.Defence(3, 3);
             // поддаём Q♣ Q♦
             Assert.Throws<Exception>(() => attackPlayer.Hand.Attack([0, 1]));
+        }
+
+
+        /// <summary>
+        /// Проверка, что номинал козырной карты, которую надо всем показать, корректный.
+        /// </summary>
+        [Test]
+        [TestCase("J♠ A♣ J♣ J♥ Q♣ 7♦", 7)]
+        [TestCase("J♠ A♣ J♣ J♥ 8♦ 7♦", 7)]
+        [TestCase("J♠ A♣ J♣ J♥ 7♦ 8♦", 7)]
+        [TestCase("J♠ A♣ J♣ J♥ Q♣ 7♥", null)]
+        public void NeedShowCardMinTrumpValueTest(string firstPlayerCards, int? expectedMinTrumpValue)
+        {
+            var playerCards = new string[]
+            {
+                firstPlayerCards,
+                "A♠ 10♥ 9♠ Q♥ 9♣ 10♠",
+            };
+            var trumpValue = "6♦";
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            game.StartGame();
+            Assert.That(game.NeedShowCardMinTrumpValue, Is.EqualTo(expectedMinTrumpValue));
         }
     }
 }

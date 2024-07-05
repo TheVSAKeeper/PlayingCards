@@ -56,13 +56,17 @@
     left: 10px;
 }
 
+.play-card,
+.card-back.show-card {
+    background: skyblue;
+}
+
 .play-card {
     width: 60px;
     height: 100px;
     border: 1px solid black;
     display: inline-block;
     margin-top: 10px;
-    background: skyblue;
 }
 
     .play-card div {
@@ -85,7 +89,21 @@
 .card-back {
     border: 1px solid black;
     background: repeating-linear-gradient(45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px);
+    position: relative;
 }
+    .card-back.show-card .card-rank {
+        font-size: 24px;
+        position: absolute;
+        left: 7px;
+        top: 5px;
+    }
+    .card-back.show-card .card-suit {
+        font-size: 15px;
+        display: inline-block;
+        position: absolute;
+        right: 2px;
+        top: -3px;
+    }
 
 #deck .card-back {
     color: white;

@@ -22,11 +22,13 @@ namespace PlayingCards.Durak.Web.Models
 
             public PlayerModel[] Players { get; set; }
 
-            public int MyIndex { get; set; }
+            public int MyPlayerIndex { get; set; }
 
             public int ActivePlayerIndex { get; set; }
 
             public int DefencePlayerIndex { get; set; }
+
+            public int? LooserPlayerIndex { get; set; }
 
             public int Status { get; set; }
 
@@ -35,6 +37,8 @@ namespace PlayingCards.Durak.Web.Models
             public int? StopRoundStatus { get; set; }
 
             public DateTime? StopRoundEndDate { get; set; }
+
+            public int? NeedShowCardMinTrumpValue { get; set; }
         }
 
         public class CardModel

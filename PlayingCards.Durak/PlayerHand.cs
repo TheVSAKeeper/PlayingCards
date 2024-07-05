@@ -61,10 +61,6 @@ namespace PlayingCards.Durak
                 cards.Add(card);
             }
             _game.StartAttack(Player, cards);
-            foreach (var cardIndex in cardIndexes.OrderByDescending(x => x))
-            {
-                Cards.RemoveAt(cardIndex);
-            }
         }
 
         /// <summary>
@@ -84,10 +80,6 @@ namespace PlayingCards.Durak
                 cards.Add(card);
             }
             _game.Attack(Player, cards);
-            foreach (var cardIndex in cardIndexes.OrderByDescending(x => x))
-            {
-                Cards.RemoveAt(cardIndex);
-            }
         }
 
 
