@@ -193,7 +193,7 @@
         private void CheckWin()
         {
             var playersWithoutCards = Players.Where(x => x.Hand.Cards.Count > 0);
-            if (playersWithoutCards.Count() == 1)
+            if (playersWithoutCards.Count() == 1 && Deck.CardsCount == 0)
             {
                 LooserPlayer = playersWithoutCards.First();
                 Status = GameStatus.Finish;

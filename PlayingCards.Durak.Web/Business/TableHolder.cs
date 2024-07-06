@@ -56,6 +56,23 @@ namespace PlayingCards.Durak.Web.Business
                     table.Game.AddPlayer("5 Лучик света продуктовой разработки");
                     table.Game.StartGame();
                 }
+
+                var debug2 = true;
+                if (debug2)
+                {
+                    table.Game.AddPlayer("я всегда проигрываю");
+                    table.Game.StartGame();
+                    table.Game.Deck.Cards = new List<Card>();
+                    if (table.Game.Players.IndexOf(table.Game.ActivePlayer) == 0)
+                    {
+                        table.Game.Players[0].Hand.Cards = table.Game.Players[0].Hand.Cards.Take(1).ToList();
+                    }
+                    if (table.Game.Players.IndexOf(table.Game.ActivePlayer) == 1)
+                    {
+                        table.Game.Players[1].Hand.Cards = table.Game.Players[1].Hand.Cards.Take(1).ToList();
+                        table.Game.Players[1].Hand.StartAttack([0]);
+                    }
+                }
             }
             else
             {

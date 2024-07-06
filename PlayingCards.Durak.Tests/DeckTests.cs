@@ -505,5 +505,44 @@
             game.StartGame();
             Assert.That(game.NeedShowCardMinTrumpValue, Is.EqualTo(expectedMinTrumpValue));
         }
+
+        /// <summary>
+        /// Проверка, что определяется проигравший.
+        /// </summary>
+        [Test]
+        public void CheckLooserTest()
+        {
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            game.AddPlayer("3");
+            game.AddPlayer("4");
+            game.AddPlayer("5");
+            game.AddPlayer("6");
+            game.Deck = new Deck(new NotSortedDeckCardGenerator());
+            game.StartGame();
+            var activePlayerIndex = game.Players.IndexOf(game.ActivePlayer);
+            var defencePlayerIndex = game.Players.IndexOf(game.DefencePlayer);
+            for (var i = 0; i < 6; i++)
+            {
+                var player = game.Players[i];
+                if (i != defencePlayerIndex)
+                {
+                    if (i == activePlayerIndex)
+                    {
+                        player.Hand.Cards = player.Hand.Cards.Take(1).ToList();
+                    }
+                    else
+                    {
+                        player.Hand.Cards = new List<Card>();
+                    }
+                }
+            }
+            game.Players[activePlayerIndex].Hand.StartAttack([0]);
+
+            Assert.That(game.Status, Is.EqualTo(GameStatus.Finish));
+            Assert.That(game.LooserPlayer, Is.Not.Null);
+            Assert.That(game.LooserPlayer.Name, Is.EqualTo(game.Players[defencePlayerIndex].Name));
+        }
     }
 }

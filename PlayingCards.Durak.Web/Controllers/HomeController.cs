@@ -98,6 +98,7 @@ namespace PlayingCards.Durak.Web.Controllers
         public async Task StartGame([FromBody] BaseTableModel model)
         {
             var table = _tableHolder.Get(model.TableId);
+
             var player = table.PlayerSecrets[model.PlayerSecret];
             if (table.Owner != player)
             {
@@ -111,6 +112,8 @@ namespace PlayingCards.Durak.Web.Controllers
         public async Task StartAttack([FromBody] AttackModel model)
         {
             var table = _tableHolder.Get(model.TableId);
+            CheckGameInProcess(table);
+
             var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.StartAttack(model.CardIndexes);
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
@@ -120,6 +123,8 @@ namespace PlayingCards.Durak.Web.Controllers
         public async Task Attack([FromBody] AttackModel model)
         {
             var table = _tableHolder.Get(model.TableId);
+            CheckGameInProcess(table);
+
             var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.Attack(model.CardIndexes);
 
@@ -146,6 +151,8 @@ namespace PlayingCards.Durak.Web.Controllers
         public async Task Defence([FromBody] DefenceModel model)
         {
             var table = _tableHolder.Get(model.TableId);
+            CheckGameInProcess(table);
+
             var player = table.PlayerSecrets[model.PlayerSecret];
             player.Hand.Defence(model.DefenceCardIndex, model.AttackCardIndex);
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
@@ -155,6 +162,8 @@ namespace PlayingCards.Durak.Web.Controllers
         public async Task Take([FromBody] BaseTableModel model)
         {
             var table = _tableHolder.Get(model.TableId);
+            CheckGameInProcess(table);
+
             var player = table.PlayerSecrets[model.PlayerSecret];
             if (table.Game.DefencePlayer != player)
             {
@@ -170,6 +179,8 @@ namespace PlayingCards.Durak.Web.Controllers
         public async Task SuccessDefence([FromBody] BaseTableModel model)
         {
             var table = _tableHolder.Get(model.TableId);
+            CheckGameInProcess(table);
+
             var player = table.PlayerSecrets[model.PlayerSecret];
             if (table.Game.DefencePlayer != player)
             {
@@ -183,6 +194,14 @@ namespace PlayingCards.Durak.Web.Controllers
             CheckStopRoundBeginDate(table);
             table.StopRoundStatus = StopRoundStatus.SuccessDefence;
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
+        }
+
+        private static void CheckGameInProcess(Table table)
+        {
+            if (table.Game.Status != GameStatus.InProcess)
+            {
+                throw new Exception("game not in process");
+            }
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

@@ -206,6 +206,8 @@ function getStatus() {
                     playerDiv.classList.remove('template-player');
                     playerDiv.getElementsByClassName('player-name')[0].innerHTML = player.name;
                     playerDiv.getElementsByClassName('player-name')[0].title = player.name;
+                    playerIndexes[i].playerDiv = playerDiv;
+
                     if (playerIndexes[i].gameIndex == status.table.activePlayerIndex) {
                         playerDiv.classList.add('active-player');
                     }
@@ -247,8 +249,7 @@ function getStatus() {
                 document.getElementById('myIcon').appendChild(myPlayerDiv);
 
                 if (status.table.stopRoundStatus != null) {
-                    let mySpeakDiv = document.createElement("label");
-                    mySpeakDiv.classList.add('speak-text');
+                    let mySpeakDiv = getSpeakDiv();
                     let endDate = new Date(status.table.stopRoundEndDate);
                     if (speakTimerIntervalId != null) {
                         console.log(speakTimerIntervalId);
@@ -293,6 +294,19 @@ function getStatus() {
                 }
                 checkMove();
 
+                if (status.table.gameStatus == gameStatus.finish) {
+                    let mySpeakDiv = getSpeakDiv();
+                    mySpeakDiv.innerHTML = 'я дурач☻к';
+                    if (status.table.myPlayerIndex == status.table.looserPlayerIndex) {
+                        myPlayerDiv.prepend(mySpeakDiv);
+                    } else {
+                        for (let i = 0; i < playerIndexes.length; i++) {
+                            if (playerIndexes[i].gameIndex == status.table.looserPlayerIndex) {
+                                playerIndexes[i].playerDiv.prepend(mySpeakDiv);
+                            }
+                        }
+                    }
+                }
             }
         },
         error: function (data) {
@@ -307,6 +321,12 @@ function getCardDiv(card) {
     cardDiv.getElementsByClassName('card-rank')[0].innerHTML = getRank(card.suit, card.rank);
     cardDiv.getElementsByClassName('card-suit')[0].innerHTML = getSuit(card.suit);
     return cardDiv;
+}
+
+function getSpeakDiv() {
+    let mySpeakDiv = document.createElement("label");
+    mySpeakDiv.classList.add('speak-text');
+    return mySpeakDiv;
 }
 
 function checkMove() {
