@@ -32,11 +32,11 @@ namespace PlayingCards.Durak.Web.Business
 
             if (_tables.TryGetValue(tableId, out var table))
             {
-                var debug = false;
+                var debug = true;
                 if (debug)
                 {
-                    table.Game.AddPlayer("1 Вася");
-                    table.Game.AddPlayer("2 Петя");
+                    table.Game.AddPlayer("1 кореш " + playerName);
+                    table.Game.AddPlayer("2 кореш " + playerName);
                 }
 
 
@@ -50,14 +50,13 @@ namespace PlayingCards.Durak.Web.Business
                     table.Owner = player;
                 }
 
-                if (debug)
-                {
-                    table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
-                    table.Game.AddPlayer("5 Лучик света продуктовой разработки");
-                    table.Game.StartGame();
-                }
+                //if (debug)
+                //{
+                //    table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
+                //    table.Game.AddPlayer("5 Лучик света продуктовой разработки");
+                //}
 
-                var debug2 = true;
+                var debug2 = false;
                 if (debug2)
                 {
                     table.Game.AddPlayer("я всегда проигрываю");
@@ -78,6 +77,20 @@ namespace PlayingCards.Durak.Web.Business
             {
                 throw new Exception("table not found");
             }
+        }
+
+        public void Leave(string playerSecret)
+        {
+            var table = GetBySecret(playerSecret, out Player? player);
+            var playerIndex = table.Game.Players.IndexOf(player);
+            if (table.Game.Status == GameStatus.InProcess)
+            {
+                table.LeavePlayer = player;
+                table.LeavePlayerIndex = playerIndex;
+            }
+
+            table.Game.LeavePlayer(playerIndex);
+            table.PlayerSecrets.Remove(playerSecret);
         }
 
         public Table Get(Guid tableId)

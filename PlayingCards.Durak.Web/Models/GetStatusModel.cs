@@ -39,6 +39,8 @@ namespace PlayingCards.Durak.Web.Models
             public DateTime? StopRoundEndDate { get; set; }
 
             public int? NeedShowCardMinTrumpValue { get; set; }
+
+            public PlayerModel? LeavePlayer { get; set; }
         }
 
         public class CardModel

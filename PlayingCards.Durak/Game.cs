@@ -107,7 +107,7 @@
         /// <param name="cards">Карты.</param>
         internal void StartAttack(Player player, List<Card> cards)
         {
-            CheckLooser();
+            CheckGameInProcess();
 
             if (IsRoundStarted())
             {
@@ -142,7 +142,7 @@
         /// <param name="cards">Карты.</param>
         internal void Attack(Player player, List<Card> cards)
         {
-            CheckLooser();
+            CheckGameInProcess();
 
             // todo добавить lock(object) в рамках одной игры, тут потоконебезопасно.
             if (IsRoundStarted() == false)
@@ -222,7 +222,7 @@
         /// <param name="attackCard">Карта, от которой защищаемся.</param>
         internal void Defence(Player player, Card defenceCard, Card attackCard)
         {
-            CheckLooser();
+            CheckGameInProcess();
 
             if (IsRoundStarted() == false)
             {
@@ -258,6 +258,33 @@
 
             var player = new Player(this) { Name = playerName };
             Players.Add(player);
+            if (Players.Count >= 2)
+            {
+                Status = GameStatus.ReadyToStart;
+            }
+            return player;
+        }
+
+        /// <summary>
+        /// Игрок вышел из игры.
+        /// </summary>
+        /// <param name="playerIndex">Имя игрока.</param>
+        public Player LeavePlayer(int playerIndex)
+        {
+            var player = Players[playerIndex];
+            Players.Remove(player);
+            if (Status == GameStatus.InProcess)
+            {
+                Status = GameStatus.Finish;
+            }
+            else
+            {
+                if (Players.Count <= 1)
+                {
+                    Status = GameStatus.WaitPlayers;
+                }
+            }
+
             if (Players.Count >= 2)
             {
                 Status = GameStatus.ReadyToStart;
@@ -359,7 +386,7 @@
 
         public void StopRound()
         {
-            CheckLooser();
+            CheckGameInProcess();
 
             bool isDefenceSuccess = Cards.All(x => x.DefenceCard != null);
             // если защитился не от всех карт, то забирает себе, иначе всё в отбой и следующий раунд.
@@ -439,12 +466,16 @@
             return Cards.Count > 0;
         }
 
-        private void CheckLooser()
+        private void CheckGameInProcess()
         {
-            if (LooserPlayer != null)
+            if (Status != GameStatus.InProcess)
             {
-                throw new Exception("looser is ready");
+                throw new Exception("game not in process: " + Status);
             }
+            //if (LooserPlayer != null)
+            //{
+            //    throw new Exception("looser is ready");
+            //}
         }
     }
 }

@@ -67,6 +67,22 @@ function joinToTable(tableId) {
     });
 }
 
+function leaveFromTable() {
+    SendRequest({
+        method: 'Post',
+        url: '/Home/Leave',
+        body: {
+            playerSecret: user.secret
+        },
+        success: function (data) {
+            getStatus();
+        },
+        error: function (data) {
+            alert('чтото пошло не так');
+        }
+    });
+}
+
 function startGame() {
     SendRequest({
         method: 'Post',
@@ -101,7 +117,13 @@ function getStatus() {
             document.getElementById('trumpInfo').innerHTML = "";
             document.getElementById('players').innerHTML = "";
 
-
+            if (status.table == null) {
+                document.getElementById('createTableBtn').classList.remove('hidden');
+                document.getElementById('leaveFromTableBtn').classList.add('hidden');
+            } else {
+                document.getElementById('createTableBtn').classList.add('hidden');
+                document.getElementById('leaveFromTableBtn').classList.remove('hidden');
+            }
 
             if (status.table == null) {
                 for (let i = 0; i < status.tables.length; i++) {
@@ -202,10 +224,7 @@ function getStatus() {
                     let needShowCard = status.table.needShowCardMinTrumpValue != null && playerIndexes[i].gameIndex == status.table.activePlayerIndex;
                     //я третий 2 1 5 4
                     let player = status.table.players[playerIndex];
-                    let playerDiv = document.getElementsByClassName('template-player')[0].cloneNode(true);
-                    playerDiv.classList.remove('template-player');
-                    playerDiv.getElementsByClassName('player-name')[0].innerHTML = player.name;
-                    playerDiv.getElementsByClassName('player-name')[0].title = player.name;
+                    let playerDiv = getPlayerDiv(playerIndex, player.name);
                     playerIndexes[i].playerDiv = playerDiv;
 
                     if (playerIndexes[i].gameIndex == status.table.activePlayerIndex) {
@@ -235,6 +254,26 @@ function getStatus() {
                         }
                     }
                 }
+
+                if (status.table.leavePlayer != null) {
+                    let playerDiv = getPlayerDiv(-1, status.table.leavePlayer.name);
+                    playerDiv.classList.add('leave-player');
+                    let mySpeakDiv = getSpeakDiv();
+                    mySpeakDiv.innerHTML = 'я вышел, как крыса';
+                    playerDiv.prepend(mySpeakDiv);
+                    for (var j = 0; j < status.table.leavePlayer.cardsCount; j++) {
+                        let cardDiv = document.getElementsByClassName('template-card-back')[0].cloneNode(true);
+                        cardDiv.classList.remove('template-card-back');
+                        playerDiv.getElementsByClassName('player-cards')[0].appendChild(cardDiv);
+                    }
+                    if (status.table.leavePlayerIndex == status.table.myPlayerIndex) {
+                        document.getElementById('players').prepend(playerDiv);
+                    } else {
+                        let rightPlayerDiv = document.querySelector('#players .player[data-player-index="' + status.table.leavePlayer.index + '"]');
+                        rightPlayerDiv.parentNode.insertBefore(playerDiv, rightPlayerDiv);
+                    }
+                }
+
                 let myPlayerDiv = document.getElementsByClassName('template-player')[0].cloneNode(true);
                 myPlayerDiv.classList.remove('template-player');
                 myPlayerDiv.getElementsByClassName('player-name')[0].innerHTML = user.name;
@@ -327,6 +366,15 @@ function getSpeakDiv() {
     let mySpeakDiv = document.createElement("label");
     mySpeakDiv.classList.add('speak-text');
     return mySpeakDiv;
+}
+
+function getPlayerDiv(playerIndex, playerName) {
+    let playerDiv = document.getElementsByClassName('template-player')[0].cloneNode(true);
+    playerDiv.classList.remove('template-player');
+    playerDiv.getElementsByClassName('player-name')[0].innerHTML = playerName;
+    playerDiv.getElementsByClassName('player-name')[0].title = playerName;
+    playerDiv.setAttribute('data-player-index', playerIndex);
+    return playerDiv;
 }
 
 function checkMove() {

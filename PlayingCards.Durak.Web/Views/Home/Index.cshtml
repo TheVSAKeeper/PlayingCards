@@ -1,11 +1,14 @@
-﻿<label type="text" id="nameLabel"></label>
-<div id="loginBlock">
-    <input type="text" id="nameInput" placeholder="Имя" />
-    <button class="btn btn-info" onclick="login()">Войти</button>
+﻿<div id="accountContainer">
+    <label type="text" id="nameLabel"></label>
+    <div id="loginBlock">
+        <input type="text" id="nameInput" placeholder="Имя" />
+        <button class="btn btn-info" onclick="login()">Войти</button>
+    </div>
+    <button class="btn btn-info" id="logoutBtn" onclick="logout()">Выйти</button>
 </div>
-<button class="btn btn-info" id="logoutBtn" onclick="logout()">Выйти</button>
 <div id="tableMain">
-    <button class="btn btn-success" onclick="createTable()">Создать стол</button>
+    <button class="btn btn-success" id="createTableBtn" onclick="createTable()">Создать стол</button>
+    <button class="btn btn-warning" id="leaveFromTableBtn" onclick="leaveFromTable()">Выйти из за стола</button>
     <div id="tables">
     </div>
 </div>

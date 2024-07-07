@@ -6,6 +6,15 @@
     display: none;
 }
 
+#accountContainer {
+    position: absolute;
+    right: 20px;
+    border: 1px solid gray;
+    padding: 20px;
+    border-radius: 5px;
+    background: lightgray;
+}
+
 .table {
     height: 100px;
     width: 100px;
@@ -153,6 +162,11 @@
     }
 
     .player.defence-player img {
+        border: 1px solid rgb(1, 1, 222);
+        background: rgba(1, 1, 222, 0.3);
+    }
+
+    .player.leave-player img {
         border: 1px solid rgb(222, 1, 1);
         background: rgba(222, 1, 1, 0.3);
     }

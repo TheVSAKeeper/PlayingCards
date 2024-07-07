@@ -47,6 +47,13 @@ namespace PlayingCards.Durak.Web.Controllers
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
+        [HttpPost]
+        public async Task Leave([FromBody] AuthModel model)
+        {
+            _tableHolder.Leave(model.PlayerSecret);
+            await _hubContext.Clients.All.SendAsync("ChangeStatus");
+        }
+
         [HttpGet]
         public JsonResult GetStatus(string playerSecret)
         {
@@ -83,6 +90,16 @@ namespace PlayingCards.Durak.Web.Controllers
                 table.Status = (int)game.Status;
                 table.StopRoundStatus = playerTable.StopRoundStatus == null ? null : (int)playerTable.StopRoundStatus;
                 table.StopRoundEndDate = playerTable.StopRoundBeginDate == null ? null : playerTable.StopRoundBeginDate.Value.AddSeconds(TableHolder.STOP_ROUND_SECONDS);
+
+                if (playerTable.LeavePlayer != null)
+                {
+                    table.LeavePlayer = new PlayerModel
+                    {
+                        Index = playerTable.LeavePlayerIndex.Value,
+                        Name = playerTable.LeavePlayer.Name,
+                        CardsCount = playerTable.LeavePlayer.Hand.Cards.Count
+                    };
+                }
                 result.Table = table;
             }
             result.Tables = playerTable != null ? null : _tableHolder.GetTables().Select(x => new TableModel
@@ -105,6 +122,8 @@ namespace PlayingCards.Durak.Web.Controllers
                 throw new Exception("you are not owner");
             }
             table.Game.StartGame();
+            table.LeavePlayer = null;
+            table.LeavePlayerIndex = null;
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 

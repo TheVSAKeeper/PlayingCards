@@ -34,5 +34,15 @@
         /// Причина окончания раунда.
         /// </summary>
         public StopRoundStatus? StopRoundStatus { get; set; }
+
+        /// <summary>
+        /// Игрок, покинувший игру, до её окончания.
+        /// </summary>
+        public Player? LeavePlayer { get; set; }
+
+        /// <summary>
+        /// Индекс игрока, покинувшего игру.
+        /// </summary>
+        public int? LeavePlayerIndex { get; set; }
     }
 }
