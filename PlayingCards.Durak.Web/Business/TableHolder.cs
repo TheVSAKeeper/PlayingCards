@@ -22,6 +22,10 @@ namespace PlayingCards.Durak.Web.Business
 
         public void Join(Guid tableId, string playerSecret, string playerName)
         {
+            if (string.IsNullOrEmpty(playerSecret))
+            {
+                throw new Exception("Авторизуйтесь");
+            }
             foreach (var table2 in _tables.Values)
             {
                 if (table2.PlayerSecrets.ContainsKey(playerSecret))
@@ -32,13 +36,14 @@ namespace PlayingCards.Durak.Web.Business
 
             if (_tables.TryGetValue(tableId, out var table))
             {
-                var debug = true;
+                var debug = false;
+                if (playerName != "maksim")
+                {
+                    debug = false;
+                }
                 if (debug)
                 {
-                    table.Game.AddPlayer("1 кореш " + playerName);
-                    table.Game.AddPlayer("2 кореш " + playerName);
                 }
-
 
                 var player = table.Game.AddPlayer(playerName);
                 table.PlayerSecrets.Add(playerSecret, player);
@@ -50,11 +55,13 @@ namespace PlayingCards.Durak.Web.Business
                     table.Owner = player;
                 }
 
-                //if (debug)
-                //{
-                //    table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
-                //    table.Game.AddPlayer("5 Лучик света продуктовой разработки");
-                //}
+                if (debug)
+                {
+                    table.Game.AddPlayer("1 кореш " + playerName);
+                    table.Game.AddPlayer("2 кореш " + playerName);
+                    table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
+                    table.Game.AddPlayer("5 Лучик света продуктовой разработки");
+                }
 
                 var debug2 = false;
                 if (debug2)

@@ -15,6 +15,14 @@
     background: lightgray;
 }
 
+    #accountContainer.not-auth {
+        margin-left: auto;
+        margin-right: auto;
+        position: initial;
+        max-width: 306px;
+        margin-top: 200px;
+    }
+
 .table {
     height: 100px;
     width: 100px;
@@ -52,6 +60,11 @@
 #actions {
     text-align: center;
 }
+
+    #actions button {
+        margin: 10px 10px 0 10px;
+        width: 180px;
+    }
 
 .field-card {
     display: inline-block;
@@ -100,12 +113,14 @@
     background: repeating-linear-gradient(45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px);
     position: relative;
 }
+
     .card-back.show-card .card-rank {
         font-size: 24px;
         position: absolute;
         left: 7px;
         top: 5px;
     }
+
     .card-back.show-card .card-suit {
         font-size: 15px;
         display: inline-block;
@@ -188,3 +203,8 @@
     #myIcon .player {
         margin: 0;
     }
+
+
+#leaveFromTableBtn {
+    background: RGBA(354, 75, 86, 0.75);
+}

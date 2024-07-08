@@ -10,6 +10,9 @@ function init() {
         document.getElementById('logoutBtn').classList.add('hidden');
         document.getElementById('loginBlock').classList.remove('hidden');
         document.getElementById('main').classList.add('hidden');
+        document.getElementById('tableMain').classList.add('hidden');
+        document.getElementById('chatMain').classList.add('hidden');
+        document.getElementById('accountContainer').classList.add('not-auth');
     } else {
         user.name = cookieName;
         user.secret = cookieSecret;
@@ -17,6 +20,9 @@ function init() {
         document.getElementById('logoutBtn').classList.remove('hidden');
         document.getElementById('loginBlock').classList.add('hidden');
         document.getElementById('main').classList.remove('hidden');
+        document.getElementById('tableMain').classList.remove('hidden');
+        document.getElementById('chatMain').classList.add('hidden');
+        document.getElementById('accountContainer').classList.remove('not-auth');
         getStatus();
     }
     if (user.name) {
@@ -224,7 +230,7 @@ function getStatus() {
                     let needShowCard = status.table.needShowCardMinTrumpValue != null && playerIndexes[i].gameIndex == status.table.activePlayerIndex;
                     //я третий 2 1 5 4
                     let player = status.table.players[playerIndex];
-                    let playerDiv = getPlayerDiv(playerIndex, player.name);
+                    let playerDiv = getPlayerDiv(playerIndexes[i].gameIndex, player.name);
                     playerIndexes[i].playerDiv = playerDiv;
 
                     if (playerIndexes[i].gameIndex == status.table.activePlayerIndex) {
@@ -269,8 +275,16 @@ function getStatus() {
                     if (status.table.leavePlayerIndex == status.table.myPlayerIndex) {
                         document.getElementById('players').prepend(playerDiv);
                     } else {
-                        let rightPlayerDiv = document.querySelector('#players .player[data-player-index="' + status.table.leavePlayer.index + '"]');
-                        rightPlayerDiv.parentNode.insertBefore(playerDiv, rightPlayerDiv);
+                        let leaverIndex = status.table.leavePlayer.index - 1;
+                        if (leaverIndex < 0) {
+                            leaverIndex = status.table.players.length - 1;
+                        }
+                        if (leaverIndex == status.table.ownerIndex) {
+                            $('#players').append(playerDiv);
+                        } else {
+                            let rightPlayerDiv = document.querySelector('#players .player[data-player-index="' + leaverIndex + '"]');
+                            rightPlayerDiv.parentNode.insertBefore(playerDiv, rightPlayerDiv);
+                        }
                     }
                 }
 
@@ -574,6 +588,7 @@ function login() {
 }
 
 function logout() {
+    leaveFromTable();
     deleteCookie(authCookieName);
     deleteCookie(authCookieSecret);
     init();
