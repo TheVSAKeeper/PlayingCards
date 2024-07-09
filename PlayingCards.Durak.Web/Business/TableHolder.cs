@@ -1,8 +1,4 @@
-﻿
-using Microsoft.AspNetCore.SignalR;
-using PlayingCards.Durak.Web.SignalR.Hubs;
-
-namespace PlayingCards.Durak.Web.Business
+﻿namespace PlayingCards.Durak.Web.Business
 {
     public class TableHolder
     {
@@ -11,11 +7,16 @@ namespace PlayingCards.Durak.Web.Business
         /// </summary>
         public const int STOP_ROUND_SECONDS = 7;
 
+        /// <summary>
+        /// Время на принятие решения.
+        /// </summary>
+        public const int AFK_SECONDS = 10;
+
         private static Dictionary<Guid, Table> _tables = new Dictionary<Guid, Table>();
 
         public Table CreateTable()
         {
-            var table = new Table { Id = Guid.NewGuid(), Game = new Game(), PlayerSecrets = new Dictionary<string, Player>() };
+            var table = new Table { Id = Guid.NewGuid(), Game = new Game(), Players = new List<TablePlayer>() };
             _tables.Add(table.Id, table);
             return table;
         }
@@ -28,7 +29,7 @@ namespace PlayingCards.Durak.Web.Business
             }
             foreach (var table2 in _tables.Values)
             {
-                if (table2.PlayerSecrets.ContainsKey(playerSecret))
+                if (table2.Players.Any(x => x.AuthSecret == playerSecret))
                 {
                     throw new Exception("Вы уже сидите за столиком");
                 }
@@ -46,8 +47,8 @@ namespace PlayingCards.Durak.Web.Business
                 }
 
                 var player = table.Game.AddPlayer(playerName);
-                table.PlayerSecrets.Add(playerSecret, player);
-                if (table.PlayerSecrets.Values.Count == 1)
+                table.Players.Add(new TablePlayer { Player = player, AuthSecret = playerSecret });
+                if (table.Players.Count == 1)
                 {
                     // кто первый сел за стол, тот и главный
                     // когда будет функция выйти из за стола, будем думать, кому отдать главенство
@@ -79,6 +80,8 @@ namespace PlayingCards.Durak.Web.Business
                         table.Game.Players[1].Hand.StartAttack([0]);
                     }
                 }
+
+                table.CleanLeaverPlayer();
             }
             else
             {
@@ -88,16 +91,33 @@ namespace PlayingCards.Durak.Web.Business
 
         public void Leave(string playerSecret)
         {
-            var table = GetBySecret(playerSecret, out Player? player);
-            var playerIndex = table.Game.Players.IndexOf(player);
+            var table = GetBySecret(playerSecret, out TablePlayer? tablePlayer);
+            table.CleanLeaverPlayer();
+            Leave(table, tablePlayer);
+        }
+
+        public void Leave(Table table, TablePlayer tablePlayer)
+        {
+            var playerIndex = table.Game.Players.IndexOf(tablePlayer.Player);
             if (table.Game.Status == GameStatus.InProcess)
             {
-                table.LeavePlayer = player;
+                table.LeavePlayer = tablePlayer.Player;
                 table.LeavePlayerIndex = playerIndex;
             }
 
             table.Game.LeavePlayer(playerIndex);
-            table.PlayerSecrets.Remove(playerSecret);
+            table.Players.Remove(tablePlayer);
+            if (table.Players.Count == 0)
+            {
+                _tables.Remove(table.Id);
+            }
+            else
+            {
+                if (table.Players.All(x => x.Player != table.Owner))
+                {
+                    table.Owner = table.Players.First().Player;
+                }
+            }
         }
 
         public Table Get(Guid tableId)
@@ -106,14 +126,14 @@ namespace PlayingCards.Durak.Web.Business
             return table;
         }
 
-        public Table? GetBySecret(string playerSecret, out Player? player)
+        public Table? GetBySecret(string playerSecret, out TablePlayer? player)
         {
             player = null;
             foreach (var table in _tables.Values)
             {
-                if (table.PlayerSecrets.ContainsKey(playerSecret))
+                player = table.Players.FirstOrDefault(x => x.AuthSecret == playerSecret);
+                if (player != null)
                 {
-                    player = table.PlayerSecrets[playerSecret];
                     return table;
                 }
             }
@@ -125,7 +145,14 @@ namespace PlayingCards.Durak.Web.Business
             return _tables.Values.ToArray();
         }
 
-        public bool CheckStopRound()
+        public bool BackgroundProcess()
+        {
+            var hasChanges = CheckStopRound();
+            hasChanges = hasChanges || CheckAfkPlayers();
+            return hasChanges;
+        }
+
+        private bool CheckStopRound()
         {
             var hasChanges = false;
             // todo потокобезопасность натянуть
@@ -144,6 +171,29 @@ namespace PlayingCards.Durak.Web.Business
                 }
             }
 
+            return hasChanges;
+        }
+
+        private bool CheckAfkPlayers()
+        {
+            var hasChanges = false;
+            foreach (var table in _tables.Values)
+            {
+                for (int i = 0; i < table.Players.Count; i++)
+                {
+                    TablePlayer? tablePlayer = table.Players[i];
+                    if (tablePlayer.AfkStartTime != null)
+                    {
+                        var finishTime = tablePlayer.AfkStartTime.Value.AddSeconds(AFK_SECONDS);
+                        if (DateTime.UtcNow >= finishTime)
+                        {
+                            Leave(table, tablePlayer);
+                            i--;
+                            hasChanges = true;
+                        }
+                    }
+                }
+            }
             return hasChanges;
         }
     }

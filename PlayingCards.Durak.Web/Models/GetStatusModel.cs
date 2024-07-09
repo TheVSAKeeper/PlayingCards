@@ -70,6 +70,8 @@ namespace PlayingCards.Durak.Web.Models
             public string Name { get; set; }
 
             public int CardsCount { get; set; }
+
+            public DateTime? AfkStartTime { get; set; }
         }
     }
 }

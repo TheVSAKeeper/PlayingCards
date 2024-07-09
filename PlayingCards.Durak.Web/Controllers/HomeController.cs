@@ -57,56 +57,57 @@ namespace PlayingCards.Durak.Web.Controllers
         [HttpGet]
         public JsonResult GetStatus(string playerSecret)
         {
-            var playerTable = _tableHolder.GetBySecret(playerSecret, out Player player);
+            var table = _tableHolder.GetBySecret(playerSecret, out TablePlayer tablePlayer);
             var result = new GetStatusModel();
-            if (playerTable != null)
+            if (table != null)
             {
-                var game = playerTable.Game;
-                var table = new TableModel();
-                table.Id = playerTable.Id;
-                table.ActivePlayerIndex = game.Players.IndexOf(game.ActivePlayer);
-                table.DefencePlayerIndex = game.Players.IndexOf(game.DefencePlayer);
-                table.MyPlayerIndex = game.Players.IndexOf(player);
-                table.OwnerIndex = game.Players.IndexOf(playerTable.Owner);
-                table.LooserPlayerIndex = game.LooserPlayer == null ? null : game.Players.IndexOf(game.LooserPlayer);
-                table.NeedShowCardMinTrumpValue = game.NeedShowCardMinTrumpValue;
-                table.MyCards = game.Players.First(x => x == player).Hand.Cards
+                var game = table.Game;
+                var tableDto = new TableModel();
+                tableDto.Id = table.Id;
+                tableDto.ActivePlayerIndex = game.Players.IndexOf(game.ActivePlayer);
+                tableDto.DefencePlayerIndex = game.Players.IndexOf(game.DefencePlayer);
+                tableDto.MyPlayerIndex = game.Players.IndexOf(tablePlayer.Player);
+                tableDto.OwnerIndex = game.Players.IndexOf(table.Owner);
+                tableDto.LooserPlayerIndex = game.LooserPlayer == null ? null : game.Players.IndexOf(game.LooserPlayer);
+                tableDto.NeedShowCardMinTrumpValue = game.NeedShowCardMinTrumpValue;
+                tableDto.MyCards = game.Players.First(x => x == tablePlayer.Player).Hand.Cards
                             .Select(x => new CardModel(x)).ToArray();
-                table.DeckCardsCount = game.Deck.CardsCount;
-                table.Trump = game.Deck.TrumpCard == null ? null :
+                tableDto.DeckCardsCount = game.Deck.CardsCount;
+                tableDto.Trump = game.Deck.TrumpCard == null ? null :
                         new CardModel(game.Deck.TrumpCard);
-                table.Cards = game.Cards.Select(x => new TableCardModel
+                tableDto.Cards = game.Cards.Select(x => new TableCardModel
                 {
                     AttackCard = new CardModel(x.AttackCard),
                     DefenceCard = x.DefenceCard == null ? null : new CardModel(x.DefenceCard),
                 }).ToArray();
-                table.Players = game.Players.Where(x => x != player)
+                tableDto.Players = table.Players.Where(x => x.Player != tablePlayer.Player)
                                 .Select((x, i) => new PlayerModel
                                 {
                                     Index = i,
-                                    Name = x.Name,
-                                    CardsCount = x.Hand.Cards.Count
+                                    Name = x.Player.Name,
+                                    CardsCount = x.Player.Hand.Cards.Count,
+                                    AfkStartTime = x.AfkStartTime,
                                 }).ToArray();
-                table.Status = (int)game.Status;
-                table.StopRoundStatus = playerTable.StopRoundStatus == null ? null : (int)playerTable.StopRoundStatus;
-                table.StopRoundEndDate = playerTable.StopRoundBeginDate == null ? null : playerTable.StopRoundBeginDate.Value.AddSeconds(TableHolder.STOP_ROUND_SECONDS);
+                tableDto.Status = (int)game.Status;
+                tableDto.StopRoundStatus = table.StopRoundStatus == null ? null : (int)table.StopRoundStatus;
+                tableDto.StopRoundEndDate = table.StopRoundBeginDate == null ? null : table.StopRoundBeginDate.Value.AddSeconds(TableHolder.STOP_ROUND_SECONDS);
 
-                if (playerTable.LeavePlayer != null)
+                if (table.LeavePlayer != null)
                 {
-                    table.LeavePlayer = new PlayerModel
+                    tableDto.LeavePlayer = new PlayerModel
                     {
-                        Index = playerTable.LeavePlayerIndex.Value,
-                        Name = playerTable.LeavePlayer.Name,
-                        CardsCount = playerTable.LeavePlayer.Hand.Cards.Count
+                        Index = table.LeavePlayerIndex.Value,
+                        Name = table.LeavePlayer.Name,
+                        CardsCount = table.LeavePlayer.Hand.Cards.Count
                     };
                 }
-                result.Table = table;
+                result.Table = tableDto;
             }
-            result.Tables = playerTable != null ? null : _tableHolder.GetTables().Select(x => new TableModel
+            result.Tables = table != null ? null : _tableHolder.GetTables().Select(x => new TableModel
             {
                 Id = x.Id,
-                Players = x.PlayerSecrets.Select(x => x.Value)
-                    .Select(x => new PlayerModel { Name = x.Name }).ToArray(),
+                Players = x.Players
+                    .Select(x => new PlayerModel { Name = x.Player.Name }).ToArray(),
             }).ToArray();
             return Json(result);
         }
@@ -115,15 +116,14 @@ namespace PlayingCards.Durak.Web.Controllers
         public async Task StartGame([FromBody] BaseTableModel model)
         {
             var table = _tableHolder.Get(model.TableId);
-
-            var player = table.PlayerSecrets[model.PlayerSecret];
+            var player = table.Players.Single(x => x.AuthSecret == model.PlayerSecret).Player;
             if (table.Owner != player)
             {
                 throw new Exception("you are not owner");
             }
             table.Game.StartGame();
-            table.LeavePlayer = null;
-            table.LeavePlayerIndex = null;
+            table.CleanLeaverPlayer();
+            table.SetActivePlayerAfkStartTime();
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
@@ -133,8 +133,9 @@ namespace PlayingCards.Durak.Web.Controllers
             var table = _tableHolder.Get(model.TableId);
             CheckGameInProcess(table);
 
-            var player = table.PlayerSecrets[model.PlayerSecret];
-            player.Hand.StartAttack(model.CardIndexes);
+            var tablePlayer = table.Players.Single(x => x.AuthSecret == model.PlayerSecret);
+            tablePlayer.Player.Hand.StartAttack(model.CardIndexes);
+            table.SetDefencePlayerAfkStartTime();
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
@@ -144,8 +145,9 @@ namespace PlayingCards.Durak.Web.Controllers
             var table = _tableHolder.Get(model.TableId);
             CheckGameInProcess(table);
 
-            var player = table.PlayerSecrets[model.PlayerSecret];
-            player.Hand.Attack(model.CardIndexes);
+            var tablePlayer = table.Players.Single(x => x.AuthSecret == model.PlayerSecret);
+            tablePlayer.Player.Hand.Attack(model.CardIndexes);
+            table.SetDefencePlayerAfkStartTime();
 
             if (table.StopRoundStatus != null)
             {
@@ -172,8 +174,9 @@ namespace PlayingCards.Durak.Web.Controllers
             var table = _tableHolder.Get(model.TableId);
             CheckGameInProcess(table);
 
-            var player = table.PlayerSecrets[model.PlayerSecret];
-            player.Hand.Defence(model.DefenceCardIndex, model.AttackCardIndex);
+            var tablePlayer = table.Players.Single(x => x.AuthSecret == model.PlayerSecret);
+            tablePlayer.Player.Hand.Defence(model.DefenceCardIndex, model.AttackCardIndex);
+            table.SetDefencePlayerAfkStartTime();
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
@@ -183,24 +186,26 @@ namespace PlayingCards.Durak.Web.Controllers
             var table = _tableHolder.Get(model.TableId);
             CheckGameInProcess(table);
 
-            var player = table.PlayerSecrets[model.PlayerSecret];
-            if (table.Game.DefencePlayer != player)
+            var tablePlayer = table.Players.Single(x => x.AuthSecret == model.PlayerSecret);
+            if (table.Game.DefencePlayer != tablePlayer.Player)
             {
                 throw new Exception("you are not defence player");
             }
 
             CheckStopRoundBeginDate(table);
             table.StopRoundStatus = StopRoundStatus.Take;
+            table.CleanDefencePlayerAfkStartTime();
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
+        // todo зачем это нажимать, если в методе Defence можно добавить проверку, что все карты отбиты и вызвать эту логику автоматически
         [HttpPost]
         public async Task SuccessDefence([FromBody] BaseTableModel model)
         {
             var table = _tableHolder.Get(model.TableId);
             CheckGameInProcess(table);
 
-            var player = table.PlayerSecrets[model.PlayerSecret];
+            var player = table.Players.Single(x => x.AuthSecret == model.PlayerSecret).Player;
             if (table.Game.DefencePlayer != player)
             {
                 throw new Exception("you are not defence player");
@@ -212,6 +217,7 @@ namespace PlayingCards.Durak.Web.Controllers
 
             CheckStopRoundBeginDate(table);
             table.StopRoundStatus = StopRoundStatus.SuccessDefence;
+            table.CleanDefencePlayerAfkStartTime();
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 

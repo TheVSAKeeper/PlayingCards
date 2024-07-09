@@ -32,7 +32,7 @@ namespace PlayingCards.Durak.Web.Business
 
         private async void _timer_Elapsed(object? sender, ElapsedEventArgs e)
         {
-            var hasChanges = _tableHolder.CheckStopRound();
+            var hasChanges = _tableHolder.BackgroundProcess();
             if (hasChanges)
             {
                 await _hubContext.Clients.All.SendAsync("ChangeStatus");

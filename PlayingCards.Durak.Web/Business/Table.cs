@@ -18,7 +18,7 @@
         /// <summary>
         /// Секреты игроков, чтоб понять, кто есть кто.
         /// </summary>
-        public Dictionary<string, Player> PlayerSecrets { get; set; }
+        public List<TablePlayer> Players { get; set; }
 
         /// <summary>
         /// Хозяин стола.
@@ -44,5 +44,27 @@
         /// Индекс игрока, покинувшего игру.
         /// </summary>
         public int? LeavePlayerIndex { get; set; }
+
+        public void SetActivePlayerAfkStartTime()
+        {
+            Players.First(x => x.Player == Game.ActivePlayer).AfkStartTime = DateTime.UtcNow;
+        }
+
+        public void SetDefencePlayerAfkStartTime()
+        {
+            Players.First(x => x.Player == Game.ActivePlayer).AfkStartTime = null;
+            Players.First(x => x.Player == Game.DefencePlayer).AfkStartTime = DateTime.UtcNow;
+        }
+
+        public void CleanDefencePlayerAfkStartTime()
+        {
+            Players.First(x => x.Player == Game.DefencePlayer).AfkStartTime = null;
+        }
+
+        public void CleanLeaverPlayer()
+        {
+            LeavePlayer = null;
+            LeavePlayerIndex = null;
+        }
     }
 }

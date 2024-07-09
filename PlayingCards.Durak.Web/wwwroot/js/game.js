@@ -122,6 +122,9 @@ function getStatus() {
             document.getElementById('deckCards').innerHTML = "";
             document.getElementById('trumpInfo').innerHTML = "";
             document.getElementById('players').innerHTML = "";
+            document.getElementById('takeCards').classList.add('hidden');
+            document.getElementById('successDefenceCards').classList.add('hidden');
+            document.getElementById('startGame').classList.add('hidden');
 
             if (status.table == null) {
                 document.getElementById('createTableBtn').classList.remove('hidden');
@@ -151,8 +154,6 @@ function getStatus() {
                     && status.table.players.length > 0
                     && status.table.myPlayerIndex == status.table.ownerIndex) {
                     document.getElementById('startGame').classList.remove('hidden');
-                } else {
-                    document.getElementById('startGame').classList.add('hidden');
                 }
 
                 // draw currentGame
@@ -278,8 +279,11 @@ function getStatus() {
                         let leaverIndex = status.table.leavePlayer.index - 1;
                         if (leaverIndex < 0) {
                             leaverIndex = status.table.players.length - 1;
+                            if (leaverIndex < 0) {
+                                leaverIndex = 0;
+                            }
                         }
-                        if (leaverIndex == status.table.ownerIndex) {
+                        if (leaverIndex == status.table.myPlayerIndex) {
                             $('#players').append(playerDiv);
                         } else {
                             let rightPlayerDiv = document.querySelector('#players .player[data-player-index="' + leaverIndex + '"]');
@@ -327,8 +331,6 @@ function getStatus() {
                     tickTack();
                 }
 
-                document.getElementById('takeCards').classList.add('hidden');
-                document.getElementById('successDefenceCards').classList.add('hidden');
                 if (status.table.cards.length > 0
                     && status.table.myPlayerIndex == status.table.defencePlayerIndex) {
                     let hasNotDefencedCard = false;
