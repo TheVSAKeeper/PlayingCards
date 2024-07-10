@@ -24,8 +24,8 @@
     }
 
 .table {
-    height: 100px;
-    width: 100px;
+    height: 200px;
+    width: 200px;
     border: 1px solid darkgray;
     background-color: lightgray;
     margin: 10px;
@@ -34,6 +34,12 @@
 
     .table.active {
         border: 1px solid blue;
+    }
+    .table label {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        display: block;
     }
 
 #hand {

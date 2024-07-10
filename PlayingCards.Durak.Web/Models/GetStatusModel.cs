@@ -24,9 +24,9 @@ namespace PlayingCards.Durak.Web.Models
 
             public int MyPlayerIndex { get; set; }
 
-            public int ActivePlayerIndex { get; set; }
+            public int? ActivePlayerIndex { get; set; }
 
-            public int DefencePlayerIndex { get; set; }
+            public int? DefencePlayerIndex { get; set; }
 
             public int? LooserPlayerIndex { get; set; }
 
@@ -41,6 +41,8 @@ namespace PlayingCards.Durak.Web.Models
             public int? NeedShowCardMinTrumpValue { get; set; }
 
             public PlayerModel? LeavePlayer { get; set; }
+
+            public DateTime? AfkEndTime { get; set; }
         }
 
         public class CardModel
@@ -71,7 +73,7 @@ namespace PlayingCards.Durak.Web.Models
 
             public int CardsCount { get; set; }
 
-            public DateTime? AfkStartTime { get; set; }
+            public DateTime? AfkEndTime { get; set; }
         }
     }
 }

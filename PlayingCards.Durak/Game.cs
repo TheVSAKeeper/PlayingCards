@@ -276,6 +276,7 @@
             if (Status == GameStatus.InProcess)
             {
                 Status = GameStatus.Finish;
+                _activePlayerIndex = null;
             }
             else
             {

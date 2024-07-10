@@ -10,7 +10,7 @@
         /// <summary>
         /// Время на принятие решения.
         /// </summary>
-        public const int AFK_SECONDS = 10;
+        public const int AFK_SECONDS = 60;
 
         private static Dictionary<Guid, Table> _tables = new Dictionary<Guid, Table>();
 
@@ -44,24 +44,25 @@
                 }
                 if (debug)
                 {
+                    var player1 = table.Game.AddPlayer("1 кореш " + playerName);
+                    table.Players.Add(new TablePlayer { Player = player1, AuthSecret = "123" });
+                    var player2 = table.Game.AddPlayer("2 кореш " + playerName);
+                    table.Players.Add(new TablePlayer { Player = player2, AuthSecret = "123" });
                 }
 
                 var player = table.Game.AddPlayer(playerName);
                 table.Players.Add(new TablePlayer { Player = player, AuthSecret = playerSecret });
-                if (table.Players.Count == 1)
+                if (table.Owner == null)
                 {
-                    // кто первый сел за стол, тот и главный
-                    // когда будет функция выйти из за стола, будем думать, кому отдать главенство
-                    // если вышел последний игрок из за стола, то и уничтожим стол
                     table.Owner = player;
                 }
 
                 if (debug)
                 {
-                    table.Game.AddPlayer("1 кореш " + playerName);
-                    table.Game.AddPlayer("2 кореш " + playerName);
-                    table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
-                    table.Game.AddPlayer("5 Лучик света продуктовой разработки");
+                    var player4 = table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
+                    table.Players.Add(new TablePlayer { Player = player4, AuthSecret = "123" });
+                    var player5 = table.Game.AddPlayer("5 Лучик света продуктовой разработки");
+                    table.Players.Add(new TablePlayer { Player = player5, AuthSecret = "123" });
                 }
 
                 var debug2 = false;
@@ -166,6 +167,7 @@
                         table.Value.StopRoundStatus = null;
                         table.Value.StopRoundBeginDate = null;
                         table.Value.Game.StopRound();
+                        table.Value.SetActivePlayerAfkStartTime();
                         hasChanges = true;
                     }
                 }

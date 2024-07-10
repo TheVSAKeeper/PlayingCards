@@ -35,7 +35,7 @@ namespace PlayingCards.Durak.Web.Controllers
         [HttpPost]
         public async Task<Guid> CreateTable()
         {
-            var table = _tableHolder.CreateTable();
+            var table = _tableHolder.CreateTable(); // todo сразу посадить за стол создателя
             await _hubContext.Clients.All.SendAsync("ChangeStatus");
             return table.Id;
         }
@@ -64,10 +64,11 @@ namespace PlayingCards.Durak.Web.Controllers
                 var game = table.Game;
                 var tableDto = new TableModel();
                 tableDto.Id = table.Id;
-                tableDto.ActivePlayerIndex = game.Players.IndexOf(game.ActivePlayer);
-                tableDto.DefencePlayerIndex = game.Players.IndexOf(game.DefencePlayer);
+                tableDto.ActivePlayerIndex = game.ActivePlayer == null ? null : game.Players.IndexOf(game.ActivePlayer);
+                tableDto.DefencePlayerIndex = game.DefencePlayer == null ? null : game.Players.IndexOf(game.DefencePlayer);
                 tableDto.MyPlayerIndex = game.Players.IndexOf(tablePlayer.Player);
                 tableDto.OwnerIndex = game.Players.IndexOf(table.Owner);
+                tableDto.AfkEndTime = tablePlayer.AfkStartTime == null ? null : tablePlayer.AfkStartTime.Value.AddSeconds(TableHolder.AFK_SECONDS);
                 tableDto.LooserPlayerIndex = game.LooserPlayer == null ? null : game.Players.IndexOf(game.LooserPlayer);
                 tableDto.NeedShowCardMinTrumpValue = game.NeedShowCardMinTrumpValue;
                 tableDto.MyCards = game.Players.First(x => x == tablePlayer.Player).Hand.Cards
@@ -86,7 +87,7 @@ namespace PlayingCards.Durak.Web.Controllers
                                     Index = i,
                                     Name = x.Player.Name,
                                     CardsCount = x.Player.Hand.Cards.Count,
-                                    AfkStartTime = x.AfkStartTime,
+                                    AfkEndTime = x.AfkStartTime == null ? null : x.AfkStartTime.Value.AddSeconds(TableHolder.AFK_SECONDS),
                                 }).ToArray();
                 tableDto.Status = (int)game.Status;
                 tableDto.StopRoundStatus = table.StopRoundStatus == null ? null : (int)table.StopRoundStatus;
@@ -147,12 +148,12 @@ namespace PlayingCards.Durak.Web.Controllers
 
             var tablePlayer = table.Players.Single(x => x.AuthSecret == model.PlayerSecret);
             tablePlayer.Player.Hand.Attack(model.CardIndexes);
-            table.SetDefencePlayerAfkStartTime();
 
             if (table.StopRoundStatus != null)
             {
                 if (table.StopRoundStatus == StopRoundStatus.SuccessDefence)
                 {
+                    table.SetDefencePlayerAfkStartTime();
                     table.StopRoundBeginDate = null;
                     table.StopRoundStatus = null;
                 }

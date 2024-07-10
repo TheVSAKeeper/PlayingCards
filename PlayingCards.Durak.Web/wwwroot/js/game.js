@@ -241,6 +241,13 @@ function getStatus() {
                         playerDiv.classList.add('defence-player');
                         defencePlayerDiv = playerDiv;
                     }
+                    if (player.afkEndTime != null) {
+                        let endDate = new Date(player.afkEndTime);
+                        speakTimerRun(playerDiv, endDate, function (seconds) {
+                            return 'осталось ' + seconds + ' секунд';
+                        });
+                    }
+
                     document.getElementById('players').appendChild(playerDiv);
 
                     for (var j = 0; j < player.cardsCount; j++) {
@@ -273,21 +280,19 @@ function getStatus() {
                         cardDiv.classList.remove('template-card-back');
                         playerDiv.getElementsByClassName('player-cards')[0].appendChild(cardDiv);
                     }
-                    if (status.table.leavePlayerIndex == status.table.myPlayerIndex) {
+                    if (status.table.leavePlayer.index == status.table.myPlayerIndex) {
                         document.getElementById('players').prepend(playerDiv);
                     } else {
-                        let leaverIndex = status.table.leavePlayer.index - 1;
-                        if (leaverIndex < 0) {
-                            leaverIndex = status.table.players.length - 1;
-                            if (leaverIndex < 0) {
-                                leaverIndex = 0;
-                            }
+                        let leaverIndex = status.table.leavePlayer.index;
+                        if (leaverIndex > status.table.players.length) {
+                            leaverIndex = 0;
                         }
                         if (leaverIndex == status.table.myPlayerIndex) {
-                            $('#players').append(playerDiv);
+                            let rightPlayerDiv = document.querySelector('#players .player')[0];
+                            rightPlayerDiv.parentNode.insertBefore(playerDiv, rightPlayerDiv);
                         } else {
                             let rightPlayerDiv = document.querySelector('#players .player[data-player-index="' + leaverIndex + '"]');
-                            rightPlayerDiv.parentNode.insertBefore(playerDiv, rightPlayerDiv);
+                            rightPlayerDiv.after(playerDiv);
                         }
                     }
                 }
@@ -304,31 +309,24 @@ function getStatus() {
                     defencePlayerDiv = myPlayerDiv;
                 }
                 document.getElementById('myIcon').appendChild(myPlayerDiv);
+                if (status.table.afkEndTime != null) {
+                    let endDate = new Date(status.table.afkEndTime);
+                    speakTimerRun(myPlayerDiv, endDate, function (seconds) {
+                        return 'осталось ' + seconds + ' секунд';
+                    });
+                }
 
                 if (status.table.stopRoundStatus != null) {
-                    let mySpeakDiv = getSpeakDiv();
                     let endDate = new Date(status.table.stopRoundEndDate);
-                    if (speakTimerIntervalId != null) {
-                        console.log(speakTimerIntervalId);
-                        clearInterval(speakTimerIntervalId);
-                    }
-                    defencePlayerDiv.prepend(mySpeakDiv);
-
-                    function tickTack() {
-                        let now = new Date();
-                        let diffSeconds = Math.round((endDate - now) / 1000, 0);
+                    speakTimerRun(defencePlayerDiv, endDate, function (seconds) {
                         if (status.table.stopRoundStatus == stopRoundStatus.take) {
-                            mySpeakDiv.innerHTML = 'я забираю через ' + diffSeconds + ' секунд';
+                            return 'я забираю через ' + seconds + ' секунд';
                         } else if (status.table.stopRoundStatus == stopRoundStatus.successDefence) {
-                            mySpeakDiv.innerHTML = 'отбито через ' + diffSeconds + ' секунд';
+                            return 'отбито через ' + seconds + ' секунд';
                         } else {
-                            mySpeakDiv.innerHTML = "что то пошло не так";
+                            return "что то пошло не так";
                         }
-                    }
-                    speakTimerIntervalId = setInterval(function () {
-                        tickTack();
-                    }, 1000);
-                    tickTack();
+                    });
                 }
 
                 if (status.table.cards.length > 0
@@ -368,6 +366,25 @@ function getStatus() {
             alert('чтото пошло не так');
         }
     });
+}
+
+function speakTimerRun(playerDiv, endDate, action) {
+
+    let mySpeakDiv = getSpeakDiv();
+    playerDiv.prepend(mySpeakDiv);
+    if (speakTimerIntervalId != null) {
+        console.log(speakTimerIntervalId);
+        clearInterval(speakTimerIntervalId);
+    }
+    function tickTack() {
+        let now = new Date();
+        let diffSeconds = Math.round((endDate - now) / 1000, 0);
+        mySpeakDiv.innerHTML = action(diffSeconds);;
+    }
+    speakTimerIntervalId = setInterval(function () {
+        tickTack();
+    }, 1000);
+    tickTack();
 }
 
 function getCardDiv(card) {
@@ -590,7 +607,9 @@ function login() {
 }
 
 function logout() {
-    leaveFromTable();
+    if (gameStatus != null && gameStatus.table != null) {
+        leaveFromTable();
+    }
     deleteCookie(authCookieName);
     deleteCookie(authCookieSecret);
     init();
