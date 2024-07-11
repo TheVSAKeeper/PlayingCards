@@ -287,12 +287,16 @@ function getStatus() {
                         if (leaverIndex > status.table.players.length) {
                             leaverIndex = 0;
                         }
-                        if (leaverIndex == status.table.myPlayerIndex) {
-                            let rightPlayerDiv = document.querySelector('#players .player')[0];
-                            rightPlayerDiv.parentNode.insertBefore(playerDiv, rightPlayerDiv);
+                        if (status.table.players.length == 0) {
+                            $('#players').append(playerDiv);
                         } else {
-                            let rightPlayerDiv = document.querySelector('#players .player[data-player-index="' + leaverIndex + '"]');
-                            rightPlayerDiv.after(playerDiv);
+                            if (leaverIndex == status.table.myPlayerIndex) {
+                                let rightPlayerDiv = document.querySelector('#players .player')[0];
+                                rightPlayerDiv.parentNode.insertBefore(playerDiv, rightPlayerDiv);
+                            } else {
+                                let rightPlayerDiv = document.querySelector('#players .player[data-player-index="' + leaverIndex + '"]');
+                                rightPlayerDiv.after(playerDiv);
+                            }
                         }
                     }
                 }
@@ -423,7 +427,6 @@ function checkMove() {
     }
 
     if (handCardIndexes.length > 0
-        && gameStatus.table.activePlayerIndex == gameStatus.table.myPlayerIndex
         && tableCardsCount > 0) {
         document.getElementById('attackCards').classList.remove('hidden');
     } else {
