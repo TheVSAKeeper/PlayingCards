@@ -1,8 +1,11 @@
-﻿var user = {};
+﻿var user;
 var authCookieName = 'auth_name';
 var authCookieSecret = 'auth_secret';
+var gameStatus = null;
+var speakTimerIntervalId = null;
 
 function init() {
+    user = null;
     let cookieName = getCookie(authCookieName);
     let cookieSecret = getCookie(authCookieSecret);
     if (cookieName == null || cookieSecret == null) {
@@ -11,28 +14,33 @@ function init() {
         document.getElementById('loginBlock').classList.remove('hidden');
         document.getElementById('main').classList.add('hidden');
         document.getElementById('tableMain').classList.add('hidden');
-        document.getElementById('chatMain').classList.add('hidden');
         document.getElementById('accountContainer').classList.add('not-auth');
     } else {
-        user.name = cookieName;
-        user.secret = cookieSecret;
+        user = {
+            name: cookieName,
+            secret: cookieSecret,
+        }
         document.getElementById('nameLabel').classList.remove('hidden');
         document.getElementById('logoutBtn').classList.remove('hidden');
         document.getElementById('loginBlock').classList.add('hidden');
         document.getElementById('main').classList.remove('hidden');
         document.getElementById('tableMain').classList.remove('hidden');
-        document.getElementById('chatMain').classList.add('hidden');
         document.getElementById('accountContainer').classList.remove('not-auth');
-        getStatus();
     }
-    if (user.name) {
+    if (user != null) {
         document.getElementById('nameLabel').innerHTML = user.name;
     } else {
         document.getElementById('nameLabel').innerHTML = '';
     }
+
+    getStatus();
 }
 
 init();
+
+setInterval(function () {
+    getStatus();
+}, 1000);
 
 function createTable() {
     SendRequest({
@@ -65,6 +73,7 @@ function joinToTable(tableId) {
             playerName: user.name,
         },
         success: function (data) {
+            gameStatus = null;
             getStatus();
         },
         error: function (data) {
@@ -106,14 +115,19 @@ function startGame() {
     });
 }
 
-var gameStatus = null;
-let speakTimerIntervalId = null;
 function getStatus() {
+    if (user == null) {
+        return;
+    }
     SendRequest({
         method: 'Get',
-        url: '/Home/GetStatus?playerSecret=' + user.secret,
+        url: '/Home/GetStatus?playerSecret=' + user.secret + "&version=" + (gameStatus == null ? null : gameStatus.version),
         success: function (data) {
             let status = JSON.parse(data.responseText);
+            if (gameStatus != null && gameStatus.version == status.version) {
+                return;
+            }
+
             gameStatus = status;
             document.getElementById('myIcon').innerHTML = "";
             document.getElementById('hand').innerHTML = ""; // todo запомнить выделенные карты, и после перерисовки выделить их снова
@@ -287,6 +301,7 @@ function getStatus() {
                         if (leaverIndex > status.table.players.length) {
                             leaverIndex = 0;
                         }
+                        // todo крайний слева от меня на 5рых игроков не показывается после афк
                         if (status.table.players.length == 0) {
                             $('#players').append(playerDiv);
                         } else {
@@ -427,6 +442,7 @@ function checkMove() {
     }
 
     if (handCardIndexes.length > 0
+        && gameStatus.table.defencePlayerIndex != gameStatus.table.myPlayerIndex
         && tableCardsCount > 0) {
         document.getElementById('attackCards').classList.remove('hidden');
     } else {

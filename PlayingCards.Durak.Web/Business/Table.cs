@@ -45,6 +45,11 @@
         /// </summary>
         public int? LeavePlayerIndex { get; set; }
 
+        /// <summary>
+        /// Номер версии данных, на любой чих мы его повышаем.
+        /// </summary>
+        public int Version { get; set; }
+
         public void SetActivePlayerAfkStartTime()
         {
             Players.First(x => x.Player == Game.ActivePlayer).AfkStartTime = DateTime.UtcNow;
@@ -65,6 +70,115 @@
         {
             LeavePlayer = null;
             LeavePlayerIndex = null;
+        }
+
+        public void StartGame()
+        {
+            Game.StartGame();
+            CleanLeaverPlayer();
+            SetActivePlayerAfkStartTime();
+            Version++;
+        }
+
+        public void StartAttack(string playerSecret, int[] cardIndexes)
+        {
+            CheckGameInProcess();
+            var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
+            tablePlayer.Player.Hand.StartAttack(cardIndexes);
+            SetDefencePlayerAfkStartTime();
+            Version++;
+        }
+
+        public void Attack(string playerSecret, int[] cardIndexes)
+        {
+            CheckGameInProcess();
+
+            var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
+            tablePlayer.Player.Hand.Attack(cardIndexes);
+
+            if (StopRoundStatus != null)
+            {
+                if (StopRoundStatus == Business.StopRoundStatus.SuccessDefence)
+                {
+                    SetDefencePlayerAfkStartTime();
+                    StopRoundBeginDate = null;
+                    StopRoundStatus = null;
+                }
+                else if (StopRoundStatus == Business.StopRoundStatus.Take)
+                {
+                    StopRoundBeginDate = DateTime.UtcNow;
+                }
+                else
+                {
+                    throw new Exception("undefined " + StopRoundStatus);
+                }
+            }
+            Version++;
+        }
+
+        public void Defence(string playerSecret, int defenceCardIndex, int attackCardIndex)
+        {
+            CheckGameInProcess();
+
+            var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
+            tablePlayer.Player.Hand.Defence(defenceCardIndex, attackCardIndex);
+            SetDefencePlayerAfkStartTime();
+            Version++;
+        }
+
+        public void Take(string playerSecret)
+        {
+            CheckGameInProcess();
+            CheckStopRoundBeginDate();
+
+            var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
+            if (Game.DefencePlayer != tablePlayer.Player)
+            {
+                throw new Exception("you are not defence player");
+            }
+            StopRoundStatus = Business.StopRoundStatus.Take;
+            CleanDefencePlayerAfkStartTime();
+            Version++;
+        }
+
+        public void SuccessDefence(string playerSecret)
+        {
+            CheckGameInProcess();
+
+            var player = Players.Single(x => x.AuthSecret == playerSecret).Player;
+            if (Game.DefencePlayer != player)
+            {
+                throw new Exception("you are not defence player");
+            }
+            if (Game.Cards.Any(x => x.DefenceCard == null))
+            {
+                throw new Exception("not all cards defenced");
+            }
+
+            CheckStopRoundBeginDate();
+            StopRoundStatus = Business.StopRoundStatus.SuccessDefence;
+            CleanDefencePlayerAfkStartTime();
+            Version++;
+        }
+
+        private void CheckGameInProcess()
+        {
+            if (Game.Status != GameStatus.InProcess)
+            {
+                throw new Exception("game not in process");
+            }
+        }
+
+        private void CheckStopRoundBeginDate()
+        {
+            if (StopRoundBeginDate != null)
+            {
+                throw new Exception("stop round in process");
+            }
+            else
+            {
+                StopRoundBeginDate = DateTime.UtcNow;
+            }
         }
     }
 }

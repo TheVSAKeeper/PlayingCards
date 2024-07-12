@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using PlayingCards.Durak.Web.Business;
 using PlayingCards.Durak.Web.Models;
-using PlayingCards.Durak.Web.SignalR.Hubs;
 using static PlayingCards.Durak.Web.Models.GetStatusModel;
 
 namespace PlayingCards.Durak.Web.Controllers
@@ -12,14 +11,11 @@ namespace PlayingCards.Durak.Web.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly TableHolder _tableHolder;
-        private readonly IHubContext<GameHub> _hubContext;
 
-        public HomeController(ILogger<HomeController> logger, TableHolder tableHolder,
-            IHubContext<GameHub> hubContext)
+        public HomeController(ILogger<HomeController> logger, TableHolder tableHolder)
         {
             _logger = logger;
             _tableHolder = tableHolder;
-            _hubContext = hubContext;
         }
 
         public IActionResult Index()
@@ -36,7 +32,6 @@ namespace PlayingCards.Durak.Web.Controllers
         public async Task<Guid> CreateTable()
         {
             var table = _tableHolder.CreateTable(); // todo сразу посадить за стол создателя
-            await _hubContext.Clients.All.SendAsync("ChangeStatus");
             return table.Id;
         }
 
@@ -44,21 +39,32 @@ namespace PlayingCards.Durak.Web.Controllers
         public async Task Join([FromBody] JoinModel model)
         {
             _tableHolder.Join(model.TableId, model.PlayerSecret, model.PlayerName);
-            await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
         [HttpPost]
         public async Task Leave([FromBody] AuthModel model)
         {
             _tableHolder.Leave(model.PlayerSecret);
-            await _hubContext.Clients.All.SendAsync("ChangeStatus");
         }
 
         [HttpGet]
-        public JsonResult GetStatus(string playerSecret)
+        public JsonResult GetStatus(string playerSecret, int? version = null)
         {
             var table = _tableHolder.GetBySecret(playerSecret, out TablePlayer tablePlayer);
             var result = new GetStatusModel();
+            if (table != null)
+            {
+                result.Version = table.Version;
+            }
+            else
+            {
+                result.Version = _tableHolder.TablesVersion;
+            }
+            if (version != null && version == result.Version)
+            {
+                return Json(result);
+            }
+
             if (table != null)
             {
                 var game = table.Game;
@@ -104,12 +110,15 @@ namespace PlayingCards.Durak.Web.Controllers
                 }
                 result.Table = tableDto;
             }
-            result.Tables = table != null ? null : _tableHolder.GetTables().Select(x => new TableModel
+            else
             {
-                Id = x.Id,
-                Players = x.Players
-                    .Select(x => new PlayerModel { Name = x.Player.Name }).ToArray(),
-            }).ToArray();
+                result.Tables = _tableHolder.GetTables().Select(x => new TableModel
+                {
+                    Id = x.Id,
+                    Players = x.Players
+                        .Select(x => new PlayerModel { Name = x.Player.Name }).ToArray(),
+                }).ToArray();
+            }
             return Json(result);
         }
 
@@ -122,81 +131,38 @@ namespace PlayingCards.Durak.Web.Controllers
             {
                 throw new Exception("you are not owner");
             }
-            table.Game.StartGame();
-            table.CleanLeaverPlayer();
-            table.SetActivePlayerAfkStartTime();
-            await _hubContext.Clients.All.SendAsync("ChangeStatus");
+            table.StartGame();
         }
 
         [HttpPost]
         public async Task StartAttack([FromBody] AttackModel model)
         {
             var table = _tableHolder.Get(model.TableId);
-            CheckGameInProcess(table);
 
-            var tablePlayer = table.Players.Single(x => x.AuthSecret == model.PlayerSecret);
-            tablePlayer.Player.Hand.StartAttack(model.CardIndexes);
-            table.SetDefencePlayerAfkStartTime();
-            await _hubContext.Clients.All.SendAsync("ChangeStatus");
+            table.StartAttack(model.PlayerSecret, model.CardIndexes);
         }
 
         [HttpPost]
         public async Task Attack([FromBody] AttackModel model)
         {
             var table = _tableHolder.Get(model.TableId);
-            CheckGameInProcess(table);
-
-            var tablePlayer = table.Players.Single(x => x.AuthSecret == model.PlayerSecret);
-            tablePlayer.Player.Hand.Attack(model.CardIndexes);
-
-            if (table.StopRoundStatus != null)
-            {
-                if (table.StopRoundStatus == StopRoundStatus.SuccessDefence)
-                {
-                    table.SetDefencePlayerAfkStartTime();
-                    table.StopRoundBeginDate = null;
-                    table.StopRoundStatus = null;
-                }
-                else if (table.StopRoundStatus == StopRoundStatus.Take)
-                {
-                    table.StopRoundBeginDate = DateTime.UtcNow;
-                }
-                else
-                {
-                    throw new Exception("undefined " + table.StopRoundStatus);
-                }
-            }
-            await _hubContext.Clients.All.SendAsync("ChangeStatus");
+            table.Attack(model.PlayerSecret, model.CardIndexes);
         }
 
         [HttpPost]
         public async Task Defence([FromBody] DefenceModel model)
         {
             var table = _tableHolder.Get(model.TableId);
-            CheckGameInProcess(table);
 
-            var tablePlayer = table.Players.Single(x => x.AuthSecret == model.PlayerSecret);
-            tablePlayer.Player.Hand.Defence(model.DefenceCardIndex, model.AttackCardIndex);
-            table.SetDefencePlayerAfkStartTime();
-            await _hubContext.Clients.All.SendAsync("ChangeStatus");
+            table.Defence(model.PlayerSecret, model.DefenceCardIndex, model.AttackCardIndex);
         }
 
         [HttpPost]
         public async Task Take([FromBody] BaseTableModel model)
         {
             var table = _tableHolder.Get(model.TableId);
-            CheckGameInProcess(table);
 
-            var tablePlayer = table.Players.Single(x => x.AuthSecret == model.PlayerSecret);
-            if (table.Game.DefencePlayer != tablePlayer.Player)
-            {
-                throw new Exception("you are not defence player");
-            }
-
-            CheckStopRoundBeginDate(table);
-            table.StopRoundStatus = StopRoundStatus.Take;
-            table.CleanDefencePlayerAfkStartTime();
-            await _hubContext.Clients.All.SendAsync("ChangeStatus");
+            table.Take(model.PlayerSecret);
         }
 
         // todo зачем это нажимать, если в методе Defence можно добавить проверку, что все карты отбиты и вызвать эту логику автоматически
@@ -204,22 +170,7 @@ namespace PlayingCards.Durak.Web.Controllers
         public async Task SuccessDefence([FromBody] BaseTableModel model)
         {
             var table = _tableHolder.Get(model.TableId);
-            CheckGameInProcess(table);
-
-            var player = table.Players.Single(x => x.AuthSecret == model.PlayerSecret).Player;
-            if (table.Game.DefencePlayer != player)
-            {
-                throw new Exception("you are not defence player");
-            }
-            if (table.Game.Cards.Any(x => x.DefenceCard == null))
-            {
-                throw new Exception("not all cards defenced");
-            }
-
-            CheckStopRoundBeginDate(table);
-            table.StopRoundStatus = StopRoundStatus.SuccessDefence;
-            table.CleanDefencePlayerAfkStartTime();
-            await _hubContext.Clients.All.SendAsync("ChangeStatus");
+            table.SuccessDefence(model.PlayerSecret);
         }
 
         private static void CheckGameInProcess(Table table)

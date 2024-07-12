@@ -8,6 +8,8 @@ namespace PlayingCards.Durak.Web.Models
 
         public TableModel[]? Tables { get; set; }
 
+        public int Version { get; set; }
+
         public class TableModel
         {
             public Guid Id { get; set; }

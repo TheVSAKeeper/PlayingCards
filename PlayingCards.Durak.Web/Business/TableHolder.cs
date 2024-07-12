@@ -13,11 +13,14 @@
         public const int AFK_SECONDS = 60;
 
         private static Dictionary<Guid, Table> _tables = new Dictionary<Guid, Table>();
+        public int TablesVersion = 0;
 
         public Table CreateTable()
         {
             var table = new Table { Id = Guid.NewGuid(), Game = new Game(), Players = new List<TablePlayer>() };
+            table.Version = 0;
             _tables.Add(table.Id, table);
+            TablesVersion++;
             return table;
         }
 
@@ -78,11 +81,13 @@
                     if (table.Game.Players.IndexOf(table.Game.ActivePlayer) == 1)
                     {
                         table.Game.Players[1].Hand.Cards = table.Game.Players[1].Hand.Cards.Take(1).ToList();
-                        table.Game.Players[1].Hand.StartAttack([0]);
+                        table.Game.Players[1].Hand.StartAttack(new int[] { 0 });
                     }
                 }
 
                 table.CleanLeaverPlayer();
+                table.Version++;
+                TablesVersion++;
             }
             else
             {
@@ -119,6 +124,8 @@
                     table.Owner = table.Players.First().Player;
                 }
             }
+            TablesVersion++;
+            table.Version++;
         }
 
         public Table Get(Guid tableId)
@@ -146,39 +153,34 @@
             return _tables.Values.ToArray();
         }
 
-        public bool BackgroundProcess()
+        public void BackgroundProcess()
         {
-            var hasChanges = CheckStopRound();
-            hasChanges = hasChanges || CheckAfkPlayers();
-            return hasChanges;
+            CheckStopRound();
+            CheckAfkPlayers();
         }
 
-        private bool CheckStopRound()
+        private void CheckStopRound()
         {
-            var hasChanges = false;
             // todo потокобезопасность натянуть
-            foreach (var table in _tables)
+            foreach (var table in _tables.Values)
             {
-                if (table.Value.StopRoundBeginDate != null)
+                if (table.StopRoundBeginDate != null)
                 {
-                    var finishTime = table.Value.StopRoundBeginDate.Value.AddSeconds(STOP_ROUND_SECONDS);
+                    var finishTime = table.StopRoundBeginDate.Value.AddSeconds(STOP_ROUND_SECONDS);
                     if (DateTime.UtcNow >= finishTime)
                     {
-                        table.Value.StopRoundStatus = null;
-                        table.Value.StopRoundBeginDate = null;
-                        table.Value.Game.StopRound();
-                        table.Value.SetActivePlayerAfkStartTime();
-                        hasChanges = true;
+                        table.StopRoundStatus = null;
+                        table.StopRoundBeginDate = null;
+                        table.Game.StopRound();
+                        table.SetActivePlayerAfkStartTime();
+                        table.Version++;
                     }
                 }
             }
-
-            return hasChanges;
         }
 
-        private bool CheckAfkPlayers()
+        private void CheckAfkPlayers()
         {
-            var hasChanges = false;
             foreach (var table in _tables.Values)
             {
                 for (int i = 0; i < table.Players.Count; i++)
@@ -191,12 +193,10 @@
                         {
                             Leave(table, tablePlayer);
                             i--;
-                            hasChanges = true;
                         }
                     }
                 }
             }
-            return hasChanges;
         }
     }
 }

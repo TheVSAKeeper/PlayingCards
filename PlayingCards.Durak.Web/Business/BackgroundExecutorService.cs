@@ -1,6 +1,4 @@
 ﻿using System.Timers;
-using Microsoft.AspNetCore.SignalR;
-using PlayingCards.Durak.Web.SignalR.Hubs;
 
 namespace PlayingCards.Durak.Web.Business
 {
@@ -9,16 +7,13 @@ namespace PlayingCards.Durak.Web.Business
         private ILogger<BackgroundExecutorService> _logger;
         private TableHolder _tableHolder;
         private System.Timers.Timer _timer;
-        private readonly IHubContext<GameHub> _hubContext;
 
         public BackgroundExecutorService(
-            IHubContext<GameHub> hubContext,
             ILogger<BackgroundExecutorService> logger,
             TableHolder tableHolder)
         {
             _logger = logger;
             _tableHolder = tableHolder;
-            _hubContext = hubContext;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -32,11 +27,7 @@ namespace PlayingCards.Durak.Web.Business
 
         private async void _timer_Elapsed(object? sender, ElapsedEventArgs e)
         {
-            var hasChanges = _tableHolder.BackgroundProcess();
-            if (hasChanges)
-            {
-                await _hubContext.Clients.All.SendAsync("ChangeStatus");
-            }
+             _tableHolder.BackgroundProcess();
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
