@@ -1,4 +1,9 @@
+using NLog;
+using NLog.Web;
 using PlayingCards.Durak.Web.Business;
+
+var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
+logger.Debug("init main");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +12,12 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddSingleton<TableHolder>();
 builder.Services.AddHostedService<BackgroundExecutorService>();
+
+
+builder.Logging.ClearProviders();
+builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+builder.Host.UseNLog();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

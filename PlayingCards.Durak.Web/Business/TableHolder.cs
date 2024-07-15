@@ -1,4 +1,8 @@
-﻿namespace PlayingCards.Durak.Web.Business
+﻿using Microsoft.Extensions.Logging;
+using NLog;
+using NLog.Fluent;
+
+namespace PlayingCards.Durak.Web.Business
 {
     public class TableHolder
     {
@@ -21,11 +25,16 @@
             table.Version = 0;
             _tables.Add(table.Id, table);
             TablesVersion++;
+
+            WriteLog(table.Id, null, "create table");
+
             return table;
         }
 
         public void Join(Guid tableId, string playerSecret, string playerName)
         {
+            WriteLog(tableId, playerSecret, "join to table");
+
             if (string.IsNullOrEmpty(playerSecret))
             {
                 throw new Exception("Авторизуйтесь");
@@ -40,17 +49,13 @@
 
             if (_tables.TryGetValue(tableId, out var table))
             {
-                var debug = false;
+                var debug = true;
                 if (playerName != "maksim")
                 {
                     debug = false;
                 }
                 if (debug)
                 {
-                    var player1 = table.Game.AddPlayer("1 кореш " + playerName);
-                    table.Players.Add(new TablePlayer { Player = player1, AuthSecret = "123" });
-                    var player2 = table.Game.AddPlayer("2 кореш " + playerName);
-                    table.Players.Add(new TablePlayer { Player = player2, AuthSecret = "123" });
                 }
 
                 var player = table.Game.AddPlayer(playerName);
@@ -62,6 +67,10 @@
 
                 if (debug)
                 {
+                    var player1 = table.Game.AddPlayer("1 кореш " + playerName);
+                    table.Players.Add(new TablePlayer { Player = player1, AuthSecret = "123" });
+                    var player2 = table.Game.AddPlayer("2 кореш " + playerName);
+                    table.Players.Add(new TablePlayer { Player = player2, AuthSecret = "123" });
                     var player4 = table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
                     table.Players.Add(new TablePlayer { Player = player4, AuthSecret = "123" });
                     var player5 = table.Game.AddPlayer("5 Лучик света продуктовой разработки");
@@ -104,6 +113,8 @@
 
         public void Leave(Table table, TablePlayer tablePlayer)
         {
+            WriteLog(table.Id, tablePlayer.AuthSecret, "leave from table");
+
             var playerIndex = table.Game.Players.IndexOf(tablePlayer.Player);
             if (table.Game.Status == GameStatus.InProcess)
             {
@@ -126,6 +137,7 @@
             }
             TablesVersion++;
             table.Version++;
+
         }
 
         public Table Get(Guid tableId)
@@ -197,6 +209,14 @@
                     }
                 }
             }
+        }
+
+        private void WriteLog(Guid tableId, string? playerSecret, string message)
+        {
+            var logger = LogManager.GetCurrentClassLogger()
+                .WithProperty("TableId", tableId)
+                .WithProperty("PlayerId", playerSecret);
+            logger.Info(message);
         }
     }
 }

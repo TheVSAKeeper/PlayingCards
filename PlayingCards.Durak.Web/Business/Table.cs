@@ -1,4 +1,8 @@
-﻿namespace PlayingCards.Durak.Web.Business
+﻿using System.Linq;
+using System.Reflection;
+using NLog;
+
+namespace PlayingCards.Durak.Web.Business
 {
     /// <summary>
     /// Игровой стол.
@@ -82,6 +86,8 @@
 
         public void StartAttack(string playerSecret, int[] cardIndexes)
         {
+            WriteLog(Id, playerSecret, "start attack " + string.Join(',', cardIndexes.Select(x => x.ToString())));
+
             CheckGameInProcess();
             var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
             tablePlayer.Player.Hand.StartAttack(cardIndexes);
@@ -91,6 +97,8 @@
 
         public void Attack(string playerSecret, int[] cardIndexes)
         {
+            WriteLog(Id, playerSecret, "attack " + string.Join(',', cardIndexes.Select(x => x.ToString())));
+
             CheckGameInProcess();
 
             var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
@@ -118,16 +126,26 @@
 
         public void Defence(string playerSecret, int defenceCardIndex, int attackCardIndex)
         {
+            WriteLog(Id, playerSecret, "defence " + defenceCardIndex + " " + attackCardIndex);
             CheckGameInProcess();
 
             var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
             tablePlayer.Player.Hand.Defence(defenceCardIndex, attackCardIndex);
             SetDefencePlayerAfkStartTime();
+
+            if (Game.Cards.All(x => x.DefenceCard != null))
+            {
+                CheckStopRoundBeginDate();
+                StopRoundStatus = Business.StopRoundStatus.SuccessDefence;
+                CleanDefencePlayerAfkStartTime();
+            }
             Version++;
         }
 
         public void Take(string playerSecret)
         {
+            WriteLog(Id, playerSecret, "take");
+
             CheckGameInProcess();
             CheckStopRoundBeginDate();
 
@@ -137,26 +155,6 @@
                 throw new Exception("you are not defence player");
             }
             StopRoundStatus = Business.StopRoundStatus.Take;
-            CleanDefencePlayerAfkStartTime();
-            Version++;
-        }
-
-        public void SuccessDefence(string playerSecret)
-        {
-            CheckGameInProcess();
-
-            var player = Players.Single(x => x.AuthSecret == playerSecret).Player;
-            if (Game.DefencePlayer != player)
-            {
-                throw new Exception("you are not defence player");
-            }
-            if (Game.Cards.Any(x => x.DefenceCard == null))
-            {
-                throw new Exception("not all cards defenced");
-            }
-
-            CheckStopRoundBeginDate();
-            StopRoundStatus = Business.StopRoundStatus.SuccessDefence;
             CleanDefencePlayerAfkStartTime();
             Version++;
         }
@@ -179,6 +177,14 @@
             {
                 StopRoundBeginDate = DateTime.UtcNow;
             }
+        }
+
+        private void WriteLog(Guid tableId, string? playerSecret, string message)
+        {
+            var logger = LogManager.GetCurrentClassLogger()
+                .WithProperty("TableId", tableId)
+                .WithProperty("PlayerId", playerSecret);
+            logger.Info(message);
         }
     }
 }

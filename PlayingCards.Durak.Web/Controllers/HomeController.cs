@@ -145,6 +145,8 @@ namespace PlayingCards.Durak.Web.Controllers
         [HttpPost]
         public async Task Attack([FromBody] AttackModel model)
         {
+            не занулять таймер, если подкинул забирающему
+если игрок отбился, то его не стоит делать активным игроком
             var table = _tableHolder.Get(model.TableId);
             table.Attack(model.PlayerSecret, model.CardIndexes);
         }
@@ -165,38 +167,10 @@ namespace PlayingCards.Durak.Web.Controllers
             table.Take(model.PlayerSecret);
         }
 
-        // todo зачем это нажимать, если в методе Defence можно добавить проверку, что все карты отбиты и вызвать эту логику автоматически
-        [HttpPost]
-        public async Task SuccessDefence([FromBody] BaseTableModel model)
-        {
-            var table = _tableHolder.Get(model.TableId);
-            table.SuccessDefence(model.PlayerSecret);
-        }
-
-        private static void CheckGameInProcess(Table table)
-        {
-            if (table.Game.Status != GameStatus.InProcess)
-            {
-                throw new Exception("game not in process");
-            }
-        }
-
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-
-        private void CheckStopRoundBeginDate(Table table)
-        {
-            if (table.StopRoundBeginDate != null)
-            {
-                throw new Exception("stop round in process");
-            }
-            else
-            {
-                table.StopRoundBeginDate = DateTime.UtcNow;
-            }
         }
     }
 }

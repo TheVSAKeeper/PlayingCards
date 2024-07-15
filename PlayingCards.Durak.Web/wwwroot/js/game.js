@@ -53,7 +53,7 @@ function createTable() {
             joinToTable(tableId);
         },
         error: function (data) {
-            alert('чтото пошло не так');
+            myalert('чтото пошло не так');
         }
     });
 }
@@ -77,7 +77,7 @@ function joinToTable(tableId) {
             getStatus();
         },
         error: function (data) {
-            alert('чтото пошло не так');
+            myalert('чтото пошло не так');
         }
     });
 }
@@ -93,7 +93,7 @@ function leaveFromTable() {
             getStatus();
         },
         error: function (data) {
-            alert('чтото пошло не так');
+            myalert('чтото пошло не так');
         }
     });
 }
@@ -110,7 +110,7 @@ function startGame() {
             getStatus();
         },
         error: function (data) {
-            alert('чтото пошло не так');
+            myalert('чтото пошло не так');
         }
     });
 }
@@ -137,7 +137,6 @@ function getStatus() {
             document.getElementById('trumpInfo').innerHTML = "";
             document.getElementById('players').innerHTML = "";
             document.getElementById('takeCards').classList.add('hidden');
-            document.getElementById('successDefenceCards').classList.add('hidden');
             document.getElementById('startGame').classList.add('hidden');
 
             if (status.table == null) {
@@ -301,12 +300,11 @@ function getStatus() {
                         if (leaverIndex > status.table.players.length) {
                             leaverIndex = 0;
                         }
-                        // todo крайний слева от меня на 5рых игроков не показывается после афк
                         if (status.table.players.length == 0) {
                             $('#players').append(playerDiv);
                         } else {
                             if (leaverIndex == status.table.myPlayerIndex) {
-                                let rightPlayerDiv = document.querySelector('#players .player')[0];
+                                let rightPlayerDiv = document.querySelector('#players .player');
                                 rightPlayerDiv.parentNode.insertBefore(playerDiv, rightPlayerDiv);
                             } else {
                                 let rightPlayerDiv = document.querySelector('#players .player[data-player-index="' + leaverIndex + '"]');
@@ -360,9 +358,6 @@ function getStatus() {
                     if (hasNotDefencedCard) {
                         document.getElementById('takeCards').classList.remove('hidden');
                     }
-                    if (!hasNotDefencedCard) {
-                        document.getElementById('successDefenceCards').classList.remove('hidden');
-                    }
                 }
                 checkMove();
 
@@ -382,7 +377,7 @@ function getStatus() {
             }
         },
         error: function (data) {
-            alert('чтото пошло не так');
+            myalert('чтото пошло не так');
         }
     });
 }
@@ -511,7 +506,7 @@ function startAttack() {
                 getStatus();
             },
             error: function (data) {
-                alert('чтото пошло не так');
+                myalert('чтото пошло не так');
             }
         });
     }
@@ -533,7 +528,7 @@ function attack() {
                 getStatus();
             },
             error: function (data) {
-                alert('чтото пошло не так');
+                myalert('чтото пошло не так');
             }
         });
     }
@@ -556,7 +551,7 @@ function defence() {
                 getStatus();
             },
             error: function (data) {
-                alert('чтото пошло не так');
+                myalert('чтото пошло не так');
             }
         });
     }
@@ -595,24 +590,7 @@ function take() {
             getStatus();
         },
         error: function (data) {
-            alert('чтото пошло не так');
-        }
-    });
-}
-
-function successDefence() {
-    SendRequest({
-        method: 'Post',
-        url: '/Home/SuccessDefence',
-        body: {
-            tableId: gameStatus.table.id,
-            playerSecret: user.secret,
-        },
-        success: function (data) {
-            getStatus();
-        },
-        error: function (data) {
-            alert('чтото пошло не так');
+            myalert('чтото пошло не так');
         }
     });
 }
@@ -679,6 +657,10 @@ function getSuit(suitValue) {
     } else {
         return "<label>" + suits[suitValue] + "<label>";
     }
+}
+
+function myalert(text) {
+    console.error(text);
 }
 
 var ranks = {
