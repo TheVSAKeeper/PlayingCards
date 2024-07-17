@@ -27,9 +27,14 @@
         public GameStatus Status { get; private set; }
 
         /// <summary>
-        /// Индекс игрока, который сейчас ходит.
+        /// Индекс игрока, который начинает раунд.
         /// </summary>
         private int? _activePlayerIndex;
+
+        /// <summary>
+        /// Индекс игрока, который сейчас защищается.
+        /// </summary>
+        private int? _defencePlayerIndex;
 
         /// <summary>
         /// Номинал карты, минимального козыря.
@@ -69,21 +74,13 @@
         {
             get
             {
-                if (_activePlayerIndex == null)
+                if (_defencePlayerIndex == null)
                 {
                     return null;
                 }
                 else
                 {
-                    var defencePlayerIndex = _activePlayerIndex.Value + 1;
-                    if (defencePlayerIndex >= Players.Count)
-                    {
-                        defencePlayerIndex = 0;
-                    }
-
-                    defencePlayerIndex = MoveNextIfCardsCountEqualZero(defencePlayerIndex);
-
-                    return (Player?)Players[defencePlayerIndex];
+                    return (Player?)Players[_defencePlayerIndex.Value];
                 }
             }
         }
@@ -302,7 +299,7 @@
             {
                 throw new BusinessException("bad status for start: " + Status);
             }
-            _activePlayerIndex = null;
+            SetActivePlayerIndex(null);
             _isSuccessDefenceExists = false;
             Cards = new List<TableCard>();
             Status = GameStatus.InProcess;
@@ -323,7 +320,7 @@
             }
 
             // никому не досталось козырей за 10 перемешиваний колоды, активным становится первый игрок.
-            _activePlayerIndex = 0;
+            SetActivePlayerIndex(0);
         }
 
         private bool ShuffleDeckAndTakeCards(int? looserPlayerIndex)
@@ -369,11 +366,12 @@
 
             if (looserPlayerIndex != null)
             {
-                _activePlayerIndex = looserPlayerIndex - 1;
-                if (_activePlayerIndex < 0)
+                var activePlayerIndex = looserPlayerIndex - 1;
+                if (activePlayerIndex < 0)
                 {
-                    _activePlayerIndex = Players.Count - 1;
+                    activePlayerIndex = Players.Count - 1;
                 }
+                SetActivePlayerIndex(activePlayerIndex);
                 return true;
             }
 
@@ -381,7 +379,8 @@
             var minTrumpSuitPlayer = minTrumpSuitPlayerSuit.Value;
             if (minTrumpSuitPlayer != null)
             {
-                _activePlayerIndex = Players.IndexOf(minTrumpSuitPlayer);
+                var activePlayerIndex = Players.IndexOf(minTrumpSuitPlayer);
+                SetActivePlayerIndex(activePlayerIndex);
                 NeedShowCardMinTrumpValue = minTrumpSuitPlayerSuit.Key;
                 return true;
             }
@@ -413,22 +412,28 @@
             Cards = new List<TableCard>();
 
             TakeCardsAfterRound();
+            SetNextActivePlayer(isDefenceSuccess);
+        }
 
+        private void SetNextActivePlayer(bool isDefenceSuccess)
+        {
+            var activePlayerIndex = _activePlayerIndex;
             if (isDefenceSuccess)
             {
-                _activePlayerIndex++;
+                activePlayerIndex++;
             }
             else
             {
-                _activePlayerIndex += 2;
+                activePlayerIndex += 2;
             }
 
-            if (_activePlayerIndex >= Players.Count)
+            if (activePlayerIndex >= Players.Count)
             {
-                _activePlayerIndex = _activePlayerIndex - Players.Count;
+                activePlayerIndex = activePlayerIndex - Players.Count;
             }
 
-            _activePlayerIndex = MoveNextIfCardsCountEqualZero(_activePlayerIndex.Value);
+            activePlayerIndex = MoveNextIfCardsCountEqualZero(activePlayerIndex.Value);
+            SetActivePlayerIndex(activePlayerIndex);
         }
 
         private int MoveNextIfCardsCountEqualZero(int playerIndex)
@@ -502,6 +507,24 @@
             //{
             //    throw new BusinessException("looser is ready");
             //}
+        }
+
+        private void SetActivePlayerIndex(int? value)
+        {
+            _activePlayerIndex = value;
+            if (_activePlayerIndex == null)
+            {
+                _defencePlayerIndex = null;
+                return;
+            }
+
+            var defencePlayerIndex = _activePlayerIndex.Value + 1;
+            if (defencePlayerIndex >= Players.Count)
+            {
+                defencePlayerIndex = 0;
+            }
+
+            _defencePlayerIndex = MoveNextIfCardsCountEqualZero(defencePlayerIndex);
         }
     }
 }

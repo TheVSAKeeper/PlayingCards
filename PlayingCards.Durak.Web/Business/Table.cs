@@ -1,5 +1,7 @@
 ﻿using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Xml.Linq;
 using NLog;
 
 namespace PlayingCards.Durak.Web.Business
@@ -54,6 +56,11 @@ namespace PlayingCards.Durak.Web.Business
         /// </summary>
         public int Version { get; set; }
 
+        /// <summary>
+        /// Порядковый номер стола.
+        /// </summary>
+        public int Number { get; set; }
+
         public void SetActivePlayerAfkStartTime()
         {
             Players.First(x => x.Player == Game.ActivePlayer).AfkStartTime = DateTime.UtcNow;
@@ -79,29 +86,37 @@ namespace PlayingCards.Durak.Web.Business
         public void StartGame()
         {
             Game.StartGame();
+            var log = new StringBuilder();
+            log.AppendLine("deck: " + string.Join(' ', Game.Deck.Cards.Select(x => x.ToString())));
+            for (int i = 0; i < Game.Players.Count; i++)
+            {
+                log.AppendLine("pl-" + i + ": " + string.Join(' ', Game.Players[i].Hand.Cards.Select(x => x.ToString())));
+            }
+
             CleanLeaverPlayer();
             SetActivePlayerAfkStartTime();
             Version++;
+
+            WriteLog("", "start game: \r\n" + log.ToString());
         }
 
         public void StartAttack(string playerSecret, int[] cardIndexes)
         {
-            WriteLog(Id, playerSecret, "start attack " + string.Join(',', cardIndexes.Select(x => x.ToString())));
-
             CheckGameInProcess();
             var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
+            StringBuilder logCards = GetCardsLog(cardIndexes, tablePlayer);
             tablePlayer.Player.Hand.StartAttack(cardIndexes);
             SetDefencePlayerAfkStartTime();
             Version++;
+            WriteLog(playerSecret, "start attack " + logCards);
         }
 
         public void Attack(string playerSecret, int[] cardIndexes)
         {
-            WriteLog(Id, playerSecret, "attack " + string.Join(',', cardIndexes.Select(x => x.ToString())));
-
             CheckGameInProcess();
 
             var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
+            StringBuilder logCards = GetCardsLog(cardIndexes, tablePlayer);
             tablePlayer.Player.Hand.Attack(cardIndexes);
 
             if (StopRoundStatus != null)
@@ -120,14 +135,24 @@ namespace PlayingCards.Durak.Web.Business
                 }
             }
             Version++;
+            WriteLog(playerSecret, "attack " + logCards);
         }
-
         public void Defence(string playerSecret, int defenceCardIndex, int attackCardIndex)
         {
-            WriteLog(Id, playerSecret, "defence " + defenceCardIndex + " " + attackCardIndex);
             CheckGameInProcess();
 
             var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
+            var logCards = new StringBuilder();
+            try
+            {
+                var defenceCard = tablePlayer.Player.Hand.Cards[defenceCardIndex];
+                var tableCard = Game.Cards[attackCardIndex].AttackCard;
+                logCards.Append(" " + defenceCard +" -> " + tableCard);
+            }
+            catch (Exception ex)
+            {
+
+            }
             tablePlayer.Player.Hand.Defence(defenceCardIndex, attackCardIndex);
             SetDefencePlayerAfkStartTime();
 
@@ -138,11 +163,13 @@ namespace PlayingCards.Durak.Web.Business
                 CleanDefencePlayerAfkStartTime();
             }
             Version++;
+
+            WriteLog(playerSecret, "defence " + logCards);
         }
 
         public void Take(string playerSecret)
         {
-            WriteLog(Id, playerSecret, "take");
+            WriteLog(playerSecret, "take");
 
             CheckGameInProcess();
 
@@ -181,12 +208,36 @@ namespace PlayingCards.Durak.Web.Business
             }
         }
 
-        private void WriteLog(Guid tableId, string? playerSecret, string message)
+        private void WriteLog(string? playerSecret, string message)
         {
+            var tablePlayer = Players.SingleOrDefault(x => x.AuthSecret == playerSecret);
+            var playerIndex = tablePlayer == null ? null : (int?)Game.Players.IndexOf(tablePlayer.Player);
+
             var logger = LogManager.GetCurrentClassLogger()
-                .WithProperty("TableId", tableId)
-                .WithProperty("PlayerId", playerSecret);
+                .WithProperty("TableId", Number + " " + Id)
+                .WithProperty("PlayerId", playerSecret)
+                .WithProperty("PlayerIndex", playerIndex);
             logger.Info(message);
         }
+
+        private static StringBuilder GetCardsLog(int[] cardIndexes, TablePlayer tablePlayer)
+        {
+            var logCards = new StringBuilder();
+            try
+            {
+                foreach (var cardIndex in cardIndexes)
+                {
+                    var card = tablePlayer.Player.Hand.Cards[cardIndex];
+                    logCards.Append(" " + card.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            return logCards;
+        }
+
     }
 }

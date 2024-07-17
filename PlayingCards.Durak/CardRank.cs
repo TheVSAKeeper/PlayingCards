@@ -14,6 +14,7 @@
         {
             Value = value;
             Name = name;
+            ShortName = name == "10" ? "10" : name.Substring(0, 1);
         }
 
         /// <summary>
@@ -31,6 +32,11 @@
         /// Например дама/queen, 9/деявятка.
         /// </remarks>
         public string Name { get; }
+
+        /// <summary>
+        /// Короткое наименование.
+        /// </summary>
+        public string ShortName { get; }
 
         public override string ToString()
         {

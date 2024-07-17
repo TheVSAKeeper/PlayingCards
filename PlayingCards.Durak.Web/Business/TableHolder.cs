@@ -18,23 +18,23 @@ namespace PlayingCards.Durak.Web.Business
 
         private static Dictionary<Guid, Table> _tables = new Dictionary<Guid, Table>();
         public int TablesVersion = 0;
+        public int TableNumber = 1;
 
         public Table CreateTable()
         {
-            var table = new Table { Id = Guid.NewGuid(), Game = new Game(), Players = new List<TablePlayer>() };
+            var table = new Table { Id = Guid.NewGuid(), Number = TableNumber, Game = new Game(), Players = new List<TablePlayer>() };
             table.Version = 0;
             _tables.Add(table.Id, table);
             TablesVersion++;
 
-            WriteLog(table.Id, null, "create table");
+            WriteLog(table, null, "create table");
+            TableNumber++;
 
             return table;
         }
 
         public void Join(Guid tableId, string playerSecret, string playerName)
         {
-            WriteLog(tableId, playerSecret, "join to table");
-
             if (string.IsNullOrEmpty(playerSecret))
             {
                 throw new BusinessException("Авторизуйтесь");
@@ -60,6 +60,8 @@ namespace PlayingCards.Durak.Web.Business
 
                 var player = table.Game.AddPlayer(playerName);
                 table.Players.Add(new TablePlayer { Player = player, AuthSecret = playerSecret });
+                WriteLog(table, playerSecret, "join to table");
+
                 if (table.Owner == null)
                 {
                     table.Owner = player;
@@ -113,7 +115,7 @@ namespace PlayingCards.Durak.Web.Business
 
         public void Leave(Table table, TablePlayer tablePlayer)
         {
-            WriteLog(table.Id, tablePlayer.AuthSecret, "leave from table");
+            WriteLog(table, tablePlayer.AuthSecret, "leave from table");
 
             var playerIndex = table.Game.Players.IndexOf(tablePlayer.Player);
             if (table.Game.Status == GameStatus.InProcess)
@@ -211,11 +213,15 @@ namespace PlayingCards.Durak.Web.Business
             }
         }
 
-        private void WriteLog(Guid tableId, string? playerSecret, string message)
+        private void WriteLog(Table table, string? playerSecret, string message)
         {
+            var tablePlayer = table.Players.SingleOrDefault(x => x.AuthSecret == playerSecret);
+            var playerIndex = tablePlayer == null ? null : (int?)table.Game.Players.IndexOf(tablePlayer.Player);
+
             var logger = LogManager.GetCurrentClassLogger()
-                .WithProperty("TableId", tableId)
-                .WithProperty("PlayerId", playerSecret);
+                .WithProperty("TableId", table.Number + " " + table.Id)
+                .WithProperty("PlayerId", playerSecret)
+                .WithProperty("PlayerIndex", playerIndex);
             logger.Info(message);
         }
     }

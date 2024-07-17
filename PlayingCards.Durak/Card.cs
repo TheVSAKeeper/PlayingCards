@@ -28,7 +28,7 @@
 
         public override string ToString()
         {
-            return Rank?.Name + " " + Suit?.IconChar;
+            return Rank?.ShortName + Suit?.IconChar;
         }
     }
 }

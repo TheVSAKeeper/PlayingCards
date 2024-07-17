@@ -145,7 +145,7 @@
             }
             else
             {
-                Assert.Throws<Exception>(() => attackTableCard.Defence(defenceCard));
+                Assert.Throws<BusinessException>(() => attackTableCard.Defence(defenceCard));
             }
         }
 
@@ -497,7 +497,7 @@
             game.StartGame();
             defencePlayer.Hand.Cards.RemoveRange(1, 5); // удалим из руки все карты, кроме одной
             // ходим J♣ J♥
-            Assert.Throws<Exception>(() => attackPlayer.Hand.StartAttack([2, 3]));
+            Assert.Throws<BusinessException>(() => attackPlayer.Hand.StartAttack([2, 3]));
         }
 
         /// <summary>
@@ -522,7 +522,7 @@
             // ходим J♠ J♦
             attackPlayer.Hand.StartAttack([0, 1]);
             // поддаём J♣ J♥
-            Assert.Throws<Exception>(() => attackPlayer.Hand.StartAttack([0, 1]));
+            Assert.Throws<BusinessException>(() => attackPlayer.Hand.StartAttack([0, 1]));
         }
 
         /// <summary>
@@ -549,7 +549,7 @@
             // отбиваем  Q♥->J♥
             defencePlayer.Hand.Defence(3, 3);
             // поддаём Q♣ Q♦
-            Assert.Throws<Exception>(() => attackPlayer.Hand.Attack([0, 1]));
+            Assert.Throws<BusinessException>(() => attackPlayer.Hand.Attack([0, 1]));
         }
 
 
