@@ -37,13 +37,13 @@ namespace PlayingCards.Durak.Web.Business
 
             if (string.IsNullOrEmpty(playerSecret))
             {
-                throw new Exception("Авторизуйтесь");
+                throw new BusinessException("Авторизуйтесь");
             }
             foreach (var table2 in _tables.Values)
             {
                 if (table2.Players.Any(x => x.AuthSecret == playerSecret))
                 {
-                    throw new Exception("Вы уже сидите за столиком");
+                    throw new BusinessException("Вы уже сидите за столиком");
                 }
             }
 
@@ -100,7 +100,7 @@ namespace PlayingCards.Durak.Web.Business
             }
             else
             {
-                throw new Exception("table not found");
+                throw new BusinessException("table not found");
             }
         }
 

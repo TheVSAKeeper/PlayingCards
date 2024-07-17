@@ -1,5 +1,6 @@
 using NLog;
 using NLog.Web;
+using PlayingCards.Durak.Web;
 using PlayingCards.Durak.Web.Business;
 
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -38,4 +39,5 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.Run();

@@ -20,3 +20,18 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.alerts-body {
+    position: fixed;
+    top: 180px;
+    z-index: 999992;
+    width: 415px;
+    right: 0;
+    padding-right: 15px;
+}
+
+.alert .close{
+    position: absolute;
+    right: 10px;
+    top: 10px;
+}

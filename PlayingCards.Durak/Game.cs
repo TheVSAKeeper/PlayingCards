@@ -80,6 +80,9 @@
                     {
                         defencePlayerIndex = 0;
                     }
+
+                    defencePlayerIndex = MoveNextIfCardsCountEqualZero(defencePlayerIndex);
+
                     return (Player?)Players[defencePlayerIndex];
                 }
             }
@@ -111,17 +114,17 @@
 
             if (IsRoundStarted())
             {
-                throw new Exception("round started");
+                throw new BusinessException("round started");
             }
 
             if (ActivePlayer != player)
             {
-                throw new Exception("player is not active");
+                throw new BusinessException("player is not active");
             }
 
             if (cards.GroupBy(x => x.Rank.Value).Count() > 1)
             {
-                throw new Exception("only one rank");
+                throw new BusinessException("only one rank");
             }
 
             CheckDeskCardCount(cards.Count);
@@ -147,12 +150,12 @@
             // todo добавить lock(object) в рамках одной игры, тут потоконебезопасно.
             if (IsRoundStarted() == false)
             {
-                throw new Exception("round not started");
+                throw new BusinessException("round not started");
             }
 
             if (DefencePlayer == player)
             {
-                throw new Exception("is defence player");
+                throw new BusinessException("is defence player");
             }
 
             CheckDeskCardCount(cards.Count);
@@ -178,7 +181,7 @@
                 }
                 if (!cardRankExistsInTable)
                 {
-                    throw new Exception("this rank not found in table");
+                    throw new BusinessException("this rank not found in table");
                 }
             }
             foreach (var card in cards)
@@ -204,13 +207,13 @@
         {
             if (cardsCount + Cards.Count(x => x.DefenceCard == null) > DefencePlayer.Hand.Cards.Count)
             {
-                throw new Exception("defence player cards count less that attack cards count");
+                throw new BusinessException("defence player cards count less that attack cards count");
             }
 
             var maxCardsCount = _isSuccessDefenceExists ? 6 : 5;
             if (cardsCount + Cards.Count > maxCardsCount)
             {
-                throw new Exception("max cards equals " + maxCardsCount);
+                throw new BusinessException("max cards equals " + maxCardsCount);
             }
         }
 
@@ -226,16 +229,16 @@
 
             if (IsRoundStarted() == false)
             {
-                throw new Exception("round not started");
+                throw new BusinessException("round not started");
             }
             if (DefencePlayer != player)
             {
-                throw new Exception("player is not defence player");
+                throw new BusinessException("player is not defence player");
             }
             var card = Cards.FirstOrDefault(x => x.AttackCard == attackCard);
             if (card == null)
             {
-                throw new Exception("attack card not found");
+                throw new BusinessException("attack card not found");
             }
             card.Defence(defenceCard);
         }
@@ -248,12 +251,12 @@
         {
             if (Players.Count >= 6)
             {
-                throw new Exception("max player count = 6");
+                throw new BusinessException("max player count = 6");
             }
 
             if (Status == GameStatus.InProcess)
             {
-                throw new Exception("bad status for join: " + Status);
+                throw new BusinessException("bad status for join: " + Status);
             }
 
             var player = new Player(this) { Name = playerName };
@@ -297,7 +300,7 @@
         {
             if (Status != GameStatus.ReadyToStart && Status != GameStatus.Finish)
             {
-                throw new Exception("bad status for start: " + Status);
+                throw new BusinessException("bad status for start: " + Status);
             }
             _activePlayerIndex = null;
             _isSuccessDefenceExists = false;
@@ -333,12 +336,12 @@
             Deck.Shuffle();
             if (Players.Count < 2)
             {
-                throw new Exception("need two or more players");
+                throw new BusinessException("need two or more players");
             }
 
             if (Players.Count > 6)
             {
-                throw new Exception("need six players or less");
+                throw new BusinessException("need six players or less");
             }
 
             for (var i = 0; i < 6; i++)
@@ -424,6 +427,28 @@
             {
                 _activePlayerIndex = _activePlayerIndex - Players.Count;
             }
+
+            _activePlayerIndex = MoveNextIfCardsCountEqualZero(_activePlayerIndex.Value);
+        }
+
+        private int MoveNextIfCardsCountEqualZero(int playerIndex)
+        {
+            for (var i = 0; i < Players.Count; i++)
+            {
+                if (Players[playerIndex].Hand.Cards.Count == 0)
+                {
+                    playerIndex++;
+                    if (playerIndex >= Players.Count)
+                    {
+                        playerIndex = 0;
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+            return playerIndex;
         }
 
         /// <summary>
@@ -471,11 +496,11 @@
         {
             if (Status != GameStatus.InProcess)
             {
-                throw new Exception("game not in process: " + Status);
+                throw new BusinessException("game not in process: " + Status);
             }
             //if (LooserPlayer != null)
             //{
-            //    throw new Exception("looser is ready");
+            //    throw new BusinessException("looser is ready");
             //}
         }
     }

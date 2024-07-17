@@ -407,6 +407,77 @@
         }
 
         /// <summary>
+        /// Проверка, если игрок без карт, то его не учитываем в выборе активного игрока.
+        /// </summary>
+        [Test]
+        public void CorrectChangeActiveZeroCardsPlayerTest()
+        {
+            var playerCards = new string[]
+            {
+                "J♠ Q♦ Q♣ Q♥ 10♥ 7♦",
+                "Q♠ 9♦ 9♥ 9♠ 9♣ 8♦",
+                "A♠ A♦ A♣ A♥ 10♣ 10♠",
+            };
+            var trumpValue = "6♦";
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            game.AddPlayer("3");
+            var attackPlayer = game.Players[0];
+            var defencePlayer = game.Players[1];
+            var expectedStartAttackPlayer = game.Players[2];
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            game.StartGame();
+            // удалим у отбивающегося все карты кроме одной
+            defencePlayer.Hand.Cards.RemoveRange(1, 5);
+            // очистим колоду
+            game.Deck.Cards = new List<Card>();
+
+            // ходим J♠
+            attackPlayer.Hand.StartAttack([0]);
+            // отбиваем Q♠->J♠
+            defencePlayer.Hand.Defence(0, 0);
+            game.StopRound();
+            Assert.That(game.ActivePlayer.Name, Is.EqualTo(expectedStartAttackPlayer.Name));
+        }
+
+        /// <summary>
+        /// Проверка, если игрок без карт, то его не учитываем в выборе защищающегося игрока.
+        /// </summary>
+        [Test]
+        public void CorrectChangeDefenceZeroCardsPlayerTest()
+        {
+            var playerCards = new string[]
+            {
+                "J♠ Q♦ Q♣ Q♥ 10♥ 7♦",
+                "Q♠ 9♦ 9♥ 9♠ 9♣ 8♦",
+                "A♠ A♦ A♣ A♥ 10♣ 10♠",
+            };
+            var trumpValue = "6♦";
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            game.AddPlayer("3");
+            var player1 = game.Players[0];
+            var player2 = game.Players[1];
+            var zeorCardsPlayer = game.Players[2];
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            game.StartGame();
+            // удалим все карты у игрока
+            zeorCardsPlayer.Hand.Cards = new List<Card>();
+            // очистим колоду
+            game.Deck.Cards = new List<Card>();
+
+            // ходим J♠
+            player1.Hand.StartAttack([0]);
+            // отбиваем Q♠->J♠
+            player2.Hand.Defence(0, 0);
+            game.StopRound();
+            Assert.That(game.DefencePlayer.Name, Is.EqualTo(player1.Name));
+            Assert.That(game.ActivePlayer.Name, Is.EqualTo(player2.Name));
+        }
+
+        /// <summary>
         /// Ошибка, если сходить количеством карт, больше, чем у защищающегося.
         /// </summary>
         [Test]

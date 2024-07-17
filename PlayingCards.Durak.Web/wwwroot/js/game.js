@@ -51,9 +51,6 @@ function createTable() {
         success: function (data) {
             let tableId = JSON.parse(data.responseText);
             joinToTable(tableId);
-        },
-        error: function (data) {
-            myalert('чтото пошло не так');
         }
     });
 }
@@ -75,9 +72,6 @@ function joinToTable(tableId) {
         success: function (data) {
             gameStatus = null;
             getStatus();
-        },
-        error: function (data) {
-            myalert('чтото пошло не так');
         }
     });
 }
@@ -91,9 +85,6 @@ function leaveFromTable() {
         },
         success: function (data) {
             getStatus();
-        },
-        error: function (data) {
-            myalert('чтото пошло не так');
         }
     });
 }
@@ -108,9 +99,6 @@ function startGame() {
         },
         success: function (data) {
             getStatus();
-        },
-        error: function (data) {
-            myalert('чтото пошло не так');
         }
     });
 }
@@ -375,9 +363,6 @@ function getStatus() {
                     }
                 }
             }
-        },
-        error: function (data) {
-            myalert('чтото пошло не так');
         }
     });
 }
@@ -504,9 +489,6 @@ function startAttack() {
             },
             success: function (data) {
                 getStatus();
-            },
-            error: function (data) {
-                myalert('чтото пошло не так');
             }
         });
     }
@@ -526,9 +508,6 @@ function attack() {
             },
             success: function (data) {
                 getStatus();
-            },
-            error: function (data) {
-                myalert('чтото пошло не так');
             }
         });
     }
@@ -549,9 +528,6 @@ function defence() {
             },
             success: function (data) {
                 getStatus();
-            },
-            error: function (data) {
-                myalert('чтото пошло не так');
             }
         });
     }
@@ -588,9 +564,6 @@ function take() {
         },
         success: function (data) {
             getStatus();
-        },
-        error: function (data) {
-            myalert('чтото пошло не так');
         }
     });
 }

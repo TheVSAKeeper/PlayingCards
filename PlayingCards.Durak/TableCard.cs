@@ -39,7 +39,7 @@
         {
             if(DefenceCard != null)
             {
-                throw new Exception("defence card exist");
+                throw new BusinessException("defence card exist");
             }
             if (defenceCard.Suit.Value == Game.Deck.TrumpCard.Suit.Value)
             {
@@ -51,7 +51,7 @@
                     }
                     else
                     {
-                        throw new Exception("defence card rank small");
+                        throw new BusinessException("defence card rank small");
                     }
                 }
                 else
@@ -63,7 +63,7 @@
             {
                 if (AttackCard.Suit.Value == Game.Deck.TrumpCard.Suit.Value)
                 {
-                    throw new Exception("defence suit is not trump");
+                    throw new BusinessException("defence suit is not trump");
                 }
                 else
                 {
@@ -75,12 +75,12 @@
                         }
                         else
                         {
-                            throw new Exception("defence card rank small");
+                            throw new BusinessException("defence card rank small");
                         }
                     }
                     else
                     {
-                        throw new Exception("defence suit invalid");
+                        throw new BusinessException("defence suit invalid");
                     }
                 }
             }

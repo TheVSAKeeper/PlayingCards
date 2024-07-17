@@ -106,19 +106,17 @@ namespace PlayingCards.Durak.Web.Business
 
             if (StopRoundStatus != null)
             {
-                if (StopRoundStatus == Business.StopRoundStatus.SuccessDefence)
+                switch (StopRoundStatus)
                 {
-                    SetDefencePlayerAfkStartTime();
-                    StopRoundBeginDate = null;
-                    StopRoundStatus = null;
-                }
-                else if (StopRoundStatus == Business.StopRoundStatus.Take)
-                {
-                    StopRoundBeginDate = DateTime.UtcNow;
-                }
-                else
-                {
-                    throw new Exception("undefined " + StopRoundStatus);
+                    case Business.StopRoundStatus.SuccessDefence:
+                        SetDefencePlayerAfkStartTime();
+                        StopRoundBeginDate = null;
+                        StopRoundStatus = null;
+                        break;
+                    case Business.StopRoundStatus.Take:
+                        break;
+                    default:
+                        throw new BusinessException("undefined " + StopRoundStatus);
                 }
             }
             Version++;
@@ -147,13 +145,17 @@ namespace PlayingCards.Durak.Web.Business
             WriteLog(Id, playerSecret, "take");
 
             CheckGameInProcess();
-            CheckStopRoundBeginDate();
 
             var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
             if (Game.DefencePlayer != tablePlayer.Player)
             {
-                throw new Exception("you are not defence player");
+                throw new BusinessException("you are not defence player");
             }
+            if (Game.Cards.Count == 0)
+            {
+                throw new BusinessException("На столе нет карт");
+            }
+            CheckStopRoundBeginDate();
             StopRoundStatus = Business.StopRoundStatus.Take;
             CleanDefencePlayerAfkStartTime();
             Version++;
@@ -163,7 +165,7 @@ namespace PlayingCards.Durak.Web.Business
         {
             if (Game.Status != GameStatus.InProcess)
             {
-                throw new Exception("game not in process");
+                throw new BusinessException("game not in process");
             }
         }
 
@@ -171,7 +173,7 @@ namespace PlayingCards.Durak.Web.Business
         {
             if (StopRoundBeginDate != null)
             {
-                throw new Exception("stop round in process");
+                throw new BusinessException("stop round in process");
             }
             else
             {

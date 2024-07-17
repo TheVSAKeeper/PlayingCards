@@ -129,7 +129,7 @@ namespace PlayingCards.Durak.Web.Controllers
             var player = table.Players.Single(x => x.AuthSecret == model.PlayerSecret).Player;
             if (table.Owner != player)
             {
-                throw new Exception("you are not owner");
+                throw new BusinessException("you are not owner");
             }
             table.StartGame();
         }
@@ -145,8 +145,6 @@ namespace PlayingCards.Durak.Web.Controllers
         [HttpPost]
         public async Task Attack([FromBody] AttackModel model)
         {
-            не занулять таймер, если подкинул забирающему
-если игрок отбился, то его не стоит делать активным игроком
             var table = _tableHolder.Get(model.TableId);
             table.Attack(model.PlayerSecret, model.CardIndexes);
         }

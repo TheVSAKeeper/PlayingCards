@@ -53,7 +53,7 @@ namespace PlayingCards.Durak
             var card = Cards.LastOrDefault();
             if (card == null)
             {
-                throw new Exception("deck empty");
+                throw new BusinessException("deck empty");
             }
             Cards.Remove(card);
             return card;

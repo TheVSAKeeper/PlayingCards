@@ -48,14 +48,14 @@ namespace PlayingCards.Durak
         {
             if(cardIndexes.Length == 0)
             {
-                throw new Exception("need one or more card");
+                throw new BusinessException("need one or more card");
             }
             List<Card> cards = new List<Card>();
             foreach (var cardIndex in cardIndexes)
             {
                 if (cardIndex < 0 || cardIndex >= Cards.Count)
                 {
-                    throw new Exception("undefined card");
+                    throw new BusinessException("undefined card");
                 }
                 var card = Cards[cardIndex];
                 cards.Add(card);
@@ -74,7 +74,7 @@ namespace PlayingCards.Durak
             {
                 if (cardIndex < 0 || cardIndex >= Cards.Count)
                 {
-                    throw new Exception("undefined card");
+                    throw new BusinessException("undefined card");
                 }
                 var card = Cards[cardIndex];
                 cards.Add(card);
@@ -91,7 +91,7 @@ namespace PlayingCards.Durak
         {
             if (defenceCardIndex < 0 || defenceCardIndex >= Cards.Count)
             {
-                throw new Exception("undefined card");
+                throw new BusinessException("undefined card");
             }
             var card = Cards[defenceCardIndex];
             var attackTableCard = _game.Cards[attackCardIndex];
