@@ -96,7 +96,6 @@ namespace PlayingCards.Durak
             var card = Cards[defenceCardIndex];
             var attackTableCard = _game.Cards[attackCardIndex];
             _game.Defence(Player, card, attackTableCard.AttackCard);
-            Cards.Remove(card);
         }
 
 

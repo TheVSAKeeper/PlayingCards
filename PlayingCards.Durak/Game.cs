@@ -192,10 +192,10 @@
 
         private void CheckWin()
         {
-            var playersWithoutCards = Players.Where(x => x.Hand.Cards.Count > 0);
-            if (playersWithoutCards.Count() == 1 && Deck.CardsCount == 0)
+            var playersWithCards = Players.Where(x => x.Hand.Cards.Count > 0);
+            if (playersWithCards.Count() == 1 && Deck.CardsCount == 0)
             {
-                LooserPlayer = playersWithoutCards.First();
+                LooserPlayer = playersWithCards.First();
                 Status = GameStatus.Finish;
             }
         }
@@ -238,6 +238,8 @@
                 throw new BusinessException("attack card not found");
             }
             card.Defence(defenceCard);
+            player.Hand.Cards.Remove(defenceCard);
+            CheckWin();
         }
 
         /// <summary>
@@ -417,16 +419,22 @@
 
         private void SetNextActivePlayer(bool isDefenceSuccess)
         {
-            var activePlayerIndex = _activePlayerIndex;
             if (isDefenceSuccess)
             {
-                activePlayerIndex++;
+                SetNextActivePlayerIndex();
             }
             else
             {
-                activePlayerIndex += 2;
+                // если игрок не отбился, то ход сначала переходит к нему, а потом к следующему за ним.
+                SetNextActivePlayerIndex();
+                SetNextActivePlayerIndex();
             }
+        }
 
+        private void SetNextActivePlayerIndex()
+        {
+            var activePlayerIndex = _activePlayerIndex;
+            activePlayerIndex++;
             if (activePlayerIndex >= Players.Count)
             {
                 activePlayerIndex = activePlayerIndex - Players.Count;

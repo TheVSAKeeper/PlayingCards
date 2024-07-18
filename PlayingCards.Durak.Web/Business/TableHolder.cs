@@ -9,7 +9,7 @@ namespace PlayingCards.Durak.Web.Business
         /// <summary>
         /// Время на окончание раунда.
         /// </summary>
-        public const int STOP_ROUND_SECONDS = 7;
+        public const int STOP_ROUND_SECONDS = 10;
 
         /// <summary>
         /// Время на принятие решения.
@@ -122,6 +122,7 @@ namespace PlayingCards.Durak.Web.Business
             {
                 table.LeavePlayer = tablePlayer.Player;
                 table.LeavePlayerIndex = playerIndex;
+                WriteLog(table, "", "leaver: " + tablePlayer.Player.Name);
             }
 
             table.Game.LeavePlayer(playerIndex);

@@ -77,6 +77,14 @@ namespace PlayingCards.Durak.Web.Business
             Players.First(x => x.Player == Game.DefencePlayer).AfkStartTime = null;
         }
 
+        public void CleanAllAfkTime()
+        {
+            foreach (var player in Players)
+            {
+                Players.First(x => x.Player == Game.DefencePlayer).AfkStartTime = null;
+            }
+        }
+
         public void CleanLeaverPlayer()
         {
             LeavePlayer = null;
@@ -107,8 +115,9 @@ namespace PlayingCards.Durak.Web.Business
             StringBuilder logCards = GetCardsLog(cardIndexes, tablePlayer);
             tablePlayer.Player.Hand.StartAttack(cardIndexes);
             SetDefencePlayerAfkStartTime();
-            Version++;
             WriteLog(playerSecret, "start attack " + logCards);
+            CheckEndGame();
+            Version++;
         }
 
         public void Attack(string playerSecret, int[] cardIndexes)
@@ -134,9 +143,11 @@ namespace PlayingCards.Durak.Web.Business
                         throw new BusinessException("undefined " + StopRoundStatus);
                 }
             }
-            Version++;
             WriteLog(playerSecret, "attack " + logCards);
+            CheckEndGame();
+            Version++;
         }
+
         public void Defence(string playerSecret, int defenceCardIndex, int attackCardIndex)
         {
             CheckGameInProcess();
@@ -147,7 +158,7 @@ namespace PlayingCards.Durak.Web.Business
             {
                 var defenceCard = tablePlayer.Player.Hand.Cards[defenceCardIndex];
                 var tableCard = Game.Cards[attackCardIndex].AttackCard;
-                logCards.Append(" " + defenceCard +" -> " + tableCard);
+                logCards.Append(" " + defenceCard + " -> " + tableCard);
             }
             catch (Exception ex)
             {
@@ -162,9 +173,10 @@ namespace PlayingCards.Durak.Web.Business
                 StopRoundStatus = Business.StopRoundStatus.SuccessDefence;
                 CleanDefencePlayerAfkStartTime();
             }
-            Version++;
 
             WriteLog(playerSecret, "defence " + logCards);
+            CheckEndGame();
+            Version++;
         }
 
         public void Take(string playerSecret)
@@ -205,6 +217,21 @@ namespace PlayingCards.Durak.Web.Business
             else
             {
                 StopRoundBeginDate = DateTime.UtcNow;
+            }
+        }
+
+        private void CheckEndGame()
+        {
+            if (Game.Status != GameStatus.InProcess)
+            {
+                CleanAllAfkTime();
+                StopRoundStatus = null;
+                StopRoundBeginDate = null;
+                WriteLog("", "game finish " + Game.Status);
+                if(Game.LooserPlayer != null)
+                {
+                    WriteLog("", "looser: " + Game.LooserPlayer.Name);
+                }
             }
         }
 

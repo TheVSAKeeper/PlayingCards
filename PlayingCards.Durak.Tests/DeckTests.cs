@@ -431,7 +431,7 @@
             // удалим у отбивающегося все карты кроме одной
             defencePlayer.Hand.Cards.RemoveRange(1, 5);
             // очистим колоду
-            game.Deck.Cards = new List<Card>();
+            game.Deck.Cards.Clear();
 
             // ходим J♠
             attackPlayer.Hand.StartAttack([0]);
@@ -464,9 +464,9 @@
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
             game.StartGame();
             // удалим все карты у игрока
-            zeorCardsPlayer.Hand.Cards = new List<Card>();
+            zeorCardsPlayer.Hand.Cards.Clear();
             // очистим колоду
-            game.Deck.Cards = new List<Card>();
+            game.Deck.Cards.Clear();
 
             // ходим J♠
             player1.Hand.StartAttack([0]);
@@ -475,6 +475,57 @@
             game.StopRound();
             Assert.That(game.DefencePlayer.Name, Is.EqualTo(player1.Name));
             Assert.That(game.ActivePlayer.Name, Is.EqualTo(player2.Name));
+        }
+
+        /// <summary>
+        /// Проверка, что в игре на четверых, когда осталось двое, после забирания, ход остаётся у того кто ходил.
+        /// </summary>
+        /// <remarks>
+        /// Была бага, что игрок после того как забрал карты, начинал ходить.
+        /// </remarks>
+        [Test]
+        public void CorrectChangeActiveAfterFailDefencePlayerTest()
+        {
+            // arrange
+            var playerCards = new string[]
+            {
+                "Q♠ Q♦ Q♣ Q♥ 10♥ 7♦",
+                "A♠ A♦ A♣ A♥ 10♣ J♦",
+                "9♠ 9♦ 9♣ 9♥ J♣ J♠",
+                "8♠ 8♦ 8♣ 8♥ K♣ K♠",
+            };
+            var trumpValue = "6♦";
+            var game = new Game();
+            var player1 = game.AddPlayer("1");
+            var player2 = game.AddPlayer("2");
+            var player3 = game.AddPlayer("3");
+            var player4 = game.AddPlayer("4");
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            game.StartGame();
+            player1.Hand.Cards.RemoveRange(0, 5);
+            player2.Hand.Cards.RemoveRange(0, 5);
+            game.Deck.Cards.Clear();
+            // ходим 7♦
+            player1.Hand.StartAttack([0]);
+            // отбиваем  J♦ -> 7♦
+            player2.Hand.Defence(0,0);
+            game.StopRound(); // 1 и 2 игрок вышли из игры
+
+            // ходим J♣
+            player3.Hand.StartAttack([4]);
+            // отбиаемся K♣->J♣
+            player4.Hand.Defence(4, 0);
+            game.StopRound();
+
+            // act 
+            // ходим 8♠
+            player4.Hand.StartAttack([0]);
+            // player3 забирает 8♠
+            game.StopRound();
+
+            // assert
+            Assert.That(game.ActivePlayer.Name, Is.EqualTo(player4.Name));
+            Assert.That(game.DefencePlayer.Name, Is.EqualTo(player3.Name));
         }
 
         /// <summary>
@@ -605,7 +656,7 @@
                     }
                     else
                     {
-                        player.Hand.Cards = new List<Card>();
+                        player.Hand.Cards.Clear();
                     }
                 }
             }
@@ -614,6 +665,42 @@
             Assert.That(game.Status, Is.EqualTo(GameStatus.Finish));
             Assert.That(game.LooserPlayer, Is.Not.Null);
             Assert.That(game.LooserPlayer.Name, Is.EqualTo(game.Players[defencePlayerIndex].Name));
+        }
+
+
+        /// <summary>
+        /// Проверка, что игра кончилась, если отбился последней картой.
+        /// </summary>
+        [Test]
+        public void CheckLooserIfDefenceLastCardTest()
+        {
+            // arrange
+            var playerCards = new string[]
+            {
+                "J♥ J♠ J♦ J♣ Q♣ Q♦",
+                "10♥ A♠ 9♠ Q♥ 9♣ 7♦",
+            };
+            var trumpValue = "6♦";
+
+            var game = new Game();
+            var winnerPlayer = game.AddPlayer("1");
+            var looserPlayer = game.AddPlayer("2");
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            game.StartGame();
+            winnerPlayer.Hand.Cards.RemoveRange(1, 5);
+            game.Deck.Cards.Clear();
+
+            // ходим 10♥
+            looserPlayer.Hand.StartAttack([0]);
+
+            // act
+            // отбиваемся последней картой J♥->10♥
+            winnerPlayer.Hand.Defence(0, 0);
+
+            // assert
+            Assert.That(game.Status, Is.EqualTo(GameStatus.Finish));
+            Assert.That(game.LooserPlayer, Is.Not.Null);
+            Assert.That(game.LooserPlayer.Name, Is.EqualTo(looserPlayer.Name));
         }
     }
 }
