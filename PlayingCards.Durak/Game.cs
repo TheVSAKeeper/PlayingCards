@@ -157,30 +157,14 @@
 
             CheckDeskCardCount(cards.Count);
 
-            var cardRankExistsInTable = false;
             foreach (var card in cards)
             {
-                foreach (var tableCard in Cards)
-                {
-                    if (card.Rank.Value == tableCard.AttackCard.Rank.Value)
-                    {
-                        cardRankExistsInTable = true;
-                        break;
-                    }
-                    if (tableCard.DefenceCard != null)
-                    {
-                        if (card.Rank.Value == tableCard.DefenceCard.Rank.Value)
-                        {
-                            cardRankExistsInTable = true;
-                            break;
-                        }
-                    }
-                }
-                if (!cardRankExistsInTable)
+                if (!IsRankOnTable(card))
                 {
                     throw new BusinessException("this rank not found in table");
                 }
             }
+            
             foreach (var card in cards)
             {
                 var addingTableCard = new TableCard(this, card);
@@ -188,6 +172,29 @@
                 player.Hand.Cards.Remove(card);
             }
             CheckWin();
+        }
+
+        private bool IsRankOnTable(Card card)
+        {
+            var cardRankExistsInTable = false;
+            foreach (var tableCard in Cards)
+            {
+                if (card.Rank.Value == tableCard.AttackCard.Rank.Value)
+                {
+                    cardRankExistsInTable = true;
+                    break;
+                }
+                if (tableCard.DefenceCard != null)
+                {
+                    if (card.Rank.Value == tableCard.DefenceCard.Rank.Value)
+                    {
+                        cardRankExistsInTable = true;
+                        break;
+                    }
+                }
+            }
+
+            return cardRankExistsInTable;
         }
 
         private void CheckWin()

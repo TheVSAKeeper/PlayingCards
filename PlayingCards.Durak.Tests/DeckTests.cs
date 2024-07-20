@@ -312,6 +312,71 @@
             Assert.That(attackPlayer.Hand.Cards.Count, Is.EqualTo(6));
             Assert.That(defencePlayer.Hand.Cards.Count, Is.EqualTo(6 + 4));
             Assert.That(game.Deck.CardsCount, Is.EqualTo(36 - 6 * 3 - 4));
+        }       
+        
+        /// <summary>
+        /// Игрок кидает одну карту, потом подкидывает одну карту доступного ранга и вторую недоступного ранга.
+        /// </summary>
+        /// <remarks>
+        /// Проверили, что нельзя поддать карту доступного ранга и недоступного ранга.
+        /// </remarks>
+        [Test]
+        public void AttackTwoDifferentCardSequence()
+        {
+            var playerCards = new string[]
+            {
+                "J♠ J♦ J♣ J♥ 10♥ 7♦",
+                "A♠ Q♦ Q♣ Q♥ 9♣ 9♠",
+            };
+            var trumpValue = "6♦";
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            var startAttackPlayer = game.Players[0];
+            var attackPlayer = game.Players[1];
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            
+            game.StartGame();
+            
+            // ходим J♠
+            startAttackPlayer.Hand.StartAttack([0]);
+            
+            // подкидываем J♦
+            startAttackPlayer.Hand.Attack([0]);
+            
+            // подкидываем 7♦
+            Assert.Throws<BusinessException>(() => startAttackPlayer.Hand.Attack([3]));
+        }        
+        
+        /// <summary>
+        /// Игрок кидает одну карту, потом подкидывает одновременно одну карту доступного ранга и вторую недоступного ранга.
+        /// </summary>
+        /// <remarks>
+        /// Проверили, что нельзя поддать одновременно карту доступного ранга и недоступного ранга.
+        /// </remarks>
+        [Test]
+        public void AttackTwoDifferentCard()
+        {
+            var playerCards = new string[]
+            {
+                "J♠ J♦ J♣ J♥ 10♥ 7♦",
+                "A♠ Q♦ Q♣ Q♥ 9♣ 9♠",
+            };
+            var trumpValue = "6♦";
+            var game = new Game();
+            game.AddPlayer("1");
+            game.AddPlayer("2");
+            var startAttackPlayer = game.Players[0];
+            var attackPlayer = game.Players[1];
+            game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
+            
+            game.StartGame();
+            
+            // ходим J♠
+            startAttackPlayer.Hand.StartAttack([0]);
+            
+            // подкидываем J♦ и 7♦
+            Assert.Throws<BusinessException>(() => startAttackPlayer.Hand.Attack([0, 4]));
         }
 
         /// <summary>
