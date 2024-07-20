@@ -49,7 +49,7 @@ namespace PlayingCards.Durak.Web.Business
 
             if (_tables.TryGetValue(tableId, out var table))
             {
-                var debug = true;
+                var debug = false;
                 if (playerName != "maksim")
                 {
                     debug = false;

@@ -6,10 +6,6 @@ namespace PlayingCards.Durak
     /// </summary>
     public class PlayerHand
     {
-        /// <summary>
-        /// Игра.
-        /// </summary>
-        private Game _game;
 
         /// <summary>
         /// Рука игрока с картами.
@@ -17,7 +13,7 @@ namespace PlayingCards.Durak
         public PlayerHand(Game game, Player player)
         {
             Cards = new List<Card>();
-            _game = game;
+            Game = game;
             Player = player;
         }
 
@@ -25,6 +21,11 @@ namespace PlayingCards.Durak
         /// Игрок.
         /// </summary>
         public Player Player { get; }
+
+        /// <summary>
+        /// Игра.
+        /// </summary>
+        public Game Game { get; }
 
         /// <summary>
         /// Карты в руке.
@@ -60,7 +61,7 @@ namespace PlayingCards.Durak
                 var card = Cards[cardIndex];
                 cards.Add(card);
             }
-            _game.StartAttack(Player, cards);
+            Game.StartAttack(Player, cards);
         }
 
         /// <summary>
@@ -79,7 +80,7 @@ namespace PlayingCards.Durak
                 var card = Cards[cardIndex];
                 cards.Add(card);
             }
-            _game.Attack(Player, cards);
+            Game.Attack(Player, cards);
         }
 
 
@@ -94,8 +95,8 @@ namespace PlayingCards.Durak
                 throw new BusinessException("undefined card");
             }
             var card = Cards[defenceCardIndex];
-            var attackTableCard = _game.Cards[attackCardIndex];
-            _game.Defence(Player, card, attackTableCard.AttackCard);
+            var attackTableCard = Game.Cards[attackCardIndex];
+            Game.Defence(Player, card, attackTableCard.AttackCard);
         }
 
 

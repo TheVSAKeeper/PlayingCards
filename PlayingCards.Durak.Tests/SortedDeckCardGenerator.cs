@@ -7,6 +7,7 @@ namespace PlayingCards.Durak.Tests
         private string[] _cardValues;
         private string? _trumpValue;
         private int _skipCardCount;
+        private string? _deckValues;
 
         /// <summary>
         /// 
@@ -22,11 +23,16 @@ namespace PlayingCards.Durak.Tests
         /// <param name="skipCardCount">
         /// Сколько кард из колоды, сразу выкинуть в отбой.
         /// </param>
-        public SortedDeckCardGenerator(string[] cardValues, string? trumpValue, int skipCardCount = 0)
+        /// <param name="deckValues">
+        /// Массив карт, которые останутся в колоде. (если заполнен, то trumpValue и skipCardCount игнорируются)
+        /// Пример массива { "A♠ 10♠ 6♠ J♥ W♥ Q♦" }.
+        /// </param>
+        public SortedDeckCardGenerator(string[] cardValues, string? trumpValue = null, int skipCardCount = 0, string? deckValues = null)
         {
             _cardValues = cardValues;
             _trumpValue = trumpValue;
             _skipCardCount = skipCardCount;
+            _deckValues = deckValues;
         }
 
         public override List<Card> GetCards()
@@ -56,15 +62,31 @@ namespace PlayingCards.Durak.Tests
                 }
             }
 
-            var trumpCard = _trumpValue == null ? null : GetCard(deckCards, _trumpValue);
-            if (_skipCardCount > 0)
+            if (_deckValues != null)
             {
-                deckCards = deckCards.Skip(_skipCardCount).ToList();
+                string? cardValues = _deckValues;
+                var cards = cardValues.Split(' ');
+                var newDeckCards = new List<Card>();
+                foreach (var card in cards)
+                {
+                    var deckCard = GetCard(deckCards, card);
+                    newDeckCards.Add(deckCard);
+                }
+
+                returnCards.InsertRange(0, newDeckCards);
             }
-            returnCards.InsertRange(0, deckCards);
-            if (trumpCard != null)
+            else
             {
-                returnCards.Insert(0, trumpCard);
+                var trumpCard = _trumpValue == null ? null : GetCard(deckCards, _trumpValue);
+                if (_skipCardCount > 0)
+                {
+                    deckCards = deckCards.Skip(_skipCardCount).ToList();
+                }
+                returnCards.InsertRange(0, deckCards);
+                if (trumpCard != null)
+                {
+                    returnCards.Insert(0, trumpCard);
+                }
             }
 
             return returnCards;

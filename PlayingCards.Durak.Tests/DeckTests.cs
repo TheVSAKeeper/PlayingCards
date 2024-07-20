@@ -303,8 +303,8 @@
             var attackPlayer = game.Players[2];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
             game.StartGame();
-            // ходим A♠
-            startAttackPlayer.Hand.StartAttack([0]);
+
+            startAttackPlayer.Hand.StartAttack("A♠");
             // подкидываем A♦ A♣ A♥
             attackPlayer.Hand.Attack([1, 2, 3]);
             game.StopRound();
@@ -312,8 +312,8 @@
             Assert.That(attackPlayer.Hand.Cards.Count, Is.EqualTo(6));
             Assert.That(defencePlayer.Hand.Cards.Count, Is.EqualTo(6 + 4));
             Assert.That(game.Deck.CardsCount, Is.EqualTo(36 - 6 * 3 - 4));
-        }       
-        
+        }
+
         /// <summary>
         /// Игрок кидает одну карту, потом подкидывает одну карту доступного ранга и вторую недоступного ранга.
         /// </summary>
@@ -335,19 +335,15 @@
             var startAttackPlayer = game.Players[0];
             var attackPlayer = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
-            
+
             game.StartGame();
-            
-            // ходим J♠
-            startAttackPlayer.Hand.StartAttack([0]);
-            
-            // подкидываем J♦
-            startAttackPlayer.Hand.Attack([0]);
-            
-            // подкидываем 7♦
-            Assert.Throws<BusinessException>(() => startAttackPlayer.Hand.Attack([3]));
-        }        
-        
+
+            startAttackPlayer.Hand.StartAttack("J♠");
+            startAttackPlayer.Hand.Attack("J♦");
+
+            Assert.Throws<BusinessException>(() => startAttackPlayer.Hand.Attack("7♦"));
+        }
+
         /// <summary>
         /// Игрок кидает одну карту, потом подкидывает одновременно одну карту доступного ранга и вторую недоступного ранга.
         /// </summary>
@@ -369,12 +365,12 @@
             var startAttackPlayer = game.Players[0];
             var attackPlayer = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
-            
+
             game.StartGame();
-            
+
             // ходим J♠
             startAttackPlayer.Hand.StartAttack([0]);
-            
+
             // подкидываем J♦ и 7♦
             Assert.Throws<BusinessException>(() => startAttackPlayer.Hand.Attack([0, 4]));
         }
@@ -573,7 +569,7 @@
             // ходим 7♦
             player1.Hand.StartAttack([0]);
             // отбиваем  J♦ -> 7♦
-            player2.Hand.Defence(0,0);
+            player2.Hand.Defence(0, 0);
             game.StopRound(); // 1 и 2 игрок вышли из игры
 
             // ходим J♣
@@ -660,12 +656,9 @@
             var defencePlayer = game.Players[1];
             game.Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue));
             game.StartGame();
-            // ходим J♠ J♦ J♣ J♥
-            attackPlayer.Hand.StartAttack([0, 1, 2, 3]);
-            // отбиваем  Q♥->J♥
-            defencePlayer.Hand.Defence(3, 3);
-            // поддаём Q♣ Q♦
-            Assert.Throws<BusinessException>(() => attackPlayer.Hand.Attack([0, 1]));
+            attackPlayer.Hand.StartAttack("J♠ J♦ J♣ J♥");
+            defencePlayer.Hand.Defence("Q♥->J♥");
+            Assert.Throws<BusinessException>(() => attackPlayer.Hand.Attack("Q♣ Q♦"));
         }
 
 
@@ -755,12 +748,10 @@
             winnerPlayer.Hand.Cards.RemoveRange(1, 5);
             game.Deck.Cards.Clear();
 
-            // ходим 10♥
-            looserPlayer.Hand.StartAttack([0]);
+            looserPlayer.Hand.StartAttack("10♥");
 
             // act
-            // отбиваемся последней картой J♥->10♥
-            winnerPlayer.Hand.Defence(0, 0);
+            winnerPlayer.Hand.Defence("J♥->10♥");
 
             // assert
             Assert.That(game.Status, Is.EqualTo(GameStatus.Finish));
