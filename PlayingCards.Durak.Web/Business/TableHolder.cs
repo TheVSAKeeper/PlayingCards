@@ -181,15 +181,30 @@ namespace PlayingCards.Durak.Web.Business
             {
                 if (table.StopRoundBeginDate != null)
                 {
-                    var finishTime = table.StopRoundBeginDate.Value.AddSeconds(STOP_ROUND_SECONDS);
-                    if (DateTime.UtcNow >= finishTime)
+                    try
                     {
-                        table.StopRoundStatus = null;
-                        table.StopRoundBeginDate = null;
-                        table.Game.StopRound();
-                        table.SetActivePlayerAfkStartTime();
-                        table.Version++;
+                        var finishTime = table.StopRoundBeginDate.Value.AddSeconds(STOP_ROUND_SECONDS);
+                        if (DateTime.UtcNow >= finishTime)
+                        {
+                            if(table.StopRoundStatus == null)
+                            {
+                                throw new Exception("stop round status is null");
+                            }
+                            table.StopRoundStatus = null;
+                            table.StopRoundBeginDate = null;
+                            table.Game.StopRound();
+                            table.SetActivePlayerAfkStartTime();
+                            table.Version++;
+
+                        }
                     }
+                    catch (Exception ex)
+                    {
+                        var logger = LogManager.GetCurrentClassLogger()
+                            .WithProperty("TableId", table.Number + " " + table.Id);
+                        logger.Error("background stop round error: " + ex.Message, ex);
+                    }
+
                 }
             }
         }

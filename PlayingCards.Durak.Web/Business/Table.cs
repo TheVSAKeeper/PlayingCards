@@ -152,7 +152,10 @@ namespace PlayingCards.Durak.Web.Business
         public void Defence(string playerSecret, int defenceCardIndex, int attackCardIndex)
         {
             CheckGameInProcess();
-            CheckStopRoundBeginDate();
+            if (StopRoundBeginDate != null)
+            {
+                throw new BusinessException("stop round in process");
+            }
 
             var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
             var logCards = new StringBuilder();
@@ -173,6 +176,7 @@ namespace PlayingCards.Durak.Web.Business
 
             if (Game.Cards.All(x => x.DefenceCard != null))
             {
+                CheckStopRoundBeginDate();
                 StopRoundStatus = Business.StopRoundStatus.SuccessDefence;
                 CleanDefencePlayerAfkStartTime();
             }
