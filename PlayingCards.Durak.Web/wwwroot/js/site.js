@@ -1,9 +1,4 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
-
-// Write your JavaScript code.
-
-function SendRequest(options) {
+﻿function SendRequest(options) {
     let _this = {};
     let defaultOptions = {
         method: 'POST',
@@ -24,12 +19,12 @@ function SendRequest(options) {
                     _this.options.success(this);
                 }
             } else if (this.status == 403) {
-                showAlert('Внимание', this.responseText);
+                showAlert('Внимание', this.responseText, 5);
             } else {
                 if (_this.options.error) {
                     _this.options.error(this);
                 } else {
-                    showAlert('Ошибка', 'чтото пошло не так');
+                    showAlert('Ошибка', 'чтото пошло не так', 2);
                 }
             }
             if (_this.options.always) {
