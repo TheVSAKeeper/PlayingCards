@@ -154,9 +154,10 @@ public class DeckTests
         int trumpCardIndex,
         bool isSuccess)
     {
-        Card attackCard = CardsHolder.Cards[attackCardIndex];
-        Card defenceCard = CardsHolder.Cards[defenceCardIndex];
-        Card trumpCard = CardsHolder.Cards[trumpCardIndex];
+        Card[] cards = CardsHolder.Cards.ToArray();
+        Card attackCard = cards[attackCardIndex];
+        Card defenceCard = cards[defenceCardIndex];
+        Card trumpCard = cards[trumpCardIndex];
 
         Game game = new()
         {
@@ -651,7 +652,7 @@ public class DeckTests
         game.StartGame();
 
         // удалим у отбивающегося все карты кроме одной
-        defencePlayer.Hand.RemoveRange(1, 5);
+        defencePlayer.Hand.RemoveRange(0, 5);
         // очистим колоду
         game.Deck.Cards.Clear();
 
@@ -745,8 +746,9 @@ public class DeckTests
 
         game.StartGame();
 
-        player1.Hand.RemoveRange(0, 5);
-        player2.Hand.RemoveRange(0, 5);
+        player1.Hand.RemoveRange(1, 5);
+        player2.Hand.RemoveRange(0, 1);
+        player2.Hand.RemoveRange(1, 4);
         game.Deck.Cards.Clear();
 
         // ходим
@@ -983,7 +985,8 @@ public class DeckTests
 
         game.StartGame();
 
-        winnerPlayer.Hand.RemoveRange(1, 5);
+        winnerPlayer.Hand.RemoveRange(0, 1);
+        winnerPlayer.Hand.RemoveRange(1, 4);
         game.Deck.Cards.Clear();
 
         looserPlayer.Hand.StartAttack("10♥");

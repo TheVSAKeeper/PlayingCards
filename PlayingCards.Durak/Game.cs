@@ -129,7 +129,7 @@
             {
                 var tableCard = new TableCard(this, card);
                 Cards.Add(tableCard);
-                player.Hand.Cards.Remove(card);
+                player.Hand.Remove(card);
             }
             NeedShowCardMinTrumpValue = null;
             CheckWin();
@@ -169,7 +169,7 @@
             {
                 var addingTableCard = new TableCard(this, card);
                 Cards.Add(addingTableCard);
-                player.Hand.Cards.Remove(card);
+                player.Hand.Remove(card);
             }
             CheckWin();
         }
@@ -245,7 +245,7 @@
                 throw new BusinessException("attack card not found");
             }
             card.Defence(defenceCard);
-            player.Hand.Cards.Remove(defenceCard);
+            player.Hand.Remove(defenceCard);
             CheckWin();
         }
 

@@ -87,11 +87,11 @@ namespace PlayingCards.Durak.Web.Business
                     table.Game.Deck.Cards = new List<Card>();
                     if (table.Game.Players.IndexOf(table.Game.ActivePlayer) == 0)
                     {
-                        table.Game.Players[0].Hand.Cards = table.Game.Players[0].Hand.Cards.Take(1).ToList();
+                        table.Game.Players[0].Hand.RemoveRange(1,5);
                     }
                     if (table.Game.Players.IndexOf(table.Game.ActivePlayer) == 1)
                     {
-                        table.Game.Players[1].Hand.Cards = table.Game.Players[1].Hand.Cards.Take(1).ToList();
+                        table.Game.Players[1].Hand.RemoveRange(1,5);
                         table.Game.Players[1].Hand.StartAttack(new int[] { 0 });
                     }
                 }

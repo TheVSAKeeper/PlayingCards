@@ -1,20 +1,20 @@
-﻿namespace PlayingCards.Durak
+﻿namespace PlayingCards.Durak;
+
+/// <summary>
+///     Генератор колоды.
+/// </summary>
+public class RandomDeckCardGenerator
 {
     /// <summary>
-    /// Геренаратор колоды.
+    ///     Получить карты для колоды.
     /// </summary>
-    public class RandomDeckCardGenerator
+    /// <returns></returns>
+    public virtual List<Card> GetCards()
     {
-        /// <summary>
-        /// Получить карты для колоды.
-        /// </summary>
-        /// <returns></returns>
-        public virtual List<Card> GetCards()
-        {
-            return CardsHolder.GetCards()
-                .Select(x => new { Order = Globals.Random.Next(), Card = x })
-                .OrderBy(x => x.Order)
-                .Select(x => x.Card).ToList();
-        }
+        return CardsHolder.Cards
+            .Select(card => new { Order = Globals.Random.Next(), Card = card })
+            .OrderBy(x => x.Order)
+            .Select(x => x.Card)
+            .ToList();
     }
 }
