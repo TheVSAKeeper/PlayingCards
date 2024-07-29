@@ -1,43 +1,33 @@
-﻿using System.Timers;
+﻿namespace PlayingCards.Durak.Web.Business;
 
-namespace PlayingCards.Durak.Web.Business
+public class BackgroundExecutorService : BackgroundService
 {
-    public class BackgroundExecutorService : IHostedService, IDisposable
+    private readonly ILogger<BackgroundExecutorService> _logger;
+    private readonly PeriodicTimer _timer;
+    private readonly TableHolder _tableHolder;
+
+    public BackgroundExecutorService(ILogger<BackgroundExecutorService> logger, TableHolder tableHolder)
     {
-        private ILogger<BackgroundExecutorService> _logger;
-        private TableHolder _tableHolder;
-        private System.Timers.Timer _timer;
+        _logger = logger;
+        _tableHolder = tableHolder;
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+    }
 
-        public BackgroundExecutorService(
-            ILogger<BackgroundExecutorService> logger,
-            TableHolder tableHolder)
-        {
-            _logger = logger;
-            _tableHolder = tableHolder;
-        }
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _logger.LogInformation("{Name} is starting.", nameof(BackgroundExecutorService));
 
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            _logger.LogInformation($"запущен!");
-            _timer = new System.Timers.Timer();
-            _timer.Interval = 1000;
-            _timer.Elapsed += _timer_Elapsed;
-            _timer.Start();
-        }
+        stoppingToken.Register(() => _logger.LogInformation("{Name} is stopping.", nameof(BackgroundExecutorService)));
 
-        private async void _timer_Elapsed(object? sender, ElapsedEventArgs e)
+        while (await _timer.WaitForNextTickAsync(stoppingToken))
         {
-             _tableHolder.BackgroundProcess();
+            _tableHolder.BackgroundProcess();
         }
+    }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            _timer.Stop();
-            _logger.LogInformation($"остановлен!");
-        }
-
-        public void Dispose()
-        {
-        }
+    public override async Task StopAsync(CancellationToken stoppingToken)
+    {
+        _timer.Dispose();
+        await base.StopAsync(stoppingToken);
     }
 }

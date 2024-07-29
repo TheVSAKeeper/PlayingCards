@@ -23,15 +23,10 @@ namespace PlayingCards.Durak.Web.Controllers
             return View();
         }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
         [HttpPost]
         public async Task<Guid> CreateTable()
         {
-            var table = _tableHolder.CreateTable(); // todo сразу посадить за стол создателя
+            var table = _tableHolder.CreateTable();
             return table.Id;
         }
 

@@ -63,6 +63,11 @@
     display: inline-block;
 }
 
+#actionsUp {
+    text-align: center;
+    min-height: 38px;
+}
+
 #actions {
     text-align: center;
 }

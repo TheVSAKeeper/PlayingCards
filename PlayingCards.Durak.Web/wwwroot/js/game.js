@@ -416,9 +416,9 @@ function checkMove() {
     if (handCardIndexes.length > 0
         && gameStatus.table.activePlayerIndex == gameStatus.table.myPlayerIndex
         && tableCardsCount == 0) {
-        document.getElementById('startattackCards').classList.remove('hidden');
+        document.getElementById('startAttackCards').classList.remove('hidden');
     } else {
-        document.getElementById('startattackCards').classList.add('hidden');
+        document.getElementById('startAttackCards').classList.add('hidden');
     }
 
     if (handCardIndexes.length > 0
