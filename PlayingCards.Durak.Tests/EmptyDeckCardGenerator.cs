@@ -1,10 +1,9 @@
-﻿namespace PlayingCards.Durak.Tests
+﻿namespace PlayingCards.Durak.Tests;
+
+public class EmptyDeckCardGenerator : RandomDeckCardGenerator
 {
-    public class EmptyDeckCardGenerator : RandomDeckCardGenerator
+    public override List<Card> GetCards()
     {
-        public override List<Card> GetCards()
-        {
-            return new List<Card>();
-        }
+        return [];
     }
 }
