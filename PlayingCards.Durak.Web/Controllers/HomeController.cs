@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using PlayingCards.Durak.Web.Business;
 using PlayingCards.Durak.Web.Models;
 using static PlayingCards.Durak.Web.Models.GetStatusModel;
@@ -24,9 +23,11 @@ namespace PlayingCards.Durak.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<Guid> CreateTable()
+        public Guid CreateTable([FromBody] CreateTableModel model)
         {
-            var table = _tableHolder.CreateTable();
+            Table table = _tableHolder.CreateTable();
+            _tableHolder.Join(table.Id, model.PlayerSecret, model.PlayerName);
+    
             return table.Id;
         }
 
@@ -128,28 +129,13 @@ namespace PlayingCards.Durak.Web.Controllers
             }
             table.StartGame();
         }
-
+        
         [HttpPost]
-        public async Task StartAttack([FromBody] AttackModel model)
+        public void PlayCards([FromBody] PlayCardsModel model)
         {
-            var table = _tableHolder.Get(model.TableId);
+            Table table = _tableHolder.Get(model.TableId);
 
-            table.StartAttack(model.PlayerSecret, model.CardIndexes);
-        }
-
-        [HttpPost]
-        public async Task Attack([FromBody] AttackModel model)
-        {
-            var table = _tableHolder.Get(model.TableId);
-            table.Attack(model.PlayerSecret, model.CardIndexes);
-        }
-
-        [HttpPost]
-        public async Task Defence([FromBody] DefenceModel model)
-        {
-            var table = _tableHolder.Get(model.TableId);
-
-            table.Defence(model.PlayerSecret, model.DefenceCardIndex, model.AttackCardIndex);
+            table.PlayCards(model.PlayerSecret, model.CardIndexes, model.AttackCardIndex);
         }
 
         [HttpPost]

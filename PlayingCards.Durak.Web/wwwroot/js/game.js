@@ -1,8 +1,8 @@
-﻿var user;
-var authCookieName = 'auth_name';
-var authCookieSecret = 'auth_secret';
-var gameStatus = null;
-var speakTimerIntervalId = null;
+﻿let user;
+const authCookieName = 'auth_name';
+const authCookieSecret = 'auth_secret';
+let gameStatus = null;
+let speakTimerIntervalId = null;
 
 function init() {
     user = null;
@@ -19,7 +19,7 @@ function init() {
         user = {
             name: cookieName,
             secret: cookieSecret,
-        }
+        };
         document.getElementById('nameLabel').classList.remove('hidden');
         document.getElementById('logoutBtn').classList.remove('hidden');
         document.getElementById('loginBlock').classList.add('hidden');
@@ -47,10 +47,12 @@ function createTable() {
         method: 'Post',
         url: '/Home/CreateTable',
         body: {
+            playerSecret: user.secret,
+            playerName: user.name,
         },
-        success: function (data) {
-            let tableId = JSON.parse(data.responseText);
-            joinToTable(tableId);
+        success(data) {
+            gameStatus = null;
+            getStatus();
         }
     });
 }
@@ -69,7 +71,7 @@ function joinToTable(tableId) {
             playerSecret: user.secret,
             playerName: user.name,
         },
-        success: function (data) {
+        success(data) {
             gameStatus = null;
             getStatus();
         }
@@ -83,7 +85,7 @@ function leaveFromTable() {
         body: {
             playerSecret: user.secret
         },
-        success: function (data) {
+        success(data) {
             getStatus();
         }
     });
@@ -97,11 +99,23 @@ function startGame() {
             tableId: gameStatus.table.id,
             playerSecret: user.secret,
         },
-        success: function (data) {
+        success(data) {
             getStatus();
         }
     });
 }
+
+const gameStatusList = {
+    waitPlayers: 0,
+    readyToStart: 1,
+    inProcess: 2,
+    finish: 3,
+};
+
+const stopRoundStatus = {
+    take: 0,
+    successDefence: 1,
+};
 
 function getStatus() {
     if (user == null) {
@@ -110,7 +124,7 @@ function getStatus() {
     SendRequest({
         method: 'Get',
         url: '/Home/GetStatus?playerSecret=' + user.secret + "&version=" + (gameStatus == null ? null : gameStatus.version),
-        success: function (data) {
+        success(data) {
             let status = JSON.parse(data.responseText);
             if (gameStatus != null && gameStatus.version == status.version) {
                 return;
@@ -347,6 +361,7 @@ function getStatus() {
                         document.getElementById('takeCards').classList.remove('hidden');
                     }
                 }
+
                 checkMove();
 
                 if (status.table.gameStatus == gameStatus.finish) {
@@ -375,11 +390,13 @@ function speakTimerRun(playerDiv, endDate, action) {
         console.log(speakTimerIntervalId);
         clearInterval(speakTimerIntervalId);
     }
+
     function tickTack() {
         let now = new Date();
-        let diffSeconds = Math.round((endDate - now) / 1000, 0);
-        mySpeakDiv.innerHTML = action(diffSeconds);;
+        let diffSeconds = Math.round((endDate - now) / 1000);
+        mySpeakDiv.innerHTML = action(diffSeconds);
     }
+
     speakTimerIntervalId = setInterval(function () {
         tickTack();
     }, 1000);
@@ -409,33 +426,34 @@ function getPlayerDiv(playerIndex, playerName) {
     return playerDiv;
 }
 
-function checkMove() {
-    let fieldCardIndexes = getFieldActiveCardIndexes();
-    let handCardIndexes = getHandActiveCardIndexes();
+function canPlayCards(handCardIndexes, fieldCardIndexes) {
     let tableCardsCount = gameStatus.table.cards.length;
-    if (handCardIndexes.length > 0
-        && gameStatus.table.activePlayerIndex == gameStatus.table.myPlayerIndex
-        && tableCardsCount == 0) {
-        document.getElementById('startAttackCards').classList.remove('hidden');
-    } else {
-        document.getElementById('startAttackCards').classList.add('hidden');
-    }
 
-    if (handCardIndexes.length > 0
-        && gameStatus.table.defencePlayerIndex != gameStatus.table.myPlayerIndex
-        && tableCardsCount > 0) {
-        document.getElementById('attackCards').classList.remove('hidden');
-    } else {
-        document.getElementById('attackCards').classList.add('hidden');
-    }
+    let isStartAttacking = handCardIndexes.length > 0
+        && gameStatus.table.activePlayerIndex === gameStatus.table.myPlayerIndex
+        && tableCardsCount === 0;
 
-    if (handCardIndexes.length == 1
-        && fieldCardIndexes.length == 1
-        && gameStatus.table.defencePlayerIndex == gameStatus.table.myPlayerIndex
-        && isValidDefence(fieldCardIndexes[0], handCardIndexes[0])) {
-        document.getElementById('defenceCards').classList.remove('hidden');
+    let isAttacking = handCardIndexes.length > 0
+        && gameStatus.table.defencePlayerIndex !== gameStatus.table.myPlayerIndex
+        && tableCardsCount > 0;
+
+    let isDefending = handCardIndexes.length === 1
+        && fieldCardIndexes.length === 1
+        && gameStatus.table.defencePlayerIndex === gameStatus.table.myPlayerIndex
+        && isValidDefence(fieldCardIndexes[0], handCardIndexes[0]);
+    
+    return isStartAttacking || isAttacking || isDefending;
+}
+
+function checkMove() {
+    let handCardIndexes = getHandActiveCardIndexes();
+    let fieldCardIndexes = getFieldActiveCardIndexes();
+    let isShow = canPlayCards(handCardIndexes, fieldCardIndexes);
+
+    if (isShow) {
+        document.getElementById('playCards').classList.remove('hidden');
     } else {
-        document.getElementById('defenceCards').classList.add('hidden');
+        document.getElementById('playCards').classList.add('hidden');
     }
 }
 
@@ -447,91 +465,50 @@ function isValidDefence(attackCardIndex, defenceCardIndex) {
         if (attackCard.suit == trump.suit) {
             if (defenceCard.rank > attackCard.rank) {
                 return true;
-            }
-            else {
+            } else {
                 return false;
             }
-        }
-        else {
+        } else {
             return true;
         }
-    }
-    else {
+    } else {
         if (attackCard.suit == trump.suit) {
             return false;
-        }
-        else {
+        } else {
             if (attackCard.suit == defenceCard.suit) {
                 if (defenceCard.rank > attackCard.rank) {
                     return true;
-                }
-                else {
+                } else {
                     return false;
                 }
-            }
-            else {
+            } else {
                 return false;
             }
         }
     }
 }
 
-function startAttack() {
-    let cardIndexes = getHandActiveCardIndexes();
-    if (cardIndexes.length > 0) {
-        SendRequest({
-            method: 'Post',
-            url: '/Home/StartAttack',
-            body: {
-                tableId: gameStatus.table.id,
-                playerSecret: user.secret,
-                cardIndexes: cardIndexes,
-            },
-            success: function (data) {
-                getStatus();
-            }
-        });
-    }
-}
-
-
-function attack() {
-    let cardIndexes = getHandActiveCardIndexes();
-    if (cardIndexes.length > 0) {
-        SendRequest({
-            method: 'Post',
-            url: '/Home/Attack',
-            body: {
-                tableId: gameStatus.table.id,
-                playerSecret: user.secret,
-                cardIndexes: cardIndexes,
-            },
-            success: function (data) {
-                getStatus();
-            }
-        });
-    }
-}
-
-function defence() {
-    let attackCardIndexes = getFieldActiveCardIndexes();
+function play() {
     let defenceCardIndexes = getHandActiveCardIndexes();
-    if (attackCardIndexes.length == 1 && defenceCardIndexes.length == 1) {
+    let attackCardIndexes = getFieldActiveCardIndexes();
+
+    if (canPlayCards(defenceCardIndexes, attackCardIndexes)) {
         SendRequest({
             method: 'Post',
-            url: '/Home/Defence',
+            url: '/Home/PlayCards',
             body: {
                 tableId: gameStatus.table.id,
                 playerSecret: user.secret,
-                defenceCardIndex: defenceCardIndexes[0],
-                attackCardIndex: attackCardIndexes[0],
+                cardIndexes: defenceCardIndexes,
+                attackCardIndex: attackCardIndexes.length > 0 ? attackCardIndexes[0] : null,
             },
-            success: function (data) {
+            success(data) {
                 getStatus();
             }
         });
     }
 }
+
 function getFieldActiveCardIndexes() {
     let cards = document.querySelectorAll("#field .attack-card");
     let cardIndexes = [];
@@ -562,7 +539,7 @@ function take() {
             tableId: gameStatus.table.id,
             playerSecret: user.secret,
         },
-        success: function (data) {
+        success(data) {
             getStatus();
         }
     });
@@ -586,23 +563,24 @@ function logout() {
 }
 
 function setCookie(name, value, days) {
-    var expires = "";
+    let expires = "";
     if (days) {
-        var date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        const date = new Date();
+        date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
         expires = "; expires=" + date.toUTCString();
     }
     document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
+
 function deleteCookie(name) {
     document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 }
 
 function getCookie(name) {
-    var nameEQ = name + "=";
-    var ca = document.cookie.split(';');
-    for (var i = 0; i < ca.length; i++) {
-        var c = ca[i];
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
         while (c.charAt(0) == ' ') c = c.substring(1, c.length);
         if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
     }
@@ -615,28 +593,7 @@ function uuidv4() {
     );
 }
 
-function getRank(suitValue, rankValue) {
-    if (suitValue == 2 || suitValue == 1) {
-        return "<label style='color:red'>" + ranks[rankValue] + "<label>";
-    } else {
-        return "<label>" + ranks[rankValue] + "<label>";
-    }
-    return 1;
-}
-
-function getSuit(suitValue) {
-    if (suitValue == 2 || suitValue == 1) {
-        return "<label style='color:red'>" + suits[suitValue] + "<label>";
-    } else {
-        return "<label>" + suits[suitValue] + "<label>";
-    }
-}
-
-function myalert(text) {
-    console.error(text);
-}
-
-var ranks = {
+const ranks = {
     "6": "6",
     "7": "7",
     "8": "8",
@@ -648,21 +605,27 @@ var ranks = {
     "14": "A",
 };
 
-var suits = {
+function getRank(suitValue, rankValue) {
+    if (suitValue == 2 || suitValue == 1) {
+        return "<label style='color:red'>" + ranks[rankValue] + "<label>";
+    } else {
+        return "<label>" + ranks[rankValue] + "<label>";
+    }
+}
+
+const suits = {
     "0": "♣",
     "1": "♦",
     "2": "♥",
     "3": "♠",
+};
+
+function getSuit(suitValue) {
+    if (suitValue == 2 || suitValue == 1) {
+        return "<label style='color:red'>" + suits[suitValue] + "<label>";
+    } else {
+        return "<label>" + suits[suitValue] + "<label>";
+    }
 }
 
-var gameStatusList = {
-    waitPlayers: 0,
-    readyToStart: 1,
-    inProcess: 2,
-    finish: 3,
-}
 
-var stopRoundStatus = {
-    take: 0,
-    successDefence: 1,
-}
