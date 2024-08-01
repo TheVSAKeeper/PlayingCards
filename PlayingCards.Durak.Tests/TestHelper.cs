@@ -30,8 +30,26 @@ public static class TestHelper
         string attackCardStr = cardsString[(index + 2)..];
 
         int defenceCardIndex = GetHandCardIndexes(hand.Cards.ToList(), defenceCardStr)[0];
-        int attackCardIndex = GetHandCardIndexes(hand.Game.Cards.Select(tableCard => tableCard.AttackCard).ToList(), attackCardStr)[0];
+        int attackCardIndex = GetHandCardIndexes(GetTableAttackCards(hand.Game), attackCardStr)[0];
         hand.Defence(defenceCardIndex, attackCardIndex);
+    }
+
+    /// <summary>
+    ///     Превратить строку в индексы карт из руки и сыграть карту.
+    /// </summary>
+    public static void PlayCards(this PlayerHand hand, string cardsString, string? attackCardString = null)
+    {
+        int[] result = GetHandCardIndexes(hand.Cards.ToList(), cardsString);
+
+        if (attackCardString != null)
+        {
+            int attackCardIndex = GetHandCardIndexes(GetTableAttackCards(hand.Game), attackCardString)[0];
+            hand.PlayCards(result, attackCardIndex);
+        }
+        else
+        {
+            hand.PlayCards(result);
+        }
     }
 
     private static int[] GetHandCardIndexes(List<Card> handCards, string cardsString)
@@ -48,5 +66,10 @@ public static class TestHelper
         }
 
         return result;
+    }
+
+    private static List<Card> GetTableAttackCards(Game game)
+    {
+        return game.Cards.Select(tableCard => tableCard.AttackCard).ToList();
     }
 }

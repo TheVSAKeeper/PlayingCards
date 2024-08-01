@@ -111,6 +111,30 @@ public class PlayerHand
     }
 
     /// <summary>
+    ///     Игрок сыграл карту.
+    /// </summary>
+    /// <param name="cardIndexes">Индексы карт.</param>
+    /// <param name="attackCardIndex">Индекс атакующей карты (если это защита).</param>
+    public void PlayCards(int[] cardIndexes, int? attackCardIndex = null)
+    {
+        List<Card> cards = new();
+
+        foreach (int cardIndex in cardIndexes)
+        {
+            if (cardIndex < 0 || cardIndex >= _cards.Count)
+            {
+                throw new BusinessException($"Карта с индексом {cardIndex} не существует");
+            }
+
+            Card card = _cards[cardIndex];
+            cards.Add(card);
+        }
+
+        Card? attackCard = attackCardIndex == null ? null : Game.Cards[attackCardIndex.Value].AttackCard;
+        Game.PlayCards(Player, cards, attackCard);
+    }
+
+    /// <summary>
     ///     Очистить руку от карт.
     /// </summary>
     public void Clear()

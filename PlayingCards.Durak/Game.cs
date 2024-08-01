@@ -248,6 +248,33 @@
             player.Hand.Remove(defenceCard);
             CheckWin();
         }
+        
+        /// <summary>
+        /// Сыграть карты.
+        /// </summary>
+        /// <param name="player">Игрок.</param>
+        /// <param name="cards">Карты.</param>
+        /// <param name="attackCard">Карта, от которой защищаемся (если это защита).</param>
+        public void PlayCards(Player player, List<Card> cards, Card? attackCard = null)
+        {
+            CheckGameInProcess();
+
+            if (attackCard != null)
+            {
+                Defence(player, cards.First(), attackCard);
+                return;
+            }
+
+            if (IsRoundStarted())
+            {
+                Attack(player, cards);
+            }
+            else
+            {
+                StartAttack(player, cards);
+            }
+        }
+
 
         /// <summary>
         /// Добавить игрока в игру.
@@ -507,7 +534,7 @@
             }
         }
 
-        private bool IsRoundStarted()
+        public bool IsRoundStarted()
         {
             return Cards.Count > 0;
         }
