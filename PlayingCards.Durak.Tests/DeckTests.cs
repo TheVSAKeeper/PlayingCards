@@ -3,18 +3,18 @@
 public class DeckTests
 {
     /// <summary>
-    ///     Перетасовали колоду и убедились что в ней 9 номиналов карт и 4 масти, и карт 36 штук.
+    /// Перетасовали колоду и убедились, что в ней 9 номиналов карт и 4 масти, и карт 36 штук.
     /// </summary>
     [Test]
     public void DeckCardsCountTest()
     {
-        Deck deck = new(new RandomDeckCardGenerator());
+        Deck deck = new(new());
         deck.Shuffle();
         List<Card> cards = [];
 
         while (deck.CardsCount > 0)
         {
-            Card card = deck.PullCard();
+            var card = deck.PullCard();
             cards.Add(card);
         }
 
@@ -27,7 +27,7 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Раздали игрокам по 6 карт в начале игры.
+    /// Раздали игрокам по 6 карт в начале игры.
     /// </summary>
     /// <param name="playerCount">Количество игроков.</param>
     [Test]
@@ -40,7 +40,7 @@ public class DeckTests
     {
         Game game = new();
 
-        for (int i = 0; i < playerCount; i++)
+        for (var i = 0; i < playerCount; i++)
         {
             game.AddPlayer($"player{i}");
         }
@@ -49,17 +49,17 @@ public class DeckTests
 
         Assert.That(game.Players, Has.Count.EqualTo(playerCount));
 
-        foreach (Player player in game.Players)
+        foreach (var player in game.Players)
         {
             Assert.That(player.Hand.Cards, Has.Count.EqualTo(6));
         }
     }
 
     /// <summary>
-    ///     Проверка, кто первый ходит.
+    /// Проверка, кто первый ходит.
     /// </summary>
     /// <remarks>
-    ///     У первого ходящего должен быть козырь наименьшего номинала на руке, чем у других.
+    /// У первого ходящего должен быть козырь наименьшего номинала на руке, чем у других.
     /// </remarks>
     /// <param name="playerCount">Количество игроков в игре.</param>
     [Test]
@@ -72,7 +72,7 @@ public class DeckTests
     {
         Game game = new();
 
-        for (int i = 0; i < playerCount; i++)
+        for (var i = 0; i < playerCount; i++)
         {
             game.AddPlayer($"Player{i}");
         }
@@ -80,10 +80,10 @@ public class DeckTests
         game.StartGame();
         Assert.That(game.ActivePlayer, Is.Not.Null);
 
-        Card? activePlayerMinSuitCard = game.ActivePlayer.Hand.GetMinSuitCard(game.Deck.TrumpCard.Suit);
+        var activePlayerMinSuitCard = game.ActivePlayer.Hand.GetMinSuitCard(game.Deck.TrumpCard.Suit);
         Assert.That(activePlayerMinSuitCard, Is.Not.Null);
 
-        foreach (int cardRank in game.Players
+        foreach (var cardRank in game.Players
                      .Where(player => player.Name != game.ActivePlayer.Name)
                      .Select(player => player.Hand.GetMinSuitCard(game.Deck.TrumpCard.Suit))
                      .Select(card => card?.Rank ?? int.MaxValue))
@@ -93,10 +93,10 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Проверка, на кого, первым ходят.
+    /// Проверка, на кого, первым ходят.
     /// </summary>
     /// <remarks>
-    ///     Следующий после активного, защищается.
+    /// Следующий после активного, защищается.
     /// </remarks>
     /// <param name="playerCount">Количество игроков в игре.</param>
     [Test]
@@ -111,7 +111,7 @@ public class DeckTests
 
         Game game = new();
 
-        for (int i = 0; i < playerCount; i++)
+        for (var i = 0; i < playerCount; i++)
         {
             game.AddPlayer(PlayerPrefix + i);
         }
@@ -124,21 +124,21 @@ public class DeckTests
             Assert.That(game.DefencePlayer, Is.Not.Null);
         });
 
-        string activePlayerNumber = game.ActivePlayer.Name[PlayerPrefix.Length..];
-        int defencePlayerNumber = int.Parse(activePlayerNumber) + 1;
+        var activePlayerNumber = game.ActivePlayer.Name[PlayerPrefix.Length..];
+        var defencePlayerNumber = int.Parse(activePlayerNumber) + 1;
 
         if (defencePlayerNumber >= playerCount)
         {
             defencePlayerNumber = 0;
         }
 
-        string defencePlayerName = $"{PlayerPrefix}{defencePlayerNumber}";
+        var defencePlayerName = $"{PlayerPrefix}{defencePlayerNumber}";
 
         Assert.That(game.DefencePlayer.Name, Is.EqualTo(defencePlayerName));
     }
 
     /// <summary>
-    ///     Отбиваемся от карты.
+    /// Отбиваемся от карты.
     /// </summary>
     [Test]
     [TestCase(0, 1, 8, true, TestName = "Бьём козырную шестёрку, козырной семёркой")]
@@ -154,17 +154,17 @@ public class DeckTests
         int trumpCardIndex,
         bool isSuccess)
     {
-        Card[] cards = CardsHolder.Cards.ToArray();
-        Card attackCard = cards[attackCardIndex];
-        Card defenceCard = cards[defenceCardIndex];
-        Card trumpCard = cards[trumpCardIndex];
+        var cards = CardsHolder.Cards.ToArray();
+        var attackCard = cards[attackCardIndex];
+        var defenceCard = cards[defenceCardIndex];
+        var trumpCard = cards[trumpCardIndex];
 
         Game game = new()
         {
-            Deck = new Deck(new EmptyDeckCardGenerator())
+            Deck = new(new EmptyDeckCardGenerator())
             {
-                TrumpCard = trumpCard
-            }
+                TrumpCard = trumpCard,
+            },
         };
 
         TableCard attackTableCard = new(game, attackCard);
@@ -180,11 +180,11 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Сходили одну карту и отбили её.
+    /// Сходили одну карту и отбили её.
     /// </summary>
     /// <remarks>
-    ///     Проверили, что после первого раунда, все добрали карты на руки до 6.
-    ///     Проверили, что в колоде стало на 2 карты меньше.
+    /// Проверили, что после первого раунда, все добрали карты на руки до 6.
+    /// Проверили, что в колоде стало на 2 карты меньше.
     /// </remarks>
     [Test]
     public void PlayOneRoundOneCardDefenceTest()
@@ -192,21 +192,21 @@ public class DeckTests
         string[] playerCards =
         [
             "A♠ Q♦ Q♣ Q♥ 10♥ 7♦",
-            "Q♠ A♦ A♣ A♥ 10♣ 10♠"
+            "Q♠ A♦ A♣ A♥ 10♣ 10♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
 
-        Player player1 = game.Players[0];
-        Player player2 = game.Players[1];
+        var player1 = game.Players[0];
+        var player2 = game.Players[1];
 
         game.StartGame();
 
@@ -226,12 +226,12 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Сходили две карты, одну отбили, а вторую не отбили, и забираем всё на руки.
+    /// Сходили две карты, одну отбили, а вторую не отбили, и забираем всё на руки.
     /// </summary>
     /// <remarks>
-    ///     Проверили, что атакующий добрал карты до 6.
-    ///     Проверили, что защищающийся забрал себе обе карты атакующего, и у него теперь их 8.
-    ///     Проверили, что в колоде стало на 2 карты меньше.
+    /// Проверили, что атакующий добрал карты до 6.
+    /// Проверили, что защищающийся забрал себе обе карты атакующего, и у него теперь их 8.
+    /// Проверили, что в колоде стало на 2 карты меньше.
     /// </remarks>
     [Test]
     public void PlayOneRoundTwoCardAndNotDefenceTest()
@@ -239,21 +239,21 @@ public class DeckTests
         string[] playerCards =
         [
             "A♠ Q♦ Q♣ Q♥ 10♥ 7♦",
-            "Q♠ A♦ A♣ A♥ 10♣ 10♠"
+            "Q♠ A♦ A♣ A♥ 10♣ 10♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
 
-        Player player1 = game.Players[0];
-        Player player2 = game.Players[1];
+        var player1 = game.Players[0];
+        var player2 = game.Players[1];
 
         game.StartGame();
 
@@ -276,10 +276,10 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Игрок 1 начинает раунд, игрок 3 подкидывает, игрок 2 отбивает все карты.
+    /// Игрок 1 начинает раунд, игрок 3 подкидывает, игрок 2 отбивает все карты.
     /// </summary>
     /// <remarks>
-    ///     Проверили, что можно подкинуть карту.
+    /// Проверили, что можно подкинуть карту.
     /// </remarks>
     [Test]
     public void StartAttackAndAttackCardTest()
@@ -289,12 +289,12 @@ public class DeckTests
             "A♠ 10♠ 6♠ J♥ 7♥ Q♦",
             "K♠ 9♠ A♥ 10♥ 6♥ J♦",
             "Q♠ 8♠ K♥ 9♥ A♦ 10♦",
-            "J♠ 7♠ Q♥ 8♥ K♦ 9♦"
+            "J♠ 7♠ Q♥ 8♥ K♦ 9♦",
         ];
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards))
+            Deck = new(new SortedDeckCardGenerator(playerCards)),
         };
 
         game.AddPlayer("1");
@@ -302,9 +302,9 @@ public class DeckTests
         game.AddPlayer("3");
         game.AddPlayer("4");
 
-        Player startAttackPlayer = game.Players[0];
-        Player defencePlayer = game.Players[1];
-        Player attackPlayer = game.Players[2];
+        var startAttackPlayer = game.Players[0];
+        var defencePlayer = game.Players[1];
+        var attackPlayer = game.Players[2];
 
         game.StartGame();
 
@@ -332,10 +332,10 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Игрок кидает 4 одинаковые карты, а защитник забирает их себе.
+    /// Игрок кидает 4 одинаковые карты, а защитник забирает их себе.
     /// </summary>
     /// <remarks>
-    ///     Проверили, что можно начать раунд с нескольких карт.
+    /// Проверили, что можно начать раунд с нескольких карт.
     /// </remarks>
     [Test]
     public void StartAttackManyCardsAndNotDefenceTest()
@@ -343,21 +343,21 @@ public class DeckTests
         string[] playerCards =
         [
             "A♠ A♦ A♣ A♥ 10♥ 7♦",
-            "Q♠ Q♦ Q♣ Q♥ 10♣ 10♠"
+            "Q♠ Q♦ Q♣ Q♥ 10♣ 10♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
 
-        Player startAttackPlayer = game.Players[0];
-        Player defencePlayer = game.Players[1];
+        var startAttackPlayer = game.Players[0];
+        var defencePlayer = game.Players[1];
 
         game.StartGame();
 
@@ -375,10 +375,10 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Игрок кидает одну карту, второй подкидывает ещё 3, а защитник забирает их себе.
+    /// Игрок кидает одну карту, второй подкидывает ещё 3, а защитник забирает их себе.
     /// </summary>
     /// <remarks>
-    ///     Проверили, что можно поддать несколько карт.
+    /// Проверили, что можно поддать несколько карт.
     /// </remarks>
     [Test]
     public void AttackManyCardsAndNotDefenceTest()
@@ -387,23 +387,23 @@ public class DeckTests
         [
             "A♠ Q♦ Q♣ Q♥ 10♥ 7♦",
             "J♠ J♦ J♣ J♥ 9♣ 9♠",
-            "Q♠ A♦ A♣ A♥ 10♣ 10♠"
+            "Q♠ A♦ A♣ A♥ 10♣ 10♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
         game.AddPlayer("3");
 
-        Player startAttackPlayer = game.Players[0];
-        Player defencePlayer = game.Players[1];
-        Player attackPlayer = game.Players[2];
+        var startAttackPlayer = game.Players[0];
+        var defencePlayer = game.Players[1];
+        var attackPlayer = game.Players[2];
 
         game.StartGame();
 
@@ -424,10 +424,10 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Игрок кидает одну карту, потом подкидывает одну карту доступного ранга и вторую недоступного ранга.
+    /// Игрок кидает одну карту, потом подкидывает одну карту доступного ранга и вторую недоступного ранга.
     /// </summary>
     /// <remarks>
-    ///     Проверили, что нельзя поддать карту доступного ранга и недоступного ранга.
+    /// Проверили, что нельзя поддать карту доступного ранга и недоступного ранга.
     /// </remarks>
     [Test]
     public void AttackTwoDifferentCardSequence()
@@ -435,19 +435,19 @@ public class DeckTests
         string[] playerCards =
         [
             "J♠ J♦ J♣ J♥ 10♥ 7♦",
-            "A♠ Q♦ Q♣ Q♥ 9♣ 9♠"
+            "A♠ Q♦ Q♣ Q♥ 9♣ 9♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
-        Player startAttackPlayer = game.Players[0];
+        var startAttackPlayer = game.Players[0];
 
         game.StartGame();
 
@@ -461,10 +461,10 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Игрок кидает одну карту, потом подкидывает одновременно одну карту доступного ранга и вторую недоступного ранга.
+    /// Игрок кидает одну карту, потом подкидывает одновременно одну карту доступного ранга и вторую недоступного ранга.
     /// </summary>
     /// <remarks>
-    ///     Проверили, что нельзя поддать одновременно карту доступного ранга и недоступного ранга.
+    /// Проверили, что нельзя поддать одновременно карту доступного ранга и недоступного ранга.
     /// </remarks>
     [Test]
     public void AttackTwoDifferentCard()
@@ -472,20 +472,20 @@ public class DeckTests
         string[] playerCards =
         [
             "J♠ J♦ J♣ J♥ 10♥ 7♦",
-            "A♠ Q♦ Q♣ Q♥ 9♣ 9♠"
+            "A♠ Q♦ Q♣ Q♥ 9♣ 9♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
 
-        Player startAttackPlayer = game.Players[0];
+        var startAttackPlayer = game.Players[0];
 
         game.StartGame();
 
@@ -497,10 +497,10 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Подкинем карту, ранг которой, равен рангу защитной карты.
+    /// Подкинем карту, ранг которой, равен рангу защитной карты.
     /// </summary>
     /// <remarks>
-    ///     Была ошибка, если вольта отбить дамой, то даму нельзя было поддать.
+    /// Была ошибка, если вольта отбить дамой, то даму нельзя было поддать.
     /// </remarks>
     [Test]
     public void AttackCardsWithDefencedCardRankTest()
@@ -508,21 +508,21 @@ public class DeckTests
         string[] playerCards =
         [
             "A♠ Q♦ J♣ J♥ 10♥ 7♦",
-            "J♠ J♦ Q♣ Q♥ 9♣ 9♠"
+            "J♠ J♦ Q♣ Q♥ 9♣ 9♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
 
-        Player attackPlayer = game.Players[0];
-        Player defencePlayer = game.Players[1];
+        var attackPlayer = game.Players[0];
+        var defencePlayer = game.Players[1];
 
         game.StartGame();
 
@@ -544,7 +544,7 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Проверка, что в игре на двоих, после того, как игрок забрал карты ход остаётся у атакующего.
+    /// Проверка, что в игре на двоих, после того, как игрок забрал карты ход остаётся у атакующего.
     /// </summary>
     [Test]
     public void CorrectChangeActivePlayerTest()
@@ -552,20 +552,20 @@ public class DeckTests
         string[] playerCards =
         [
             "A♠ Q♦ Q♣ Q♥ 10♥ 7♦",
-            "Q♠ A♦ A♣ A♥ 10♣ 10♠"
+            "Q♠ A♦ A♣ A♥ 10♣ 10♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
 
-        Player attackPlayer = game.Players[0];
+        var attackPlayer = game.Players[0];
 
         game.StartGame();
 
@@ -577,10 +577,10 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Проверка, что в игре на двоих, после отбивания ход переходит второму игроку.
+    /// Проверка, что в игре на двоих, после отбивания ход переходит второму игроку.
     /// </summary>
     /// <remarks>
-    ///     Если один из игроков, не берёт карту из колоды, то активный игрок неверно определялся.
+    /// Если один из игроков, не берёт карту из колоды, то активный игрок неверно определялся.
     /// </remarks>
     [Test]
     public void CorrectChangeActiveAfterDefencePlayerTest()
@@ -588,21 +588,21 @@ public class DeckTests
         string[] playerCards =
         [
             "A♠ Q♦ Q♣ Q♥ 10♥ 7♦",
-            "Q♠ A♦ A♣ A♥ 10♣ 10♠"
+            "Q♠ A♦ A♣ A♥ 10♣ 10♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
 
-        Player attackPlayer = game.Players[0];
-        Player defencePlayer = game.Players[1];
+        var attackPlayer = game.Players[0];
+        var defencePlayer = game.Players[1];
 
         game.StartGame();
 
@@ -622,7 +622,7 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Проверка, если игрок без карт, то его не учитываем в выборе активного игрока.
+    /// Проверка, если игрок без карт, то его не учитываем в выборе активного игрока.
     /// </summary>
     [Test]
     public void CorrectChangeActiveZeroCardsPlayerTest()
@@ -631,23 +631,23 @@ public class DeckTests
         [
             "J♠ Q♦ Q♣ Q♥ 10♥ 7♦",
             "Q♠ 9♦ 9♥ 9♠ 9♣ 8♦",
-            "A♠ A♦ A♣ A♥ 10♣ 10♠"
+            "A♠ A♦ A♣ A♥ 10♣ 10♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
         game.AddPlayer("3");
 
-        Player attackPlayer = game.Players[0];
-        Player defencePlayer = game.Players[1];
-        Player expectedStartAttackPlayer = game.Players[2];
+        var attackPlayer = game.Players[0];
+        var defencePlayer = game.Players[1];
+        var expectedStartAttackPlayer = game.Players[2];
 
         game.StartGame();
 
@@ -667,7 +667,7 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Проверка, если игрок без карт, то его не учитываем в выборе защищающегося игрока.
+    /// Проверка, если игрок без карт, то его не учитываем в выборе защищающегося игрока.
     /// </summary>
     [Test]
     public void CorrectChangeDefenceZeroCardsPlayerTest()
@@ -676,23 +676,23 @@ public class DeckTests
         [
             "J♠ Q♦ Q♣ Q♥ 10♥ 7♦",
             "Q♠ 9♦ 9♥ 9♠ 9♣ 8♦",
-            "A♠ A♦ A♣ A♥ 10♣ 10♠"
+            "A♠ A♦ A♣ A♥ 10♣ 10♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
         game.AddPlayer("3");
 
-        Player player1 = game.Players[0];
-        Player player2 = game.Players[1];
-        Player zeroCardsPlayer = game.Players[2];
+        var player1 = game.Players[0];
+        var player2 = game.Players[1];
+        var zeroCardsPlayer = game.Players[2];
 
         game.StartGame();
 
@@ -716,10 +716,10 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Проверка, что в игре на четверых, когда осталось двое, после забирания, ход остаётся у того кто ходил.
+    /// Проверка, что в игре на четверых, когда осталось двое, после забирания, ход остаётся у того кто ходил.
     /// </summary>
     /// <remarks>
-    ///     Была бага, что игрок после того как забрал карты, начинал ходить.
+    /// Была бага, что игрок после того как забрал карты, начинал ходить.
     /// </remarks>
     [Test]
     public void CorrectChangeActiveAfterFailDefencePlayerTest()
@@ -729,20 +729,20 @@ public class DeckTests
             "Q♠ Q♦ Q♣ Q♥ 10♥ 7♦",
             "A♠ A♦ A♣ A♥ 10♣ J♦",
             "9♠ 9♦ 9♣ 9♥ J♣ J♠",
-            "8♠ 8♦ 8♣ 8♥ K♣ K♠"
+            "8♠ 8♦ 8♣ 8♥ K♣ K♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
-        Player player1 = game.AddPlayer("1");
-        Player player2 = game.AddPlayer("2");
-        Player player3 = game.AddPlayer("3");
-        Player player4 = game.AddPlayer("4");
+        var player1 = game.AddPlayer("1");
+        var player2 = game.AddPlayer("2");
+        var player3 = game.AddPlayer("3");
+        var player4 = game.AddPlayer("4");
 
         game.StartGame();
 
@@ -779,7 +779,7 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Ошибка, если сходить количеством карт, больше, чем у защищающегося.
+    /// Ошибка, если сходить количеством карт, больше, чем у защищающегося.
     /// </summary>
     [Test]
     public void StartAttackOverflowTest()
@@ -787,19 +787,19 @@ public class DeckTests
         string[] playerCards =
         [
             "A♠ Q♦ J♣ J♥ 10♥ 9♠",
-            "J♠ J♦ Q♣ Q♥ 9♣ 10♠" // 10♠ будет козырем
+            "J♠ J♦ Q♣ Q♥ 9♣ 10♠", // 10♠ будет козырем
         ];
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, null, 24))
+            Deck = new(new SortedDeckCardGenerator(playerCards, null, 24)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
 
-        Player attackPlayer = game.Players[0];
-        Player defencePlayer = game.Players[1];
+        var attackPlayer = game.Players[0];
+        var defencePlayer = game.Players[1];
 
         game.StartGame();
 
@@ -811,7 +811,7 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Ошибка, если поддаваемое количеством карт плюс карт на столе, больше, чем у защищающегося.
+    /// Ошибка, если поддаваемое количеством карт плюс карт на столе, больше, чем у защищающегося.
     /// </summary>
     [Test]
     public void AttackOverflowTest()
@@ -819,19 +819,19 @@ public class DeckTests
         string[] playerCards =
         [
             "J♠ J♦ J♣ J♥ 10♥ 9♠",
-            "A♠ Q♦ Q♣ Q♥ 9♣ 10♠" // 10♠ будет козырем
+            "A♠ Q♦ Q♣ Q♥ 9♣ 10♠", // 10♠ будет козырем
         ];
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, null, 24))
+            Deck = new(new SortedDeckCardGenerator(playerCards, null, 24)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
 
-        Player attackPlayer = game.Players[0];
-        Player defencePlayer = game.Players[1];
+        var attackPlayer = game.Players[0];
+        var defencePlayer = game.Players[1];
 
         game.StartGame();
 
@@ -845,7 +845,7 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Проверка, что нельзя до первого отбоя атаковать больше 5 картами.
+    /// Проверка, что нельзя до первого отбоя атаковать больше 5 картами.
     /// </summary>
     [Test]
     public void FirstDefenceMaxFiveAttackCardsTest()
@@ -853,21 +853,21 @@ public class DeckTests
         string[] playerCards =
         [
             "J♠ J♦ J♣ J♥ Q♣ Q♦",
-            "A♠ 10♥ 9♠ Q♥ 9♣ 10♠"
+            "A♠ 10♥ 9♠ Q♥ 9♣ 10♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
         game.AddPlayer("2");
 
-        Player attackPlayer = game.Players[0];
-        Player defencePlayer = game.Players[1];
+        var attackPlayer = game.Players[0];
+        var defencePlayer = game.Players[1];
 
         game.StartGame();
 
@@ -878,7 +878,7 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Проверка, что номинал козырной карты, которую надо всем показать, корректный.
+    /// Проверка, что номинал козырной карты, которую надо всем показать, корректный.
     /// </summary>
     [Test]
     [TestCase("J♠ A♣ J♣ J♥ Q♣ 7♦", 7)]
@@ -890,14 +890,14 @@ public class DeckTests
         string[] playerCards =
         [
             firstPlayerCards,
-            "A♠ 10♥ 9♠ Q♥ 9♣ 10♠"
+            "A♠ 10♥ 9♠ Q♥ 9♣ 10♠",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
         game.AddPlayer("1");
@@ -909,14 +909,14 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Проверка, что определяется проигравший.
+    /// Проверка, что определяется проигравший.
     /// </summary>
     [Test]
     public void CheckLooserTest()
     {
         Game game = new()
         {
-            Deck = new Deck(new NotSortedDeckCardGenerator())
+            Deck = new(new NotSortedDeckCardGenerator()),
         };
 
         game.AddPlayer("1");
@@ -928,12 +928,12 @@ public class DeckTests
 
         game.StartGame();
 
-        int activePlayerIndex = game.Players.IndexOf(game.ActivePlayer!);
-        int defencePlayerIndex = game.Players.IndexOf(game.DefencePlayer!);
+        var activePlayerIndex = game.Players.IndexOf(game.ActivePlayer!);
+        var defencePlayerIndex = game.Players.IndexOf(game.DefencePlayer!);
 
-        for (int i = 0; i < 6; i++)
+        for (var i = 0; i < 6; i++)
         {
-            Player player = game.Players[i];
+            var player = game.Players[i];
 
             if (i == defencePlayerIndex)
             {
@@ -962,7 +962,7 @@ public class DeckTests
     }
 
     /// <summary>
-    ///     Проверка, что игра кончилась, если отбился последней картой.
+    /// Проверка, что игра кончилась, если отбился последней картой.
     /// </summary>
     [Test]
     public void CheckLooserIfDefenceLastCardTest()
@@ -970,18 +970,18 @@ public class DeckTests
         string[] playerCards =
         [
             "J♥ J♠ J♦ J♣ Q♣ Q♦",
-            "10♥ A♠ 9♠ Q♥ 9♣ 7♦"
+            "10♥ A♠ 9♠ Q♥ 9♣ 7♦",
         ];
 
-        string trumpValue = "6♦";
+        var trumpValue = "6♦";
 
         Game game = new()
         {
-            Deck = new Deck(new SortedDeckCardGenerator(playerCards, trumpValue))
+            Deck = new(new SortedDeckCardGenerator(playerCards, trumpValue)),
         };
 
-        Player winnerPlayer = game.AddPlayer("1");
-        Player looserPlayer = game.AddPlayer("2");
+        var winnerPlayer = game.AddPlayer("1");
+        var looserPlayer = game.AddPlayer("2");
 
         game.StartGame();
 

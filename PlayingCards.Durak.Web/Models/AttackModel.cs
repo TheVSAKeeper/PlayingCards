@@ -1,7 +1,6 @@
-﻿namespace PlayingCards.Durak.Web.Models
+﻿namespace PlayingCards.Durak.Web.Models;
+
+public class AttackModel : BaseTableModel
 {
-    public class AttackModel : BaseTableModel
-    {
-        public int[] CardIndexes { get; set; }
-    }
+    public int[] CardIndexes { get; set; }
 }

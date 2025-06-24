@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿namespace PlayingCards.Durak.Web.Models;
 
-namespace PlayingCards.Durak.Web.Models
+public class AuthModel
 {
-    public class AuthModel
-    {
-        public string PlayerSecret { get; set; }
-    }
+    public string PlayerSecret { get; set; }
 }

@@ -1,12 +1,12 @@
 ﻿namespace PlayingCards.Durak;
 
 /// <summary>
-///     Игральная карта.
+/// Игральная карта.
 /// </summary>
 public class Card : IEquatable<Card>
 {
     /// <summary>
-    ///     Игральная карта.
+    /// Игральная карта.
     /// </summary>
     /// <param name="rank">
     ///     <see cref="Rank" />
@@ -21,12 +21,12 @@ public class Card : IEquatable<Card>
     }
 
     /// <summary>
-    ///     Старшинство.
+    /// Старшинство.
     /// </summary>
     public CardRank Rank { get; }
 
     /// <summary>
-    ///     Масть.
+    /// Масть.
     /// </summary>
     public CardSuit Suit { get; }
 
@@ -34,8 +34,6 @@ public class Card : IEquatable<Card>
     {
         return Rank.ShortName + Suit.IconChar;
     }
-
-    #region Equality members
 
     public bool Equals(Card? other)
     {
@@ -87,6 +85,4 @@ public class Card : IEquatable<Card>
     {
         return !Equals(left, right);
     }
-
-    #endregion
 }

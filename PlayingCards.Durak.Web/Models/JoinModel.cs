@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿namespace PlayingCards.Durak.Web.Models;
 
-namespace PlayingCards.Durak.Web.Models
+public class JoinModel : BaseTableModel
 {
-    public class JoinModel : BaseTableModel
-    {
-        public string PlayerName { get; set; }
-    }
+    public string PlayerName { get; set; }
 }

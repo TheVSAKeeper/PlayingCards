@@ -1,12 +1,12 @@
 ﻿namespace PlayingCards.Durak;
 
 /// <summary>
-///     Игральная карта на столе.
+/// Игральная карта на столе.
 /// </summary>
 public class TableCard
 {
     /// <summary>
-    ///     Игральная карта на столе.
+    /// Игральная карта на столе.
     /// </summary>
     /// <param name="game">
     ///     <see cref="Game" />
@@ -21,22 +21,22 @@ public class TableCard
     }
 
     /// <summary>
-    ///     Карта, которой атаковали.
+    /// Карта, которой атаковали.
     /// </summary>
     public Card AttackCard { get; }
 
     /// <summary>
-    ///     Карта, которой защищались.
+    /// Карта, которой защищались.
     /// </summary>
     public Card? DefenceCard { get; private set; }
 
     /// <summary>
-    ///     Игра.
+    /// Игра.
     /// </summary>
     private Game Game { get; }
 
     /// <summary>
-    ///     Защититься.
+    /// Защититься.
     /// </summary>
     /// <param name="defenceCard">Карта для защиты.</param>
     public void Defence(Card defenceCard)

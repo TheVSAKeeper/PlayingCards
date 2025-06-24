@@ -1,7 +1,7 @@
 ﻿namespace PlayingCards.Durak;
 
 /// <summary>
-///     Рука игрока с картами.
+/// Рука игрока с картами.
 /// </summary>
 public class PlayerHand
 {
@@ -9,32 +9,32 @@ public class PlayerHand
     private List<Card> _cards;
 
     /// <summary>
-    ///     Рука игрока с картами.
+    /// Рука игрока с картами.
     /// </summary>
     public PlayerHand(Game game, Player player)
     {
-        _cards = new List<Card>(6);
+        _cards = new(6);
         Game = game;
         Player = player;
     }
 
     /// <summary>
-    ///     Игрок.
+    /// Игрок.
     /// </summary>
     private Player Player { get; }
 
     /// <summary>
-    ///     Игра.
+    /// Игра.
     /// </summary>
     public Game Game { get; }
 
     /// <summary>
-    ///     Карты в руке.
+    /// Карты в руке.
     /// </summary>
     public IReadOnlyList<Card> Cards => _cards;
 
     /// <summary>
-    ///     Взять карту в руку.
+    /// Взять карту в руку.
     /// </summary>
     /// <param name="card">Карта.</param>
     public void TakeCard(Card card)
@@ -45,7 +45,7 @@ public class PlayerHand
     }
 
     /// <summary>
-    ///     Начать раунд, сыграв карту.
+    /// Начать раунд, сыграв карту.
     /// </summary>
     /// <param name="cardIndexes">Индексы карт.</param>
     public void StartAttack(int[] cardIndexes)
@@ -55,16 +55,16 @@ public class PlayerHand
             throw new BusinessException("Нужна одна или несколько карт для начала атаки");
         }
 
-        List<Card> cards = new();
+        List<Card> cards = [];
 
-        foreach (int cardIndex in cardIndexes)
+        foreach (var cardIndex in cardIndexes)
         {
             if (cardIndex < 0 || cardIndex >= _cards.Count)
             {
                 throw new BusinessException($"Карта с индексом {cardIndex} не существует");
             }
 
-            Card card = _cards[cardIndex];
+            var card = _cards[cardIndex];
             cards.Add(card);
         }
 
@@ -72,21 +72,21 @@ public class PlayerHand
     }
 
     /// <summary>
-    ///     Подкинуть карту.
+    /// Подкинуть карту.
     /// </summary>
     /// <param name="cardIndexes">Индексы карт.</param>
     public void Attack(int[] cardIndexes)
     {
-        List<Card> cards = new();
+        List<Card> cards = [];
 
-        foreach (int cardIndex in cardIndexes)
+        foreach (var cardIndex in cardIndexes)
         {
             if (cardIndex < 0 || cardIndex >= _cards.Count)
             {
                 throw new BusinessException($"Карта с индексом {cardIndex} не существует");
             }
 
-            Card card = _cards[cardIndex];
+            var card = _cards[cardIndex];
             cards.Add(card);
         }
 
@@ -94,7 +94,7 @@ public class PlayerHand
     }
 
     /// <summary>
-    ///     Защититься.
+    /// Защититься.
     /// </summary>
     /// <param name="defenceCardIndex">Индекс карты.</param>
     /// <param name="attackCardIndex">Индекс атакующей карты.</param>
@@ -105,45 +105,45 @@ public class PlayerHand
             throw new BusinessException($"Карта с индексом {defenceCardIndex} не существует");
         }
 
-        Card card = _cards[defenceCardIndex];
-        TableCard attackTableCard = Game.Cards[attackCardIndex];
+        var card = _cards[defenceCardIndex];
+        var attackTableCard = Game.Cards[attackCardIndex];
         Game.Defence(Player, card, attackTableCard.AttackCard);
     }
 
     /// <summary>
-    ///     Игрок сыграл карту.
+    /// Игрок сыграл карту.
     /// </summary>
     /// <param name="cardIndexes">Индексы карт.</param>
     /// <param name="attackCardIndex">Индекс атакующей карты (если это защита).</param>
     public void PlayCards(int[] cardIndexes, int? attackCardIndex = null)
     {
-        List<Card> cards = new();
+        List<Card> cards = [];
 
-        foreach (int cardIndex in cardIndexes)
+        foreach (var cardIndex in cardIndexes)
         {
             if (cardIndex < 0 || cardIndex >= _cards.Count)
             {
                 throw new BusinessException($"Карта с индексом {cardIndex} не существует");
             }
 
-            Card card = _cards[cardIndex];
+            var card = _cards[cardIndex];
             cards.Add(card);
         }
 
-        Card? attackCard = attackCardIndex == null ? null : Game.Cards[attackCardIndex.Value].AttackCard;
+        var attackCard = attackCardIndex == null ? null : Game.Cards[attackCardIndex.Value].AttackCard;
         Game.PlayCards(Player, cards, attackCard);
     }
 
     /// <summary>
-    ///     Очистить руку от карт.
+    /// Очистить руку от карт.
     /// </summary>
     public void Clear()
     {
-        _cards = new List<Card>();
+        _cards = [];
     }
 
     /// <summary>
-    ///     Получить карту с минимальным значением козыря.
+    /// Получить карту с минимальным значением козыря.
     /// </summary>
     /// <param name="suit">Масть козыря.</param>
     /// <returns>Карту, если она есть, иначе null.</returns>
@@ -172,7 +172,7 @@ public class PlayerHand
     }
 
     /// <summary>
-    ///     Сортировка сначала по старшинству, затем по масти.
+    /// Сортировка сначала по старшинству, затем по масти.
     /// </summary>
     /// <remarks>Козырная карта при сортировке по масти будет крайней правой.</remarks>
     private void SortCards()

@@ -441,7 +441,7 @@ function canPlayCards(handCardIndexes, fieldCardIndexes) {
         && fieldCardIndexes.length === 1
         && gameStatus.table.defencePlayerIndex === gameStatus.table.myPlayerIndex
         && isValidDefence(fieldCardIndexes[0], handCardIndexes[0]);
-    
+
     return isStartAttacking || isAttacking || isDefending;
 }
 
@@ -627,5 +627,3 @@ function getSuit(suitValue) {
         return "<label>" + suits[suitValue] + "<label>";
     }
 }
-
-

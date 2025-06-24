@@ -1,8 +1,7 @@
-﻿namespace PlayingCards.Durak.Web.Business
+﻿namespace PlayingCards.Durak.Web.Business;
+
+public enum StopRoundStatus
 {
-    public enum StopRoundStatus
-    {
-        Take = 0,
-        SuccessDefence = 1,
-    }
+    Take = 0,
+    SuccessDefence = 1,
 }

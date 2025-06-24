@@ -2,7 +2,7 @@
     let _this = {};
     let defaultOptions = {
         method: 'POST',
-    }
+    };
 
     _this.options = Object.assign({}, defaultOptions, options);
 
@@ -32,11 +32,12 @@
             }
         };
         xhr.send(JSON.stringify(_this.options.body));
-    }
+    };
     _this.Send();
 }
 
 var globalAlertId = 0;
+
 function showAlert(title, message, timeoutSeconds) {
     globalAlertId++;
     let alertId = globalAlertId;

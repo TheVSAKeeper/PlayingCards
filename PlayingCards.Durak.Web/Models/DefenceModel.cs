@@ -1,9 +1,8 @@
-﻿namespace PlayingCards.Durak.Web.Models
-{
-    public class DefenceModel : BaseTableModel
-    {
-        public int DefenceCardIndex { get; set; }
+﻿namespace PlayingCards.Durak.Web.Models;
 
-        public int AttackCardIndex { get; set; }
-    }
+public class DefenceModel : BaseTableModel
+{
+    public int DefenceCardIndex { get; set; }
+
+    public int AttackCardIndex { get; set; }
 }

@@ -1,28 +1,27 @@
-﻿namespace PlayingCards.Durak
+﻿namespace PlayingCards.Durak;
+
+/// <summary>
+/// Статус игры.
+/// </summary>
+public enum GameStatus
 {
     /// <summary>
-    /// Статус игры.
+    /// Мало игроков для начала игры.
     /// </summary>
-    public enum GameStatus
-    {
-        /// <summary>
-        /// Мало игроков для начала игры.
-        /// </summary>
-        WaitPlayers = 0,
+    WaitPlayers = 0,
 
-        /// <summary>
-        /// Можно начинать.
-        /// </summary>
-        ReadyToStart = 1,
+    /// <summary>
+    /// Можно начинать.
+    /// </summary>
+    ReadyToStart = 1,
 
-        /// <summary>
-        /// В процессе.
-        /// </summary>
-        InProcess = 2,
+    /// <summary>
+    /// В процессе.
+    /// </summary>
+    InProcess = 2,
 
-        /// <summary>
-        /// Объявился дурач☻к.
-        /// </summary>
-        Finish = 3,
-    }
+    /// <summary>
+    /// Объявился дурач☻к.
+    /// </summary>
+    Finish = 3,
 }

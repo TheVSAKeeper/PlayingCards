@@ -1,8 +1,3 @@
 ﻿namespace PlayingCards.Durak;
 
-public class BusinessException : Exception
-{
-    public BusinessException(string message) : base(message)
-    {
-    }
-}
+public class BusinessException(string message) : Exception(message);

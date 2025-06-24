@@ -1,12 +1,12 @@
 ﻿namespace PlayingCards.Durak;
 
 /// <summary>
-///     Масть.
+/// Масть.
 /// </summary>
 public class CardSuit : IEquatable<CardSuit>
 {
     /// <summary>
-    ///     Масть.
+    /// Масть.
     /// </summary>
     /// <param name="value">
     ///     <see cref="Value" />
@@ -25,21 +25,21 @@ public class CardSuit : IEquatable<CardSuit>
     }
 
     /// <summary>
-    ///     Значение.
+    /// Значение.
     /// </summary>
     /// <remarks>Например, 0 - черви, 1 - пики.</remarks>
     public int Value { get; }
 
     /// <summary>
-    ///     Наименование.
+    /// Наименование.
     /// </summary>
     /// <remarks>
-    ///     Например Черви, Буби.
+    /// Например: Черви, Буби.
     /// </remarks>
     public string Name { get; }
 
     /// <summary>
-    ///     Сокращённое наименование.
+    /// Сокращённое наименование.
     /// </summary>
     /// <remarks>♥/♦/♣/♠</remarks>
     public char IconChar { get; }
@@ -53,8 +53,6 @@ public class CardSuit : IEquatable<CardSuit>
     {
         return suit.Value;
     }
-
-    #region Equality members
 
     public bool Equals(CardSuit? other)
     {
@@ -105,6 +103,4 @@ public class CardSuit : IEquatable<CardSuit>
     {
         return !Equals(left, right);
     }
-
-    #endregion
 }

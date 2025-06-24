@@ -1,26 +1,51 @@
-﻿<div id="accountContainer" class="not-auth">
-    <label type="text" id="nameLabel"></label>
+﻿<div id="accountContainer"
+     class="not-auth">
+    <label type="text"
+           id="nameLabel"></label>
     <div id="loginBlock">
-        <input type="text" id="nameInput" placeholder="Имя" />
-        <button class="btn btn-info" onclick="login()">Войти</button>
+        <input type="text"
+               id="nameInput"
+               placeholder="Имя" />
+        <button class="btn btn-info"
+                onclick="login()">Войти
+        </button>
     </div>
-    <button class="btn btn-info" id="logoutBtn" onclick="logout()">Выйти</button>
+    <button class="btn btn-info"
+            id="logoutBtn"
+            onclick="logout()">Выйти
+    </button>
 </div>
 <div id="tableMain">
-    <button class="btn btn-success" id="createTableBtn" onclick="createTable()">Создать стол</button>
-    <button class="btn btn-warning" id="leaveFromTableBtn" onclick="leaveFromTable()">Выйти из-за стола</button>
+    <button class="btn btn-success"
+            id="createTableBtn"
+            onclick="createTable()">Создать стол
+    </button>
+    <button class="btn btn-warning"
+            id="leaveFromTableBtn"
+            onclick="leaveFromTable()">Выйти из-за стола
+    </button>
     <div id="tables">
     </div>
 </div>
-<div id="main" class="hidden">
-    <button id="startGame" class="btn btn-info hidden" onclick="startGame()">Начать игру</button>
+<div id="main"
+     class="hidden">
+    <button id="startGame"
+            class="btn btn-info hidden"
+            onclick="startGame()">Начать игру
+    </button>
     <div id="myIcon"></div>
     <div id="actionsUp">
-        <button id="takeCards" class="btn btn-warning hidden" onclick="take()">Забрать карты</button>
+        <button id="takeCards"
+                class="btn btn-warning hidden"
+                onclick="take()">Забрать карты
+        </button>
     </div>
     <div id="hand"></div>
     <div id="actions">
-        <button id="playCards" class="btn btn-info hidden" onclick="play()">Сыграть</button>
+        <button id="playCards"
+                class="btn btn-info hidden"
+                onclick="play()">Сыграть
+        </button>
     </div>
     <div id="field"></div>
     <div id="deck">
@@ -37,7 +62,9 @@
     <div class="card-back template-card-back">
     </div>
     <div class="table template-table">
-        <button class="btn btn-info" onclick="joinToTableClick(this)">Подсесть</button>
+        <button class="btn btn-info"
+                onclick="joinToTableClick(this)">Подсесть
+        </button>
     </div>
     <div class="player template-player">
         <img src="~/images/player.png" />

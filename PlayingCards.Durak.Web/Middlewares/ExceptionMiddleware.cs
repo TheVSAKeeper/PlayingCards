@@ -1,28 +1,20 @@
 ﻿using System.Net;
 
-namespace PlayingCards.Durak.Web
+namespace PlayingCards.Durak.Web.Middlewares;
+
+public class ExceptionMiddleware(RequestDelegate next)
 {
-    public class ExceptionMiddleware
+    // IMessageWriter is injected into InvokeAsync
+    public async Task InvokeAsync(HttpContext httpContext)
     {
-        private readonly RequestDelegate _next;
-
-        public ExceptionMiddleware(RequestDelegate next)
+        try
         {
-            _next = next;
+            await next(httpContext);
         }
-
-        // IMessageWriter is injected into InvokeAsync
-        public async Task InvokeAsync(HttpContext httpContext)
+        catch (BusinessException ex)
         {
-            try
-            {
-                await _next(httpContext);
-            }
-            catch (BusinessException ex)
-            {
-                httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                await httpContext.Response.WriteAsync(ex.Message);
-            }
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+            await httpContext.Response.WriteAsync(ex.Message);
         }
     }
 }

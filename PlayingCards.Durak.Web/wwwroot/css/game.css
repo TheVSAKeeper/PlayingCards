@@ -9,53 +9,54 @@
 #accountContainer {
     position: absolute;
     right: 20px;
-    border: 1px solid gray;
     padding: 20px;
+    border: 1px solid gray;
     border-radius: 5px;
     background: lightgray;
 }
 
-    #accountContainer.not-auth {
-        margin-left: auto;
-        margin-right: auto;
-        position: initial;
-        max-width: 306px;
-        margin-top: 200px;
-    }
-
-.table {
-    height: 200px;
-    width: 200px;
-    border: 1px solid darkgray;
-    background-color: lightgray;
-    margin: 10px;
-    display: inline-block;
+#accountContainer.not-auth {
+    position: initial;
+    max-width: 306px;
+    margin-top: 200px;
+    margin-right: auto;
+    margin-left: auto;
 }
 
-    .table.active {
-        border: 1px solid blue;
-    }
-    .table label {
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-        display: block;
-    }
+.table {
+    display: inline-block;
+    width: 200px;
+    height: 200px;
+    margin: 10px;
+    border: 1px solid darkgray;
+    background-color: lightgray;
+}
+
+.table.active {
+    border: 1px solid blue;
+}
+
+.table label {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
 
 #hand {
     text-align: center;
 }
 
 #deck {
-    margin-top: 20px;
     position: relative;
+    margin-top: 20px;
     text-align: center;
 }
 
 #field {
+    position: relative;
     min-height: 150px;
     margin-top: 20px;
-    position: relative;
     text-align: center;
 }
 
@@ -64,23 +65,23 @@
 }
 
 #actionsUp {
-    text-align: center;
     min-height: 38px;
+    text-align: center;
 }
 
 #actions {
     text-align: center;
 }
 
-    #actions button {
-        margin: 10px 10px 0 10px;
-        width: 180px;
-    }
+#actions button {
+    width: 180px;
+    margin: 10px 10px 0 10px;
+}
 
 .field-card {
+    position: relative;
     display: inline-block;
     margin-right: 15px;
-    position: relative;
 }
 
 .defence-card {
@@ -95,59 +96,59 @@
 }
 
 .play-card {
+    display: inline-block;
     width: 60px;
     height: 100px;
-    border: 1px solid black;
-    display: inline-block;
     margin-top: 10px;
+    border: 1px solid black;
 }
 
-    .play-card div {
-        display: inline-block;
-    }
+.play-card div {
+    display: inline-block;
+}
 
-    .play-card .card-suit {
-        font-size: 30px;
-    }
+.play-card .card-suit {
+    font-size: 30px;
+}
 
-    .play-card .card-rank {
-        font-size: 28px;
-    }
+.play-card .card-rank {
+    font-size: 28px;
+}
 
-    .play-card.active {
-        border: 2px solid blue;
-        margin-top: 5px;
-    }
+.play-card.active {
+    margin-top: 5px;
+    border: 2px solid blue;
+}
 
 .card-back {
+    position: relative;
     border: 1px solid black;
     background: repeating-linear-gradient(45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px);
-    position: relative;
 }
 
-    .card-back.show-card .card-rank {
-        font-size: 24px;
-        position: absolute;
-        left: 7px;
-        top: 5px;
-    }
+.card-back.show-card .card-rank {
+    font-size: 24px;
+    position: absolute;
+    top: 5px;
+    left: 7px;
+}
 
-    .card-back.show-card .card-suit {
-        font-size: 15px;
-        display: inline-block;
-        position: absolute;
-        right: 2px;
-        top: -3px;
-    }
+.card-back.show-card .card-suit {
+    font-size: 15px;
+    position: absolute;
+    top: -3px;
+    right: 2px;
+    display: inline-block;
+}
 
 #deck .card-back {
-    color: white;
     font-size: 36px;
-    height: 60px;
-    width: 100px;
     position: absolute;
     top: 50px;
     left: calc(50% - 50px);
+    width: 100px;
+    height: 60px;
+    color: white;
 }
 
 #players {
@@ -159,62 +160,61 @@
     margin: 20px;
 }
 
-    .player img {
-        max-width: 64px;
-        max-height: 64px;
-    }
+.player img {
+    max-width: 64px;
+    max-height: 64px;
+}
 
-    .player .player-name {
-        display: block;
-        max-width: 180px;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-    }
+.player .player-name {
+    display: block;
+    overflow: hidden;
+    max-width: 180px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
 
-    .player .card-back {
-        height: 50px;
-        width: 15px;
-        display: inline-block
-    }
+.player .card-back {
+    display: inline-block;
+    width: 15px;
+    height: 50px;
+}
 
-        .player .card-back:last-child {
-            width: 30px;
-        }
+.player .card-back:last-child {
+    width: 30px;
+}
 
-    .player.active-player img {
-        border: 1px solid rgb(1, 222, 1);
-        background: rgba(1, 222, 1, 0.3);
-    }
+.player.active-player img {
+    border: 1px solid rgb(1, 222, 1);
+    background: rgba(1, 222, 1, 0.3);
+}
 
-    .player.defence-player img {
-        border: 1px solid rgb(1, 1, 222);
-        background: rgba(1, 1, 222, 0.3);
-    }
+.player.defence-player img {
+    border: 1px solid rgb(1, 1, 222);
+    background: rgba(1, 1, 222, 0.3);
+}
 
-    .player.leave-player img {
-        border: 1px solid rgb(222, 1, 1);
-        background: rgba(222, 1, 1, 0.3);
-    }
+.player.leave-player img {
+    border: 1px solid rgb(222, 1, 1);
+    background: rgba(222, 1, 1, 0.3);
+}
 
-    .player .speak-text {
-        font-size: 15px;
-        display: block;
-        margin-bottom: 7px;
-        border: 1px solid black;
-        padding: 3px;
-        border-radius: 5px;
-        background-color: lightcoral;
-    }
+.player .speak-text {
+    font-size: 15px;
+    display: block;
+    margin-bottom: 7px;
+    padding: 3px;
+    border: 1px solid black;
+    border-radius: 5px;
+    background-color: lightcoral;
+}
 
 #myIcon {
     text-align: center;
 }
 
-    #myIcon .player {
-        margin: 0;
-    }
-
+#myIcon .player {
+    margin: 0;
+}
 
 #leaveFromTableBtn {
     background: RGBA(354, 75, 86, 0.75);
