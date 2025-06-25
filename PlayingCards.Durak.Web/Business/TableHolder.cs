@@ -110,6 +110,32 @@ public class TableHolder
                 }
             }
 
+            var debug3 = false;
+
+            if (debug3)
+            {
+                var player1 = table.Game.AddPlayer("1 кореш " + playerName);
+                table.Players.Add(new() { Player = player1, AuthSecret = "123" });
+
+                var player2 = table.Game.AddPlayer("2 кореш " + playerName);
+                table.Players.Add(new() { Player = player2, AuthSecret = "123" });
+
+                table.Game.StartGame();
+                table.Game.Deck.Cards = new();
+
+                if (table.Game.Players.IndexOf(table.Game.ActivePlayer) == 0)
+                {
+                    table.Game.Players[0].Hand.RemoveRange(1, 5);
+                }
+
+                if (table.Game.Players.IndexOf(table.Game.ActivePlayer) == 1)
+                {
+                    table.Game.Players[1].Hand.RemoveRange(1, 5);
+                    //table.Game.Players[1].Hand.StartAttack(new[] { 0 });
+                    //table.Game.LeavePlayer(1);
+                }
+            }
+
             table.CleanLeaverPlayer();
             table.Version++;
             TablesVersion++;
@@ -123,7 +149,7 @@ public class TableHolder
     public void Leave(string playerSecret)
     {
         var table = GetBySecret(playerSecret, out var tablePlayer);
-        table.CleanLeaverPlayer();
+        //table.CleanLeaverPlayer();
         Leave(table, tablePlayer);
     }
 
@@ -132,18 +158,28 @@ public class TableHolder
         WriteLog(table, tablePlayer.AuthSecret, "leave from table");
 
         var playerIndex = table.Game.Players.IndexOf(tablePlayer.Player);
+        var correctionValue = 0;
 
-        if (table.Game.Status == GameStatus.InProcess)
+        if (table.Game.LeavePlayer(playerIndex))
         {
-            table.LeavePlayer = tablePlayer.Player;
-            table.LeavePlayerIndex = playerIndex;
-            WriteLog(table, "", "leaver: " + tablePlayer.Player.Name);
+            if (table.Game.Status == GameStatus.InProcess)
+            {
+                table.LeavePlayer = tablePlayer.Player;
+                table.LeavePlayerIndex = playerIndex;
+                WriteLog(table, "", "leaver: " + tablePlayer.Player.Name);
+            }
+
+            table.Players.Remove(tablePlayer);
+            correctionValue = 1;
+        }
+        else
+        {
+            // TODO: Костыль. Игрок не сможет создать новый стол
+            tablePlayer.AuthSecret = string.Empty;
+            WriteLog(table, "", "winner leaver: " + tablePlayer.Player.Name);
         }
 
-        table.Game.LeavePlayer(playerIndex);
-        table.Players.Remove(tablePlayer);
-
-        if (table.Players.Count == 0)
+        if (table.Players.Count - correctionValue == 0)
         {
             _tables.Remove(table.Id);
         }
@@ -253,7 +289,7 @@ public class TableHolder
 
     private void WriteLog(Table table, string? playerSecret, string message)
     {
-        var tablePlayer = table.Players.SingleOrDefault(x => x.AuthSecret == playerSecret);
+        var tablePlayer = table.Players.Find(x => x.AuthSecret == playerSecret);
         var playerIndex = tablePlayer == null ? null : (int?)table.Game.Players.IndexOf(tablePlayer.Player);
 
         var logger = LogManager.GetCurrentClassLogger()

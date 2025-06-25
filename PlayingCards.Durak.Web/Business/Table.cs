@@ -109,7 +109,7 @@ public class Table
     public void PlayCards(string playerSecret, int[] cardIndexes, int? attackCardIndex = null)
     {
         CheckGameInProcess();
-        var tablePlayer = Players.Single(player => player.AuthSecret == playerSecret);
+        var tablePlayer = GetPlayer(playerSecret);
 
         if (attackCardIndex != null)
         {
@@ -135,7 +135,7 @@ public class Table
     {
         CheckGameInProcess();
 
-        var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
+        var tablePlayer = GetPlayer(playerSecret);
 
         if (Game.DefencePlayer != tablePlayer.Player)
         {
@@ -284,7 +284,7 @@ public class Table
 
     private void WriteLog(string? playerSecret, string message)
     {
-        var tablePlayer = Players.SingleOrDefault(x => x.AuthSecret == playerSecret);
+        var tablePlayer = Players.Find(x => x.AuthSecret == playerSecret);
         var playerIndex = tablePlayer == null ? null : (int?)Game.Players.IndexOf(tablePlayer.Player);
 
         var logger = LogManager.GetCurrentClassLogger()
@@ -293,5 +293,13 @@ public class Table
             .WithProperty("PlayerIndex", playerIndex);
 
         logger.Info(message);
+    }
+
+    public TablePlayer GetPlayer(string playerSecret)
+    {
+        var tablePlayer = Players.Find(x => x.AuthSecret == playerSecret)
+                          ?? throw new BusinessException("player not found");
+
+        return tablePlayer;
     }
 }

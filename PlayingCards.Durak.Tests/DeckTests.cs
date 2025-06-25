@@ -1000,4 +1000,51 @@ public class DeckTests
 
         Assert.That(game.LooserPlayer.Name, Is.EqualTo(looserPlayer.Name));
     }
+
+    /// <summary>
+    /// Проверка, что выигравший может выйти.
+    /// </summary>
+    [Test]
+    public void LeaveWinnerTest()
+    {
+        Game game = new()
+        {
+            Deck = new(new NotSortedDeckCardGenerator()),
+        };
+
+        game.AddPlayer("1");
+        game.AddPlayer("2");
+        game.AddPlayer("3");
+        game.AddPlayer("4");
+        game.AddPlayer("5");
+        game.AddPlayer("6");
+
+        game.StartGame();
+
+        var activePlayerIndex = game.Players.IndexOf(game.ActivePlayer!);
+        var defencePlayerIndex = game.Players.IndexOf(game.DefencePlayer!);
+
+        for (var i = 0; i < 6; i++)
+        {
+            var player = game.Players[i];
+
+            if (i == defencePlayerIndex)
+            {
+                continue;
+            }
+
+            if (i == activePlayerIndex)
+            {
+                player.Hand.RemoveRange(1, player.Hand.Cards.Count - 1);
+            }
+        }
+
+        game.Players[activePlayerIndex].Hand.StartAttack([0]);
+
+        Assert.That(game.Status, Is.EqualTo(GameStatus.InProcess));
+
+        game.LeavePlayer(activePlayerIndex);
+
+        Assert.That(game.Status, Is.EqualTo(GameStatus.InProcess));
+    }
 }

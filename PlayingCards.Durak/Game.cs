@@ -316,10 +316,16 @@ public class Game
     /// Игрок вышел из игры.
     /// </summary>
     /// <param name="playerIndex">Имя игрока.</param>
-    public Player LeavePlayer(int playerIndex)
+    public bool LeavePlayer(int playerIndex)
     {
         var player = Players[playerIndex];
         Players.Remove(player);
+
+        if (player.Hand.Cards.Count == 0 && Deck.CardsCount == 0)
+        {
+            AdjustActivePlayerIndexAfterPlayerRemoval(playerIndex);
+            return false;
+        }
 
         if (Status == GameStatus.InProcess)
         {
@@ -339,7 +345,32 @@ public class Game
             Status = GameStatus.ReadyToStart;
         }
 
-        return player;
+        return true;
+    }
+
+    // TODO: Возможно можно сделать имеющимися методами
+    private void AdjustActivePlayerIndexAfterPlayerRemoval(int removedPlayerIndex)
+    {
+        if (_activePlayerIndex == null)
+        {
+            return;
+        }
+
+        if (removedPlayerIndex < _activePlayerIndex.Value)
+        {
+            _activePlayerIndex--;
+        }
+        else if (removedPlayerIndex == _activePlayerIndex.Value)
+        {
+            if (_activePlayerIndex.Value >= Players.Count)
+            {
+                _activePlayerIndex = 0;
+            }
+
+            _activePlayerIndex = MoveNextIfCardsCountEqualZero(_activePlayerIndex.Value);
+        }
+
+        SetActivePlayerIndex(_activePlayerIndex);
     }
 
     public void StartGame()
