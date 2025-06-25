@@ -148,7 +148,16 @@ public class Table
         }
 
         CheckStopRoundBeginDate();
-        StopRoundStatus = Business.StopRoundStatus.Take;
+
+        if (Game.Cards.Count == 6 || tablePlayer.Player.Hand.Cards.Count == Game.Cards.Count(x=>x.DefenceCard == null))
+        {
+            StopRoundStatus = Business.StopRoundStatus.TakeFull;
+        }
+        else
+        {
+            StopRoundStatus = Business.StopRoundStatus.Take;
+        }
+
         CleanDefencePlayerAfkStartTime();
         WriteLog(playerSecret, "take");
         Version++;
@@ -206,6 +215,7 @@ public class Table
                 break;
 
             case Business.StopRoundStatus.Take:
+            case Business.StopRoundStatus.TakeFull:
                 break;
 
             default:

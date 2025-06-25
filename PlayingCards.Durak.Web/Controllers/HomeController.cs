@@ -86,8 +86,19 @@ public class HomeController(TableHolder tableHolder) : Controller
                 .ToArray();
 
             tableDto.Status = (int)game.Status;
-            tableDto.StopRoundStatus = table.StopRoundStatus == null ? null : (int)table.StopRoundStatus;
-            tableDto.StopRoundEndDate = table.StopRoundBeginDate?.AddSeconds(TableHolder.STOP_ROUND_SECONDS);
+
+            tableDto.StopRoundStatus = table.StopRoundStatus switch
+            {
+                null => null,
+                StopRoundStatus.SuccessDefence => 1,
+                StopRoundStatus.Take => 0,
+                StopRoundStatus.TakeFull => 0,
+                _ => (int)table.StopRoundStatus,
+            };
+
+            tableDto.StopRoundEndDate = table.StopRoundBeginDate == null
+                ? null
+                : TableHolder.GetSecond(table.StopRoundBeginDate.Value, table.StopRoundStatus);
 
             if (table.LeavePlayer != null)
             {

@@ -9,6 +9,8 @@ public class TableHolder
     /// </summary>
     public const int STOP_ROUND_SECONDS = 10;
 
+    private const int STOP_ROUND_MIN_SECONDS = 3;
+
     /// <summary>
     /// Время на принятие решения.
     /// </summary>
@@ -238,7 +240,7 @@ public class TableHolder
             {
                 try
                 {
-                    var finishTime = table.StopRoundBeginDate.Value.AddSeconds(STOP_ROUND_SECONDS);
+                    var finishTime = GetSecond(table.StopRoundBeginDate.Value, table.StopRoundStatus);
 
                     if (DateTime.UtcNow >= finishTime)
                     {
@@ -263,6 +265,11 @@ public class TableHolder
                 }
             }
         }
+    }
+
+    public static DateTime GetSecond(DateTime tableStopRoundBeginDate, StopRoundStatus? tableStopRoundStatus)
+    {
+        return tableStopRoundBeginDate.AddSeconds(tableStopRoundStatus == StopRoundStatus.TakeFull ? STOP_ROUND_MIN_SECONDS : STOP_ROUND_SECONDS);
     }
 
     private void CheckAfkPlayers()
