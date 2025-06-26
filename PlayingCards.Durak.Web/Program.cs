@@ -1,6 +1,7 @@
 using NLog;
 using NLog.Web;
 using PlayingCards.Durak.Web.Business;
+using PlayingCards.Durak.Web.Hubs;
 using PlayingCards.Durak.Web.Middlewares;
 
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -12,6 +13,33 @@ try
 
     builder.Services.AddControllersWithViews();
 
+    var signalRConfig = new SignalRConfiguration();
+    builder.Configuration.GetSection("SignalR").Bind(signalRConfig);
+    builder.Services.AddSingleton(signalRConfig);
+
+    builder.Services.AddSignalR(options =>
+    {
+        options.EnableDetailedErrors = signalRConfig.EnableDetailedErrors;
+        options.MaximumReceiveMessageSize = signalRConfig.MaxMessageSize;
+        options.StreamBufferCapacity = signalRConfig.StreamBufferCapacity;
+        options.ClientTimeoutInterval = TimeSpan.FromSeconds(signalRConfig.ConnectionTimeoutSeconds);
+        options.KeepAliveInterval = TimeSpan.FromSeconds(signalRConfig.KeepAliveIntervalSeconds);
+    });
+
+    if (signalRConfig.EnableCors)
+    {
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("SignalRCorsPolicy", policy =>
+            {
+                policy.WithOrigins(signalRConfig.CorsOrigins.Length > 0 ? signalRConfig.CorsOrigins : ["*"])
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            });
+        });
+    }
+
     builder.Services.AddSingleton<TableHolder>();
     builder.Services.AddHostedService<BackgroundExecutorService>();
 
@@ -20,7 +48,6 @@ try
 
     var app = builder.Build();
 
-    // Configure the HTTP request pipeline.
     if (!app.Environment.IsDevelopment())
     {
         app.UseExceptionHandler("/Home/Error");
@@ -29,11 +56,20 @@ try
     app.UseHttpsRedirection();
     app.UseStaticFiles();
 
+    var appSignalRConfig = app.Services.GetRequiredService<SignalRConfiguration>();
+
+    if (appSignalRConfig.EnableCors)
+    {
+        app.UseCors("SignalRCorsPolicy");
+    }
+
     app.UseRouting();
 
     app.UseAuthorization();
 
     app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+
+    app.MapHub<GameHub>(appSignalRConfig.HubPath);
 
     app.UseMiddleware<ExceptionMiddleware>();
     app.Run();

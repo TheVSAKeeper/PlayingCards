@@ -50,11 +50,34 @@
             &copy; 2024 - PlayingCards.Durak.Web
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
+    <script src="~/js/signalr-client.js"
+            asp-append-version="true"></script>
     <script src="~/js/site.js"
             asp-append-version="true"></script>
-    <script src="~/js/game.js"
+
+    <script src="~/js/game-config.js"
+            asp-append-version="true"></script>
+    <script src="~/js/card-utils.js"
+            asp-append-version="true"></script>
+    <script src="~/js/ui-utils.js"
+            asp-append-version="true"></script>
+    <script src="~/js/auth-manager.js"
+            asp-append-version="true"></script>
+    <script src="~/js/timer-manager.js"
+            asp-append-version="true"></script>
+    <script src="~/js/game-state-manager.js"
+            asp-append-version="true"></script>
+    <script src="~/js/event-handlers.js"
+            asp-append-version="true"></script>
+    <script src="~/js/communication-manager.js"
+            asp-append-version="true"></script>
+    <script src="~/js/game-renderer.js"
+            asp-append-version="true"></script>
+    <script src="~/js/game-actions.js"
+            asp-append-version="true"></script>
+    <script src="~/js/game-init.js"
             asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", false)
 </body>

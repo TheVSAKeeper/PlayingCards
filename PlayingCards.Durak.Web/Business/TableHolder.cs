@@ -1,39 +1,51 @@
-﻿using NLog;
+﻿using Microsoft.AspNetCore.SignalR;
+using NLog;
+using PlayingCards.Durak.Web.Hubs;
+using PlayingCards.Durak.Web.Models;
+using static PlayingCards.Durak.Web.Models.GetStatusModel;
 
 namespace PlayingCards.Durak.Web.Business;
 
-public class TableHolder
+public class TableHolder(IHubContext<GameHub>? hubContext = null)
 {
     /// <summary>
     /// Время на окончание раунда.
     /// </summary>
     public const int STOP_ROUND_SECONDS = 10;
 
-    private const int STOP_ROUND_MIN_SECONDS = 3;
-
     /// <summary>
     /// Время на принятие решения.
     /// </summary>
     public const int AFK_SECONDS = 60;
 
+    private const int STOP_ROUND_MIN_SECONDS = 3;
+
     private static readonly Dictionary<Guid, Table> _tables = new();
     public int TablesVersion;
     public int TableNumber = 1;
 
-    public Table CreateTable()
+    public static DateTime GetSecond(DateTime tableStopRoundBeginDate, StopRoundStatus? tableStopRoundStatus)
+    {
+        return tableStopRoundBeginDate.AddSeconds(tableStopRoundStatus == StopRoundStatus.TakeFull ? STOP_ROUND_MIN_SECONDS : STOP_ROUND_SECONDS);
+    }
+
+    public async Task<Table> CreateTable()
     {
         var table = new Table { Id = Guid.NewGuid(), Number = TableNumber, Game = new(), Players = new() };
         table.Version = 0;
+        table.SetHubContext(hubContext);
         _tables.Add(table.Id, table);
         TablesVersion++;
 
         WriteLog(table, null, "create table");
         TableNumber++;
 
+        await BroadcastTablesUpdated();
+
         return table;
     }
 
-    public void Join(Guid tableId, string playerSecret, string playerName)
+    public async Task Join(Guid tableId, string playerSecret, string playerName)
     {
         if (string.IsNullOrEmpty(playerSecret))
         {
@@ -139,8 +151,12 @@ public class TableHolder
             }
 
             table.CleanLeaverPlayer();
+            table.SetHubContext(hubContext);
             table.Version++;
             TablesVersion++;
+
+            await BroadcastPlayerJoined(table, playerName);
+            await BroadcastTablesUpdated();
         }
         else
         {
@@ -148,17 +164,17 @@ public class TableHolder
         }
     }
 
-    public void Leave(string playerSecret)
+    public async Task Leave(string playerSecret)
     {
         var table = GetBySecret(playerSecret, out var tablePlayer);
-        //table.CleanLeaverPlayer();
-        Leave(table, tablePlayer);
+        await Leave(table, tablePlayer);
     }
 
-    public void Leave(Table table, TablePlayer tablePlayer)
+    public async Task Leave(Table table, TablePlayer tablePlayer)
     {
         WriteLog(table, tablePlayer.AuthSecret, "leave from table");
 
+        var playerName = tablePlayer.Player.Name;
         var playerIndex = table.Game.Players.IndexOf(tablePlayer.Player);
         var correctionValue = 0;
 
@@ -195,6 +211,9 @@ public class TableHolder
 
         TablesVersion++;
         table.Version++;
+
+        await BroadcastPlayerLeft(table, playerName);
+        await BroadcastTablesUpdated();
     }
 
     public Table Get(Guid tableId)
@@ -225,15 +244,102 @@ public class TableHolder
         return _tables.Values.ToArray();
     }
 
-    public void BackgroundProcess()
+    public async Task BackgroundProcess()
     {
-        CheckStopRound();
-        CheckAfkPlayers();
+        await CheckStopRound();
+        await CheckAfkPlayers();
     }
 
-    private void CheckStopRound()
+    private async Task BroadcastTablesUpdated()
     {
-        // todo потокобезопасность натянуть
+        if (hubContext == null)
+        {
+            return;
+        }
+
+        try
+        {
+            var tablesState = GetTablesState();
+            await hubContext.Clients.All.SendAsync("TablesUpdated", tablesState);
+        }
+        catch (Exception ex)
+        {
+            var logger = LogManager.GetCurrentClassLogger();
+            logger.Error(ex, "Failed to broadcast tables updated");
+        }
+    }
+
+    private async Task BroadcastPlayerJoined(Table table, string playerName)
+    {
+        if (hubContext == null)
+        {
+            return;
+        }
+
+        try
+        {
+            var groupName = $"Table_{table.Id}";
+
+            var notification = new PlayerJoinedNotification
+            {
+                PlayerName = playerName,
+                TableId = table.Id,
+            };
+
+            await hubContext.Clients.Group(groupName).SendAsync("PlayerJoined", notification);
+        }
+        catch (Exception ex)
+        {
+            var logger = LogManager.GetCurrentClassLogger();
+            logger.Error(ex, "Failed to broadcast player joined for table {TableId}", table.Id);
+        }
+    }
+
+    private async Task BroadcastPlayerLeft(Table table, string playerName)
+    {
+        if (hubContext == null)
+        {
+            return;
+        }
+
+        try
+        {
+            var groupName = $"Table_{table.Id}";
+
+            var notification = new PlayerLeftNotification
+            {
+                PlayerName = playerName,
+                TableId = table.Id,
+            };
+
+            await hubContext.Clients.Group(groupName).SendAsync("PlayerLeft", notification);
+        }
+        catch (Exception ex)
+        {
+            var logger = LogManager.GetCurrentClassLogger();
+            logger.Error(ex, "Failed to broadcast player left for table {TableId}", table.Id);
+        }
+    }
+
+    private GetStatusModel GetTablesState()
+    {
+        return new()
+        {
+            Version = TablesVersion,
+            Tables = GetTables()
+                .Select(x => new TableModel
+                {
+                    Id = x.Id,
+                    Players = x.Players
+                        .Select(p => new PlayerModel { Name = p.Player.Name })
+                        .ToArray(),
+                })
+                .ToArray(),
+        };
+    }
+
+    private async Task CheckStopRound()
+    {
         foreach (var table in _tables.Values)
         {
             if (table.StopRoundBeginDate != null)
@@ -254,6 +360,8 @@ public class TableHolder
                         table.Game.StopRound();
                         table.SetActivePlayerAfkStartTime();
                         table.Version++;
+
+                        await table.BroadcastGameStateAsync();
                     }
                 }
                 catch (Exception ex)
@@ -267,12 +375,7 @@ public class TableHolder
         }
     }
 
-    public static DateTime GetSecond(DateTime tableStopRoundBeginDate, StopRoundStatus? tableStopRoundStatus)
-    {
-        return tableStopRoundBeginDate.AddSeconds(tableStopRoundStatus == StopRoundStatus.TakeFull ? STOP_ROUND_MIN_SECONDS : STOP_ROUND_SECONDS);
-    }
-
-    private void CheckAfkPlayers()
+    private async Task CheckAfkPlayers()
     {
         foreach (var table in _tables.Values)
         {
@@ -286,7 +389,7 @@ public class TableHolder
 
                     if (DateTime.UtcNow >= finishTime)
                     {
-                        Leave(table, tablePlayer);
+                        await Leave(table, tablePlayer);
                         i--;
                     }
                 }

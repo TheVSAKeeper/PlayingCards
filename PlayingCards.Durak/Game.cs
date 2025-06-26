@@ -6,6 +6,21 @@
 public class Game
 {
     /// <summary>
+    /// Индекс игрока, который начинает раунд.
+    /// </summary>
+    private int? _activePlayerIndex;
+
+    /// <summary>
+    /// Индекс игрока, который сейчас защищается.
+    /// </summary>
+    private int? _defencePlayerIndex;
+
+    /// <summary>
+    /// Есть первый отбой.
+    /// </summary>
+    private bool _isSuccessDefenceExists;
+
+    /// <summary>
     /// Игра.
     /// </summary>
     public Game()
@@ -27,27 +42,12 @@ public class Game
     public GameStatus Status { get; private set; }
 
     /// <summary>
-    /// Индекс игрока, который начинает раунд.
-    /// </summary>
-    private int? _activePlayerIndex;
-
-    /// <summary>
-    /// Индекс игрока, который сейчас защищается.
-    /// </summary>
-    private int? _defencePlayerIndex;
-
-    /// <summary>
     /// Номинал карты, минимального козыря.
     /// </summary>
     /// <remarks>
     /// Игрок, который ходит первый (с минимальным козырем), должен показать его другим игрокам.
     /// </remarks>
     public int? NeedShowCardMinTrumpValue { get; private set; }
-
-    /// <summary>
-    /// Есть первый отбой.
-    /// </summary>
-    private bool _isSuccessDefenceExists;
 
     /// <summary>
     /// Игрок, который сейчас ходит.
@@ -95,6 +95,166 @@ public class Game
     /// Колода.
     /// </summary>
     public Deck Deck { get; set; }
+
+    /// <summary>
+    /// Сыграть карты.
+    /// </summary>
+    /// <param name="player">Игрок.</param>
+    /// <param name="cards">Карты.</param>
+    /// <param name="attackCard">Карта, от которой защищаемся (если это защита).</param>
+    public void PlayCards(Player player, List<Card> cards, Card? attackCard = null)
+    {
+        CheckGameInProcess();
+
+        if (attackCard != null)
+        {
+            Defence(player, cards.First(), attackCard);
+            return;
+        }
+
+        if (IsRoundStarted())
+        {
+            Attack(player, cards);
+        }
+        else
+        {
+            StartAttack(player, cards);
+        }
+    }
+
+    /// <summary>
+    /// Добавить игрока в игру.
+    /// </summary>
+    /// <param name="playerName">Имя игрока.</param>
+    public Player AddPlayer(string playerName)
+    {
+        if (Players.Count >= 6)
+        {
+            throw new BusinessException("max player count = 6");
+        }
+
+        if (Status == GameStatus.InProcess)
+        {
+            throw new BusinessException("bad status for join: " + Status);
+        }
+
+        var player = new Player(this) { Name = playerName };
+        Players.Add(player);
+
+        if (Players.Count >= 2)
+        {
+            Status = GameStatus.ReadyToStart;
+        }
+
+        return player;
+    }
+
+    /// <summary>
+    /// Игрок вышел из игры.
+    /// </summary>
+    /// <param name="playerIndex">Имя игрока.</param>
+    public bool LeavePlayer(int playerIndex)
+    {
+        var player = Players[playerIndex];
+        Players.Remove(player);
+
+        if (Status == GameStatus.InProcess
+            && player.Hand.Cards.Count == 0
+            && Deck.CardsCount == 0)
+        {
+            AdjustActivePlayerIndexAfterPlayerRemoval(playerIndex);
+            return false;
+        }
+
+        if (Status == GameStatus.InProcess)
+        {
+            Status = GameStatus.Finish;
+            _activePlayerIndex = null;
+        }
+        else
+        {
+            if (Players.Count <= 1)
+            {
+                Status = GameStatus.WaitPlayers;
+            }
+        }
+
+        if (Players.Count >= 2)
+        {
+            Status = GameStatus.ReadyToStart;
+        }
+
+        return true;
+    }
+
+    public void StartGame()
+    {
+        if (Status != GameStatus.ReadyToStart && Status != GameStatus.Finish)
+        {
+            throw new BusinessException("bad status for start: " + Status);
+        }
+
+        SetActivePlayerIndex(null);
+        _isSuccessDefenceExists = false;
+        Cards = [];
+        Status = GameStatus.InProcess;
+        int? looserPlayerIndex = null;
+
+        if (LooserPlayer != null)
+        {
+            looserPlayerIndex = Players.IndexOf(LooserPlayer);
+            LooserPlayer = null;
+        }
+
+        for (var i = 0; i < 10; i++)
+        {
+            var isSuccess = ShuffleDeckAndTakeCards(looserPlayerIndex);
+
+            // козырей на руках нет, перетусуем колоду.
+            if (isSuccess)
+            {
+                return;
+            }
+        }
+
+        // никому не досталось козырей за 10 перемешиваний колоды, активным становится первый игрок.
+        SetActivePlayerIndex(0);
+    }
+
+    public void StopRound()
+    {
+        CheckGameInProcess();
+
+        var isDefenceSuccess = Cards.All(x => x.DefenceCard != null);
+
+        // если защитился не от всех карт, то забирает себе, иначе всё в отбой и следующий раунд.
+        if (!isDefenceSuccess)
+        {
+            foreach (var card in Cards)
+            {
+                DefencePlayer.Hand.TakeCard(card.AttackCard);
+
+                if (card.DefenceCard != null)
+                {
+                    DefencePlayer.Hand.TakeCard(card.DefenceCard);
+                }
+            }
+        }
+        else
+        {
+            _isSuccessDefenceExists = true;
+        }
+
+        Cards = [];
+
+        TakeCardsAfterRound();
+        SetNextActivePlayer(isDefenceSuccess);
+    }
+
+    public bool IsRoundStarted()
+    {
+        return Cards.Count > 0;
+    }
 
     /// <summary>
     /// Начать раунд, сыграв карту.
@@ -170,6 +330,38 @@ public class Game
         CheckWin();
     }
 
+    /// <summary>
+    /// Защититься от карты.
+    /// </summary>
+    /// <param name="player">Игрок.</param>
+    /// <param name="defenceCard">Карта, которой мы защищаемся.</param>
+    /// <param name="attackCard">Карта, от которой защищаемся.</param>
+    internal void Defence(Player player, Card defenceCard, Card attackCard)
+    {
+        CheckGameInProcess();
+
+        if (IsRoundStarted() == false)
+        {
+            throw new BusinessException("round not started");
+        }
+
+        if (DefencePlayer != player)
+        {
+            throw new BusinessException("player is not defence player");
+        }
+
+        var card = Cards.FirstOrDefault(x => x.AttackCard == attackCard);
+
+        if (card == null)
+        {
+            throw new BusinessException("attack card not found");
+        }
+
+        card.Defence(defenceCard);
+        player.Hand.Remove(defenceCard);
+        CheckWin();
+    }
+
     private bool IsRankOnTable(Card card)
     {
         var cardRankExistsInTable = false;
@@ -227,127 +419,6 @@ public class Game
         }
     }
 
-    /// <summary>
-    /// Защититься от карты.
-    /// </summary>
-    /// <param name="player">Игрок.</param>
-    /// <param name="defenceCard">Карта, которой мы защищаемся.</param>
-    /// <param name="attackCard">Карта, от которой защищаемся.</param>
-    internal void Defence(Player player, Card defenceCard, Card attackCard)
-    {
-        CheckGameInProcess();
-
-        if (IsRoundStarted() == false)
-        {
-            throw new BusinessException("round not started");
-        }
-
-        if (DefencePlayer != player)
-        {
-            throw new BusinessException("player is not defence player");
-        }
-
-        var card = Cards.FirstOrDefault(x => x.AttackCard == attackCard);
-
-        if (card == null)
-        {
-            throw new BusinessException("attack card not found");
-        }
-
-        card.Defence(defenceCard);
-        player.Hand.Remove(defenceCard);
-        CheckWin();
-    }
-
-    /// <summary>
-    /// Сыграть карты.
-    /// </summary>
-    /// <param name="player">Игрок.</param>
-    /// <param name="cards">Карты.</param>
-    /// <param name="attackCard">Карта, от которой защищаемся (если это защита).</param>
-    public void PlayCards(Player player, List<Card> cards, Card? attackCard = null)
-    {
-        CheckGameInProcess();
-
-        if (attackCard != null)
-        {
-            Defence(player, cards.First(), attackCard);
-            return;
-        }
-
-        if (IsRoundStarted())
-        {
-            Attack(player, cards);
-        }
-        else
-        {
-            StartAttack(player, cards);
-        }
-    }
-
-    /// <summary>
-    /// Добавить игрока в игру.
-    /// </summary>
-    /// <param name="playerName">Имя игрока.</param>
-    public Player AddPlayer(string playerName)
-    {
-        if (Players.Count >= 6)
-        {
-            throw new BusinessException("max player count = 6");
-        }
-
-        if (Status == GameStatus.InProcess)
-        {
-            throw new BusinessException("bad status for join: " + Status);
-        }
-
-        var player = new Player(this) { Name = playerName };
-        Players.Add(player);
-
-        if (Players.Count >= 2)
-        {
-            Status = GameStatus.ReadyToStart;
-        }
-
-        return player;
-    }
-
-    /// <summary>
-    /// Игрок вышел из игры.
-    /// </summary>
-    /// <param name="playerIndex">Имя игрока.</param>
-    public bool LeavePlayer(int playerIndex)
-    {
-        var player = Players[playerIndex];
-        Players.Remove(player);
-
-        if (player.Hand.Cards.Count == 0 && Deck.CardsCount == 0)
-        {
-            AdjustActivePlayerIndexAfterPlayerRemoval(playerIndex);
-            return false;
-        }
-
-        if (Status == GameStatus.InProcess)
-        {
-            Status = GameStatus.Finish;
-            _activePlayerIndex = null;
-        }
-        else
-        {
-            if (Players.Count <= 1)
-            {
-                Status = GameStatus.WaitPlayers;
-            }
-        }
-
-        if (Players.Count >= 2)
-        {
-            Status = GameStatus.ReadyToStart;
-        }
-
-        return true;
-    }
-
     // TODO: Возможно можно сделать имеющимися методами
     private void AdjustActivePlayerIndexAfterPlayerRemoval(int removedPlayerIndex)
     {
@@ -371,40 +442,6 @@ public class Game
         }
 
         SetActivePlayerIndex(_activePlayerIndex);
-    }
-
-    public void StartGame()
-    {
-        if (Status != GameStatus.ReadyToStart && Status != GameStatus.Finish)
-        {
-            throw new BusinessException("bad status for start: " + Status);
-        }
-
-        SetActivePlayerIndex(null);
-        _isSuccessDefenceExists = false;
-        Cards = [];
-        Status = GameStatus.InProcess;
-        int? looserPlayerIndex = null;
-
-        if (LooserPlayer != null)
-        {
-            looserPlayerIndex = Players.IndexOf(LooserPlayer);
-            LooserPlayer = null;
-        }
-
-        for (var i = 0; i < 10; i++)
-        {
-            var isSuccess = ShuffleDeckAndTakeCards(looserPlayerIndex);
-
-            // козырей на руках нет, перетусуем колоду.
-            if (isSuccess)
-            {
-                return;
-            }
-        }
-
-        // никому не досталось козырей за 10 перемешиваний колоды, активным становится первый игрок.
-        SetActivePlayerIndex(0);
     }
 
     private bool ShuffleDeckAndTakeCards(int? looserPlayerIndex)
@@ -476,36 +513,6 @@ public class Game
         }
 
         return false;
-    }
-
-    public void StopRound()
-    {
-        CheckGameInProcess();
-
-        var isDefenceSuccess = Cards.All(x => x.DefenceCard != null);
-
-        // если защитился не от всех карт, то забирает себе, иначе всё в отбой и следующий раунд.
-        if (!isDefenceSuccess)
-        {
-            foreach (var card in Cards)
-            {
-                DefencePlayer.Hand.TakeCard(card.AttackCard);
-
-                if (card.DefenceCard != null)
-                {
-                    DefencePlayer.Hand.TakeCard(card.DefenceCard);
-                }
-            }
-        }
-        else
-        {
-            _isSuccessDefenceExists = true;
-        }
-
-        Cards = [];
-
-        TakeCardsAfterRound();
-        SetNextActivePlayer(isDefenceSuccess);
     }
 
     private void SetNextActivePlayer(bool isDefenceSuccess)
@@ -595,11 +602,6 @@ public class Game
                 startPlayerIndex = 0;
             }
         }
-    }
-
-    public bool IsRoundStarted()
-    {
-        return Cards.Count > 0;
     }
 
     private void CheckGameInProcess()

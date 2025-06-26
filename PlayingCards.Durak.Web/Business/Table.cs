@@ -1,5 +1,9 @@
-﻿using NLog;
+﻿using Microsoft.AspNetCore.SignalR;
+using NLog;
+using PlayingCards.Durak.Web.Hubs;
+using PlayingCards.Durak.Web.Models;
 using System.Text;
+using static PlayingCards.Durak.Web.Models.GetStatusModel;
 
 namespace PlayingCards.Durak.Web.Business;
 
@@ -8,6 +12,8 @@ namespace PlayingCards.Durak.Web.Business;
 /// </summary>
 public class Table
 {
+    private IHubContext<GameHub>? _hubContext;
+
     /// <summary>
     /// Идентификатор.
     /// </summary>
@@ -58,6 +64,32 @@ public class Table
     /// </summary>
     public int Number { get; set; }
 
+    public void SetHubContext(IHubContext<GameHub> hubContext)
+    {
+        _hubContext = hubContext;
+    }
+
+    public async Task BroadcastGameStateAsync()
+    {
+        if (_hubContext == null || Players.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var groupName = $"Table_{Id}";
+
+            var gameState = GetTableState(Players.First());
+            await _hubContext.Clients.Group(groupName).SendAsync("GameStateChanged", gameState);
+        }
+        catch (Exception ex)
+        {
+            var logger = LogManager.GetCurrentClassLogger();
+            logger.Error(ex, "Failed to broadcast game state for table {TableId}", Id);
+        }
+    }
+
     public void SetActivePlayerAfkStartTime()
     {
         Players.First(x => x.Player == Game.ActivePlayer).AfkStartTime = DateTime.UtcNow;
@@ -88,7 +120,7 @@ public class Table
         LeavePlayerIndex = null;
     }
 
-    public void StartGame()
+    public async Task StartGame()
     {
         Game.StartGame();
         var log = new StringBuilder();
@@ -104,9 +136,11 @@ public class Table
         Version++;
 
         WriteLog("", "start game: \r\n" + log);
+
+        await BroadcastGameStateAsync();
     }
 
-    public void PlayCards(string playerSecret, int[] cardIndexes, int? attackCardIndex = null)
+    public async Task PlayCards(string playerSecret, int[] cardIndexes, int? attackCardIndex = null)
     {
         CheckGameInProcess();
         var tablePlayer = GetPlayer(playerSecret);
@@ -129,9 +163,11 @@ public class Table
 
         CheckEndGame();
         Version++;
+
+        await BroadcastGameStateAsync();
     }
 
-    public void Take(string playerSecret)
+    public async Task Take(string playerSecret)
     {
         CheckGameInProcess();
 
@@ -149,7 +185,7 @@ public class Table
 
         CheckStopRoundBeginDate();
 
-        if (Game.Cards.Count == 6 || tablePlayer.Player.Hand.Cards.Count == Game.Cards.Count(x=>x.DefenceCard == null))
+        if (Game.Cards.Count == 6 || tablePlayer.Player.Hand.Cards.Count == Game.Cards.Count(x => x.DefenceCard == null))
         {
             StopRoundStatus = Business.StopRoundStatus.TakeFull;
         }
@@ -161,6 +197,16 @@ public class Table
         CleanDefencePlayerAfkStartTime();
         WriteLog(playerSecret, "take");
         Version++;
+
+        await BroadcastGameStateAsync();
+    }
+
+    public TablePlayer GetPlayer(string playerSecret)
+    {
+        var tablePlayer = Players.Find(x => x.AuthSecret == playerSecret)
+                          ?? throw new BusinessException("player not found");
+
+        return tablePlayer;
     }
 
     private static StringBuilder GetCardsLog(int[] cardIndexes, TablePlayer tablePlayer)
@@ -182,6 +228,79 @@ public class Table
         }
 
         return logCards;
+    }
+
+    private GetStatusModel GetTableState(TablePlayer player)
+    {
+        var game = Game;
+
+        var result = new GetStatusModel
+        {
+            Version = Version,
+            Table = new()
+            {
+                Id = Id,
+                ActivePlayerIndex = game.ActivePlayer == null ? null : game.Players.IndexOf(game.ActivePlayer),
+                DefencePlayerIndex = game.DefencePlayer == null ? null : game.Players.IndexOf(game.DefencePlayer),
+                MyPlayerIndex = game.Players.IndexOf(player.Player),
+                OwnerIndex = game.Players.IndexOf(Owner),
+                AfkEndTime = player.AfkStartTime?.AddSeconds(TableHolder.AFK_SECONDS),
+                LooserPlayerIndex = game.LooserPlayer == null ? null : game.Players.IndexOf(game.LooserPlayer),
+                NeedShowCardMinTrumpValue = game.NeedShowCardMinTrumpValue,
+
+                MyCards = game.Players.First(x => x == player.Player)
+                    .Hand.Cards
+                    .Select(x => new CardModel(x))
+                    .ToArray(),
+
+                DeckCardsCount = game.Deck.CardsCount,
+                Trump = game.Deck.TrumpCard == null ? null : new CardModel(game.Deck.TrumpCard),
+
+                Cards = game.Cards.Select(x => new TableCardModel
+                    {
+                        AttackCard = new(x.AttackCard),
+                        DefenceCard = x.DefenceCard == null ? null : new CardModel(x.DefenceCard),
+                    })
+                    .ToArray(),
+
+                Players = Players.Where(x => x.Player != player.Player)
+                    .Select((x, i) => new PlayerModel
+                    {
+                        Index = i,
+                        Name = x.Player.Name,
+                        CardsCount = x.Player.Hand.Cards.Count,
+                        AfkEndTime = x.AfkStartTime?.AddSeconds(TableHolder.AFK_SECONDS),
+                    })
+                    .ToArray(),
+
+                Status = (int)game.Status,
+
+                StopRoundStatus = StopRoundStatus switch
+                {
+                    null => null,
+                    Business.StopRoundStatus.SuccessDefence => 1,
+                    Business.StopRoundStatus.Take => 0,
+                    Business.StopRoundStatus.TakeFull => 0,
+                    _ => (int)StopRoundStatus,
+                },
+
+                StopRoundEndDate = StopRoundBeginDate == null
+                    ? null
+                    : TableHolder.GetSecond(StopRoundBeginDate.Value, StopRoundStatus),
+            },
+        };
+
+        if (LeavePlayer != null)
+        {
+            result.Table.LeavePlayer = new()
+            {
+                Index = LeavePlayerIndex!.Value,
+                Name = LeavePlayer.Name,
+                CardsCount = LeavePlayer.Hand.Cards.Count,
+            };
+        }
+
+        return result;
     }
 
     private void StartAttack(TablePlayer tablePlayer, int[] cardIndexes)
@@ -303,13 +422,5 @@ public class Table
             .WithProperty("PlayerIndex", playerIndex);
 
         logger.Info(message);
-    }
-
-    public TablePlayer GetPlayer(string playerSecret)
-    {
-        var tablePlayer = Players.Find(x => x.AuthSecret == playerSecret)
-                          ?? throw new BusinessException("player not found");
-
-        return tablePlayer;
     }
 }
