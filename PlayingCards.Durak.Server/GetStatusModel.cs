@@ -1,4 +1,4 @@
-﻿namespace PlayingCards.Durak.Web.Models;
+﻿namespace PlayingCards.Durak.Server;
 
 public class GetStatusModel
 {

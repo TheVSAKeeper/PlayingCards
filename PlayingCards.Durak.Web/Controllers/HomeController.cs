@@ -2,7 +2,7 @@
 using PlayingCards.Durak.Server;
 using PlayingCards.Durak.Web.Models;
 using System.Diagnostics;
-using static PlayingCards.Durak.Web.Models.GetStatusModel;
+using static PlayingCards.Durak.Server.GetStatusModel;
 
 namespace PlayingCards.Durak.Web.Controllers;
 
@@ -38,9 +38,10 @@ public class HomeController(TableHolder tableHolder) : Controller
     public JsonResult GetStatus(string playerSecret, int? version = null)
     {
         var table = tableHolder.GetBySecret(playerSecret, out var tablePlayer);
-        var result = new GetStatusModel();
-
-        result.Version = table?.Version ?? tableHolder.TablesVersion;
+        var result = new GetStatusModel
+        {
+            Version = table?.Version ?? tableHolder.TablesVersion,
+        };
 
         if (version != null && version == result.Version)
         {
@@ -49,69 +50,11 @@ public class HomeController(TableHolder tableHolder) : Controller
 
         if (table != null)
         {
-            var game = table.Game;
-            var tableDto = new TableModel();
-            tableDto.Id = table.Id;
-            tableDto.ActivePlayerIndex = game.ActivePlayer == null ? null : game.Players.IndexOf(game.ActivePlayer);
-            tableDto.DefencePlayerIndex = game.DefencePlayer == null ? null : game.Players.IndexOf(game.DefencePlayer);
-            tableDto.MyPlayerIndex = game.Players.IndexOf(tablePlayer.Player);
-            tableDto.OwnerIndex = game.Players.IndexOf(table.Owner);
-            tableDto.AfkEndTime = tablePlayer.AfkStartTime?.AddSeconds(TableHolder.AFK_SECONDS);
-            tableDto.LooserPlayerIndex = game.LooserPlayer == null ? null : game.Players.IndexOf(game.LooserPlayer);
-            tableDto.NeedShowCardMinTrumpValue = game.NeedShowCardMinTrumpValue;
-
-            tableDto.MyCards = game.Players.First(x => x == tablePlayer.Player)
-                .Hand.Cards
-                .Select(x => new CardModel(x))
-                .ToArray();
-
-            tableDto.DeckCardsCount = game.Deck.CardsCount;
-            tableDto.Trump = game.Deck.TrumpCard == null ? null : new CardModel(game.Deck.TrumpCard);
-
-            tableDto.Cards = game.Cards.Select(x => new TableCardModel
-                {
-                    AttackCard = new(x.AttackCard),
-                    DefenceCard = x.DefenceCard == null ? null : new CardModel(x.DefenceCard),
-                })
-                .ToArray();
-
-            tableDto.Players = table.Players.Where(x => x.Player != tablePlayer.Player)
-                .Select((x, i) => new PlayerModel
-                {
-                    Index = i,
-                    Name = x.Player.Name,
-                    CardsCount = x.Player.Hand.Cards.Count,
-                    AfkEndTime = x.AfkStartTime?.AddSeconds(TableHolder.AFK_SECONDS),
-                })
-                .ToArray();
-
-            tableDto.Status = (int)game.Status;
-            tableDto.StopRoundStatus = table.StopRoundStatus == null ? null : (int)table.StopRoundStatus;
-            tableDto.StopRoundEndDate = table.StopRoundBeginDate?.AddSeconds(TableHolder.STOP_ROUND_SECONDS);
-
-            if (table.LeavePlayer != null)
-            {
-                tableDto.LeavePlayer = new()
-                {
-                    Index = table.LeavePlayerIndex.Value,
-                    Name = table.LeavePlayer.Name,
-                    CardsCount = table.LeavePlayer.Hand.Cards.Count,
-                };
-            }
-
-            result.Table = tableDto;
+            result.Table = TableViewBuilder.BuildTable(table, tablePlayer!);
         }
         else
         {
-            result.Tables = tableHolder.GetTables()
-                .Select(x => new TableModel
-                {
-                    Id = x.Id,
-                    Players = x.Players
-                        .Select(x => new PlayerModel { Name = x.Player.Name })
-                        .ToArray(),
-                })
-                .ToArray();
+            result.Tables = TableViewBuilder.BuildLobby(tableHolder.GetTables());
         }
 
         return Json(result);
