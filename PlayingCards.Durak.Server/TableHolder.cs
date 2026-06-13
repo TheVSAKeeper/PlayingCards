@@ -15,7 +15,22 @@ public class TableHolder
     public const int AFK_SECONDS = 60;
 
     private static readonly Dictionary<Guid, Table> _tables = new();
-    public int TablesVersion;
+    private int _tablesVersion;
+
+    public int TablesVersion
+    {
+        get => _tablesVersion;
+        set
+        {
+            _tablesVersion = value;
+            Changed?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// Событие изменения списка столов / лобби (для push в UI).
+    /// </summary>
+    public event Action? Changed;
     public int TableNumber = 1;
 
     public Table CreateTable()

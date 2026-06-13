@@ -49,10 +49,25 @@ public class Table
     /// </summary>
     public int? LeavePlayerIndex { get; set; }
 
+    private int _version;
+
     /// <summary>
     /// Номер версии данных, на любой чих мы его повышаем.
     /// </summary>
-    public int Version { get; set; }
+    public int Version
+    {
+        get => _version;
+        set
+        {
+            _version = value;
+            Changed?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// Событие любого изменения стола (для push в UI).
+    /// </summary>
+    public event Action? Changed;
 
     /// <summary>
     /// Порядковый номер стола.
