@@ -1,0 +1,40 @@
+﻿@inject PlayerSession Session
+
+<div class="login-screen">
+    <div class="login-card">
+        <div class="login-suits" aria-hidden="true">
+            <span class="suit suit-spade">♠</span>
+            <span class="suit suit-diamond">♦</span>
+            <span class="suit suit-club">♣</span>
+            <span class="suit suit-heart">♥</span>
+        </div>
+
+        <h1 class="login-title">Дурак</h1>
+        <p class="login-subtitle">Введите имя, чтобы сесть за стол</p>
+
+        <div class="login-block">
+            <input type="text" class="login-input" @bind="_name" placeholder="Имя" @onkeyup="OnKey" />
+            <button class="btn btn-info" @onclick="Login" disabled="@string.IsNullOrWhiteSpace(_name)">Войти</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _name = string.Empty;
+
+    [Parameter] public EventCallback OnLoggedIn { get; set; }
+
+    private async Task OnKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_name))
+        {
+            await Login();
+        }
+    }
+
+    private async Task Login()
+    {
+        await Session.LoginAsync(_name.Trim());
+        await OnLoggedIn.InvokeAsync();
+    }
+}

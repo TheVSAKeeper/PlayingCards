@@ -1,0 +1,11 @@
+﻿
+
+<section class="game-table-stub">
+    <p>Игровая доска (в разработке).</p>
+</section>
+
+@code {
+    [Parameter] public Table Table { get; set; } = null!;
+    [Parameter] public TablePlayer Me { get; set; } = null!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+}

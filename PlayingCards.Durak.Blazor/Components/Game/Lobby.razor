@@ -1,0 +1,11 @@
+﻿
+
+<section class="lobby-stub">
+    <p>Лобби (в разработке).</p>
+</section>
+
+@code {
+    [Parameter] public string PlayerSecret { get; set; } = string.Empty;
+    [Parameter] public string PlayerName { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnChanged { get; set; }
+}

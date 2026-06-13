@@ -1,7 +1,95 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@inject PlayerSession Session
+@inject TableHolder TableHolder
+@implements IDisposable
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Дурак</PageTitle>
 
-<h1>Hello, world!</h1>
+@if (!_loaded)
+{
+    <div class="screen-loading">
+        <span class="suit-spinner">♠ ♦ ♣ ♥</span>
+        <p>Загрузка…</p>
+    </div>
+}
+else if (!Session.IsAuthenticated)
+{
+    <LoginPanel OnLoggedIn="OnSessionChanged" />
+}
+else
+{
+    <div class="top-bar">
+        <span class="name-label">@Session.Name</span>
+        <button class="btn btn-info" @onclick="Logout">Выйти</button>
+    </div>
 
-Welcome to your new app.
+    @if (_currentTable == null)
+    {
+        <Lobby PlayerSecret="@(Session.Secret!)" PlayerName="@(Session.Name!)" OnChanged="Refresh" />
+    }
+    else
+    {
+        <GameTable Table="_currentTable" Me="_me!" OnChanged="Refresh" />
+    }
+}
+
+@code {
+    private bool _loaded;
+    private Table? _currentTable;
+    private TablePlayer? _me;
+
+    protected override void OnInitialized()
+    {
+        TableHolder.Changed += OnHolderChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Session.LoadAsync();
+            _loaded = true;
+            await OnSessionChanged();
+        }
+    }
+
+    private void OnHolderChanged() => InvokeAsync(Refresh);
+
+    private async Task OnSessionChanged()
+    {
+        Refresh();
+        await Task.CompletedTask;
+    }
+
+    private void Refresh()
+    {
+        if (Session.IsAuthenticated)
+        {
+            _currentTable = TableHolder.GetBySecret(Session.Secret!, out _me);
+        }
+        else
+        {
+            _currentTable = null;
+            _me = null;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task Logout()
+    {
+        if (_currentTable != null)
+        {
+            TableHolder.Leave(Session.Secret!);
+        }
+
+        await Session.LogoutAsync();
+        Refresh();
+    }
+
+    public void Dispose()
+    {
+        TableHolder.Changed -= OnHolderChanged;
+    }
+}
