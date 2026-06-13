@@ -1,4 +1,4 @@
-using NLog;
+﻿using NLog;
 using NLog.Web;
 using PlayingCards.Durak.Web;
 using PlayingCards.Durak.Web.Business;

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using PlayingCards.Durak.Web.Business;
 using PlayingCards.Durak.Web.Models;
 using System.Diagnostics;
