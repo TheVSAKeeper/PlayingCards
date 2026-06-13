@@ -1,0 +1,20 @@
+﻿<div class="play-card @(Active ? "active" : "") @CssClass" @onclick="OnClickInternal">
+    <div class="card-rank @(IsRed ? "red" : "")">@RankText</div>
+    <div class="card-suit @(IsRed ? "red" : "")">@SuitText</div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CardModel Card { get; set; } = default!;
+    [Parameter] public bool Active { get; set; }
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private bool IsRed => Card.Suit is 1 or 2;
+    private string SuitText => Card.Suit switch { 0 => "♣", 1 => "♦", 2 => "♥", 3 => "♠", _ => "?" };
+    private string RankText => Card.Rank switch
+    {
+        11 => "J", 12 => "Q", 13 => "K", 14 => "A", _ => Card.Rank.ToString(),
+    };
+
+    private async Task OnClickInternal() => await OnClick.InvokeAsync();
+}

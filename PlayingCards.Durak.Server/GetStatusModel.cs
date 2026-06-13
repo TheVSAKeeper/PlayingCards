@@ -47,6 +47,8 @@ public class GetStatusModel
 
     public class CardModel
     {
+        public CardModel() { }
+
         public CardModel(Card card)
         {
             Rank = card.Rank.Value;
