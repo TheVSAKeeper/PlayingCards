@@ -1,11 +1,37 @@
-﻿
+﻿@inject TableHolder TableHolder
 
-<section class="lobby-stub">
-    <p>Лобби (в разработке).</p>
-</section>
+<div class="table-main">
+    <button class="btn btn-success" @onclick="CreateTable">Создать стол</button>
+
+    <div class="tables">
+        @foreach (var t in _tables)
+        {
+            <TableCard Model="t" OnJoin="Join" />
+        }
+    </div>
+</div>
 
 @code {
-    [Parameter] public string PlayerSecret { get; set; } = string.Empty;
-    [Parameter] public string PlayerName { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string PlayerSecret { get; set; } = default!;
+    [Parameter, EditorRequired] public string PlayerName { get; set; } = default!;
     [Parameter] public EventCallback OnChanged { get; set; }
+
+    private TableModel[] _tables = [];
+
+    protected override void OnParametersSet() => ReloadTables();
+
+    private void ReloadTables() => _tables = TableViewBuilder.BuildLobby(TableHolder.GetTables());
+
+    private async Task CreateTable()
+    {
+        var table = TableHolder.CreateTable();
+        TableHolder.Join(table.Id, PlayerSecret, PlayerName);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task Join(Guid tableId)
+    {
+        TableHolder.Join(tableId, PlayerSecret, PlayerName);
+        await OnChanged.InvokeAsync();
+    }
 }

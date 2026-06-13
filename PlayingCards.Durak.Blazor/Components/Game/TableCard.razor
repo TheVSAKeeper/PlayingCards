@@ -1,0 +1,12 @@
+﻿<div class="table">
+    @foreach (var p in Model.Players)
+    {
+        <label>@p.Name</label>
+    }
+    <button class="btn btn-info" @onclick="() => OnJoin.InvokeAsync(Model.Id)">Подсесть</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TableModel Model { get; set; } = default!;
+    [Parameter] public EventCallback<Guid> OnJoin { get; set; }
+}

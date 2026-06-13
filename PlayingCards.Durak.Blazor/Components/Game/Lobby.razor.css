@@ -1,0 +1,65 @@
+﻿
+
+.table-main {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.table-main > .btn-success {
+    align-self: flex-start;
+    position: relative;
+    padding: 0.7rem 1.6rem;
+    border: 1px solid rgba(196, 164, 92, 0.55);
+    border-radius: 0.65rem;
+    background: linear-gradient(135deg, #2f6b46, #1c4a30);
+    color: #f4ecd2;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: transform 0.12s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.table-main > .btn-success::before {
+    content: '\2660';
+    margin-right: 0.55rem;
+    color: #c4a45c;
+    font-size: 1.1em;
+}
+
+.table-main > .btn-success:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.45),
+        0 0 0 3px rgba(196, 164, 92, 0.18);
+}
+
+.table-main > .btn-success:active {
+    transform: translateY(0);
+}
+
+.tables {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
+    gap: 1.25rem;
+}
+
+.tables:empty::after {
+    content: 'Пока нет открытых столов \2014 создайте первый';
+    grid-column: 1 / -1;
+    padding: 2.5rem 1rem;
+    text-align: center;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    color: rgba(216, 201, 163, 0.55);
+    border: 1px dashed rgba(196, 164, 92, 0.3);
+    border-radius: 1rem;
+}
