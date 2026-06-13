@@ -1,6 +1,6 @@
 ﻿using NLog;
 
-namespace PlayingCards.Durak.Web.Business;
+namespace PlayingCards.Durak.Server;
 
 public class TableHolder
 {

@@ -1,7 +1,8 @@
 ﻿using NLog;
 using System.Text;
+using SRS = PlayingCards.Durak.Server.StopRoundStatus;
 
-namespace PlayingCards.Durak.Web.Business;
+namespace PlayingCards.Durak.Server;
 
 /// <summary>
 /// Игровой стол.
@@ -148,7 +149,7 @@ public class Table
         }
 
         CheckStopRoundBeginDate();
-        StopRoundStatus = Business.StopRoundStatus.Take;
+        StopRoundStatus = SRS.Take;
         CleanDefencePlayerAfkStartTime();
         WriteLog(playerSecret, "take");
         Version++;
@@ -199,13 +200,13 @@ public class Table
 
         switch (StopRoundStatus)
         {
-            case Business.StopRoundStatus.SuccessDefence:
+            case SRS.SuccessDefence:
                 SetDefencePlayerAfkStartTime();
                 StopRoundBeginDate = null;
                 StopRoundStatus = null;
                 break;
 
-            case Business.StopRoundStatus.Take:
+            case SRS.Take:
                 break;
 
             default:
@@ -244,7 +245,7 @@ public class Table
         }
 
         CheckStopRoundBeginDate();
-        StopRoundStatus = Business.StopRoundStatus.SuccessDefence;
+        StopRoundStatus = SRS.SuccessDefence;
         CleanDefencePlayerAfkStartTime();
     }
 

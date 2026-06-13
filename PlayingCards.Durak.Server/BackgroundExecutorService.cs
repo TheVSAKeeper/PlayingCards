@@ -1,4 +1,7 @@
-﻿namespace PlayingCards.Durak.Web.Business;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+namespace PlayingCards.Durak.Server;
 
 public class BackgroundExecutorService(ILogger<BackgroundExecutorService> logger, TableHolder tableHolder) : BackgroundService
 {

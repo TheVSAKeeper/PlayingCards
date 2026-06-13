@@ -1,4 +1,4 @@
-﻿namespace PlayingCards.Durak.Web.Business;
+﻿namespace PlayingCards.Durak.Server;
 
 /// <summary>
 /// Игрок за столом.

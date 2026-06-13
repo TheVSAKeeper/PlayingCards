@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PlayingCards.Durak.Web.Business;
+using PlayingCards.Durak.Server;
 using PlayingCards.Durak.Web.Models;
 using System.Diagnostics;
 using static PlayingCards.Durak.Web.Models.GetStatusModel;

@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PlayingCards.Durak\PlayingCards.Durak.csproj" />
+    <ProjectReference Include="..\PlayingCards.Durak.Server\PlayingCards.Durak.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>

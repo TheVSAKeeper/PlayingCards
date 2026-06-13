@@ -1,7 +1,7 @@
 ﻿using NLog;
 using NLog.Web;
 using PlayingCards.Durak.Web;
-using PlayingCards.Durak.Web.Business;
+using PlayingCards.Durak.Server;
 using PlayingCards.Durak.Web.Middlewares;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
