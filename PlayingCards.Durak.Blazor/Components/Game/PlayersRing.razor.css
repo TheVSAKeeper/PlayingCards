@@ -1,0 +1,73 @@
+﻿
+
+.player {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0.6rem 0.6rem 0;
+    padding: 0.7rem 0.85rem 0.85rem;
+    border-radius: 0.9rem;
+    background: radial-gradient(120% 120% at 50% 0%, rgba(30, 64, 44, 0.92), rgba(11, 26, 18, 0.95));
+    border: 1px solid rgba(196, 164, 92, 0.3);
+    box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    vertical-align: top;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.player img {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(196, 164, 92, 0.4);
+    background: rgba(8, 20, 14, 0.6);
+}
+
+.player-name {
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    color: #f1e6c8;
+}
+
+.player-cards {
+    display: flex;
+    gap: 0.12rem;
+    min-height: 2.15rem;
+}
+
+.player.active-player {
+    border-color: rgba(196, 164, 92, 0.95);
+    transform: translateY(-3px);
+    box-shadow:
+        0 16px 32px rgba(0, 0, 0, 0.5),
+        0 0 0 2px rgba(196, 164, 92, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.player.defence-player {
+    border-color: rgba(108, 162, 214, 0.85);
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.45),
+        0 0 0 2px rgba(108, 162, 214, 0.4);
+}
+
+.player ::deep .countdown {
+    margin-top: 0.15rem;
+    padding: 0.12rem 0.5rem;
+    border-radius: 0.4rem;
+    background: rgba(176, 106, 44, 0.25);
+    border: 1px solid rgba(196, 164, 92, 0.3);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    color: #f3d9ad;
+}

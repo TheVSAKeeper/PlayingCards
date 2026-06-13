@@ -1,0 +1,10 @@
+﻿
+
+<div class="error-toast" @onclick="Dismiss">@Message</div>
+
+@code {
+    [Parameter, EditorRequired] public string Message { get; set; } = default!;
+    [Parameter] public EventCallback OnDismiss { get; set; }
+
+    private async Task Dismiss() => await OnDismiss.InvokeAsync();
+}

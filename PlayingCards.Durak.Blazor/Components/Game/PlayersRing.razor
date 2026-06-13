@@ -1,0 +1,49 @@
+﻿@foreach (var seat in Seats)
+{
+    <div class="player @StateClass(seat) @(seat.GameIndex == View.DefencePlayerIndex ? "defence-player" : "")"
+         data-player-index="@seat.GameIndex">
+        <img src="/images/player.png" />
+        <label class="player-name" title="@seat.Player.Name">@seat.Player.Name</label>
+        <div class="player-cards">
+            @for (var j = 0; j < seat.Player.CardsCount; j++)
+            {
+                <CardBack CssClass="mini" />
+            }
+        </div>
+        @if (seat.Player.AfkEndTime is { } afk)
+        {
+            <Countdown EndTime="afk" Format="@(s => $"осталось {s} секунд")" />
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public TableModel View { get; set; } = default!;
+
+    private record Seat(PlayerModel Player, int GameIndex);
+
+    private List<Seat> Seats
+    {
+        get
+        {
+            var result = new List<Seat>();
+            var others = View.Players;
+            var my = View.MyPlayerIndex;
+
+            for (var i = my - 1; i >= 0; i--)
+            {
+                result.Add(new Seat(others[i], i));
+            }
+
+            for (var i = others.Length - 1; i >= my; i--)
+            {
+                result.Add(new Seat(others[i], i + 1));
+            }
+
+            return result;
+        }
+    }
+
+    private string StateClass(Seat seat) =>
+        seat.GameIndex == View.ActivePlayerIndex ? "active-player" : "";
+}

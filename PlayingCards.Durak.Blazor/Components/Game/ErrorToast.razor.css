@@ -1,0 +1,19 @@
+﻿
+
+.error-toast {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 50;
+    max-width: 22rem;
+    padding: 0.85rem 1.2rem;
+    border-radius: 0.7rem;
+    background: linear-gradient(135deg, #7a2230, #4a121c);
+    border: 1px solid rgba(196, 164, 92, 0.45);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+    color: #f7e7d3;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+}

@@ -1,11 +1,166 @@
-﻿
+﻿@inject TableHolder TableHolder
+@implements IDisposable
 
-<section class="game-table-stub">
-    <p>Игровая доска (в разработке).</p>
-</section>
+@if (_view != null)
+{
+    <div class="game">
+        @if (CanStart)
+        {
+            <button class="btn btn-info" @onclick="StartGame">Начать игру</button>
+        }
+
+        <button class="btn btn-warning" @onclick="Leave">Выйти из-за стола</button>
+
+        <PlayersRing View="_view" />
+
+        <div class="actions-up">
+            @if (CanTake)
+            {
+                <button class="btn btn-warning" @onclick="Take">Забрать карты</button>
+            }
+        </div>
+
+        <div class="hand">
+            @for (var i = 0; i < (_view.MyCards?.Length ?? 0); i++)
+            {
+                var idx = i;
+                <CardView Card="_view.MyCards![idx]"
+                          Active="_handActive.Contains(idx)"
+                          OnClick="() => ToggleHand(idx)" />
+            }
+        </div>
+
+        <div class="actions">
+            @if (CanPlay)
+            {
+                <button class="btn btn-info" @onclick="Play">Сыграть</button>
+            }
+        </div>
+
+        <div class="field">
+            @for (var i = 0; i < (_view.Cards?.Length ?? 0); i++)
+            {
+                var idx = i;
+                var fc = _view.Cards![idx];
+                <div class="field-card">
+                    <CardView Card="fc.AttackCard!"
+                              CssClass="attack-card"
+                              Active="_fieldActive.Contains(idx)"
+                              OnClick="() => ToggleField(idx)" />
+                    @if (fc.DefenceCard != null)
+                    {
+                        <CardView Card="fc.DefenceCard" CssClass="defence-card" />
+                    }
+                </div>
+            }
+        </div>
+
+        <Deck View="_view" />
+
+        @if (_error != null)
+        {
+            <ErrorToast Message="@_error" OnDismiss="() => _error = null" />
+        }
+    </div>
+}
 
 @code {
-    [Parameter] public Table Table { get; set; } = null!;
-    [Parameter] public TablePlayer Me { get; set; } = null!;
+    [Parameter, EditorRequired] public Table Table { get; set; } = default!;
+    [Parameter, EditorRequired] public TablePlayer Me { get; set; } = default!;
     [Parameter] public EventCallback OnChanged { get; set; }
+
+    private TableModel? _view;
+    private readonly HashSet<int> _handActive = [];
+    private readonly HashSet<int> _fieldActive = [];
+    private string? _error;
+    private Table? _subscribed;
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_subscribed, Table))
+        {
+            if (_subscribed != null) _subscribed.Changed -= OnTableChanged;
+            Table.Changed += OnTableChanged;
+            _subscribed = Table;
+        }
+
+        Rebuild();
+    }
+
+    private void OnTableChanged() => InvokeAsync(() =>
+    {
+        Rebuild();
+        StateHasChanged();
+    });
+
+    private void Rebuild()
+    {
+        _view = TableViewBuilder.BuildTable(Table, Me);
+        _handActive.RemoveWhere(i => i >= (_view.MyCards?.Length ?? 0));
+        _fieldActive.RemoveWhere(i => i >= (_view.Cards?.Length ?? 0));
+    }
+
+    private bool CanStart => _view!.Status != (int)GameStatus.InProcess
+        && _view.Players.Length > 0
+        && _view.MyPlayerIndex == _view.OwnerIndex;
+
+    private bool CanTake => _view!.Cards is { Length: > 0 }
+        && _view.MyPlayerIndex == _view.DefencePlayerIndex
+        && _view.Cards.Any(c => c.DefenceCard == null);
+
+    private bool CanPlay => PlayLogic.CanPlayCards(_view!, [.. _handActive], [.. _fieldActive]);
+
+    private void ToggleHand(int i) { if (!_handActive.Add(i)) _handActive.Remove(i); }
+
+    private void ToggleField(int i)
+    {
+        if (_view!.Cards![i].DefenceCard != null) return;
+        if (!_fieldActive.Add(i)) _fieldActive.Remove(i);
+    }
+
+    private async Task StartGame()
+    {
+        await Guard(() => Table.StartGame());
+    }
+
+    private async Task Play()
+    {
+        var hand = _handActive.OrderBy(x => x).ToArray();
+        var field = _fieldActive.OrderBy(x => x).ToArray();
+        int? attackIndex = field.Length > 0 ? field[0] : null;
+
+        await Guard(() => Table.PlayCards(Me.AuthSecret, hand, attackIndex));
+        _handActive.Clear();
+        _fieldActive.Clear();
+    }
+
+    private async Task Take()
+    {
+        await Guard(() => Table.Take(Me.AuthSecret));
+    }
+
+    private async Task Leave()
+    {
+        TableHolder.Leave(Me.AuthSecret);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task Guard(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (BusinessException ex)
+        {
+            _error = ex.Message;
+        }
+
+        await OnChanged.InvokeAsync();
+    }
+
+    public void Dispose()
+    {
+        if (_subscribed != null) _subscribed.Changed -= OnTableChanged;
+    }
 }

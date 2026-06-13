@@ -1,0 +1,8 @@
+﻿
+
+<span class="countdown">@Format(0)</span>
+
+@code {
+    [Parameter, EditorRequired] public DateTime EndTime { get; set; }
+    [Parameter] public Func<int, string> Format { get; set; } = s => s.ToString();
+}

@@ -1,0 +1,23 @@
+﻿<div class="deck">
+    <div class="deck-cards">
+        @if (View.Trump != null && View.DeckCardsCount > 0)
+        {
+            <CardView Card="View.Trump" />
+        }
+        @if (View.DeckCardsCount > 1)
+        {
+            <CardBack CssClass="deck-back">@(View.DeckCardsCount - 1)</CardBack>
+        }
+    </div>
+    @if (View.Trump != null && View.DeckCardsCount == 0)
+    {
+        <div class="trump-info">Козырь: @SuitText(View.Trump.Suit)</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TableModel View { get; set; } = default!;
+
+    private static string SuitText(int suit) =>
+        suit switch { 0 => "♣", 1 => "♦", 2 => "♥", 3 => "♠", _ => "?" };
+}
