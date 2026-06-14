@@ -38,17 +38,22 @@
 }
 
 .player-cards {
+    --fan-w: 5rem;
+    --card-w: 1.5rem;
+    --overlap: min(-0.8rem, calc((var(--fan-w) - var(--card-w)) / max(var(--count, 1) - 1, 1) - var(--card-w)));
     display: flex;
     justify-content: center;
     min-height: 2.15rem;
-    min-width: 5rem;
+    width: var(--fan-w);
 }
 
-.player-cards ::deep .card-back.mini {
-    margin-left: -0.8rem;
+.player-cards ::deep .card-back.mini,
+.player-cards ::deep .show-card {
+    margin-left: var(--overlap);
 }
 
-.player-cards ::deep .card-back.mini:first-child {
+.player-cards ::deep .card-back.mini:first-child,
+.player-cards ::deep .show-card:first-child {
     margin-left: 0;
 }
 
@@ -159,13 +164,39 @@
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
 }
 
-.player ::deep .show-card {
-    width: 1.5rem;
+.player-cards ::deep .show-card,
+.player-cards ::deep .show-card:hover {
+    width: var(--card-w);
     height: 2.15rem;
     border-radius: 0.28rem;
     cursor: default;
+    transform: none;
+    filter: none;
     box-shadow:
         0 0 0 1px rgba(196, 164, 92, 0.9),
         0 4px 10px rgba(0, 0, 0, 0.45);
-    transform: translateY(-2px);
+}
+
+.player-cards ::deep .show-card .card-pip,
+.player-cards ::deep .show-card .card-index-br {
+    display: none;
+}
+
+.player-cards ::deep .show-card::after {
+    inset: 0.12rem;
+    border-radius: 0.18rem;
+}
+
+.player-cards ::deep .show-card .card-index-tl {
+    position: static;
+    height: 100%;
+    justify-content: center;
+}
+
+.player-cards ::deep .show-card .card-rank {
+    font-size: 0.8rem;
+}
+
+.player-cards ::deep .show-card .card-suit {
+    font-size: 0.7rem;
 }

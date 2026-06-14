@@ -26,7 +26,7 @@
     <label class="player-name" title="@Name">@Name</label>
     @if (CardsCount > 0)
     {
-        <div class="player-cards">
+        <div class="player-cards" style="--count: @CardsCount">
             @for (var j = 0; j < CardsCount; j++)
             {
                 @if (ShowTrump && MinTrumpCard != null && j == CardsCount - 1)
