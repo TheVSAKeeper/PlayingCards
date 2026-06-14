@@ -107,3 +107,78 @@ a:hover {
 .blazor-error-boundary::after {
     content: "Произошла ошибка.";
 }
+
+body.dnd-dragging,
+body.dnd-dragging * {
+    cursor: grabbing !important;
+}
+
+.card-drag-avatar {
+    position: fixed;
+    z-index: 9999;
+    margin: 0;
+    pointer-events: none;
+    will-change: transform;
+    transform-origin: 50% 55%;
+
+    box-shadow:
+        0 26px 50px rgba(0, 0, 0, 0.6),
+        0 0 0 2px rgba(196, 164, 92, 0.55),
+        0 0 30px rgba(196, 164, 92, 0.3) !important;
+    filter: brightness(1.04);
+}
+
+.card-drag-avatar.over-target {
+    box-shadow:
+        0 30px 58px rgba(0, 0, 0, 0.6),
+        0 0 0 3px rgba(231, 200, 134, 0.9),
+        0 0 48px rgba(196, 164, 92, 0.6) !important;
+}
+
+.play-card.dnd-ghost {
+    opacity: 0.26;
+    filter: grayscale(0.35) brightness(0.9);
+    transform: none !important;
+}
+
+.play-card.dnd-ghost:hover {
+    transform: none !important;
+    box-shadow: none;
+}
+
+.dnd-sparkle-layer {
+    position: fixed;
+    z-index: 9998;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+
+.dnd-sparkle-layer span {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    margin: -4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff7da 0%, #e7c886 55%, rgba(196, 164, 92, 0) 72%);
+    animation: dnd-spark 0.6s ease-out forwards;
+}
+
+@keyframes dnd-spark {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0.2); opacity: 0; }
+}
+
+.dnd-pulse-ring {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    margin: -11px;
+    border-radius: 50%;
+    border: 2px solid rgba(231, 200, 134, 0.85);
+    animation: dnd-ring 0.5s ease-out forwards;
+}
+
+@keyframes dnd-ring {
+    0% { transform: scale(0.4); opacity: 0.9; }
+    100% { transform: scale(3.8); opacity: 0; }
+}

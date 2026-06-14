@@ -206,8 +206,60 @@
     background: transparent;
 }
 
-.hand ::deep .play-card {
+.hand-slot {
     flex: 0 0 auto;
+    touch-action: none;
+}
+
+.hand-slot[data-playable="true"] ::deep .play-card {
+    cursor: grab;
+}
+
+.hand-slot[data-playable="true"] ::deep .play-card:active {
+    cursor: grabbing;
+}
+
+.field.drop-ok {
+    border-color: rgba(196, 164, 92, 0.55);
+    box-shadow:
+        inset 0 0 28px rgba(0, 0, 0, 0.4),
+        0 0 0 2px rgba(196, 164, 92, 0.3),
+        0 0 30px rgba(196, 164, 92, 0.18);
+    animation: dnd-zone-breathe 1.4s ease-in-out infinite;
+}
+
+.field.drop-hover {
+    border-color: rgba(231, 200, 134, 0.95);
+    background: rgba(38, 78, 52, 0.55);
+    box-shadow:
+        inset 0 0 44px rgba(196, 164, 92, 0.28),
+        0 0 0 3px rgba(231, 200, 134, 0.75),
+        0 0 46px rgba(196, 164, 92, 0.55);
+    animation: none;
+}
+
+.field-card.drop-ok::before {
+    content: '';
+    position: absolute;
+    inset: -0.5rem;
+    border-radius: 0.85rem;
+    border: 2px solid rgba(196, 164, 92, 0.6);
+    box-shadow: 0 0 22px rgba(196, 164, 92, 0.35);
+    pointer-events: none;
+    z-index: 2;
+    animation: dnd-zone-breathe 1.4s ease-in-out infinite;
+}
+
+.field-card.drop-hover::before {
+    inset: -0.7rem;
+    border-color: rgba(231, 200, 134, 0.95);
+    box-shadow: 0 0 32px rgba(231, 200, 134, 0.6);
+    animation: none;
+}
+
+@keyframes dnd-zone-breathe {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
 }
 
 @media (max-width: 720px) {

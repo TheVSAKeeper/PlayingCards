@@ -1,9 +1,10 @@
 ﻿@inject TableHolder TableHolder
-@implements IDisposable
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 @if (_view != null)
 {
-    <div class="game">
+    <div class="game" @ref="_root">
 
         <header class="game-topbar">
             <button class="btn btn-info"
@@ -28,7 +29,7 @@
         </section>
 
         <section class="table-center">
-            <div class="field">
+            <div class="field" data-drop="field">
                 @{
                     var amDefender = _view.DefencePlayerIndex == _view.MyPlayerIndex;
                 }
@@ -42,7 +43,7 @@
                     var attackCss = "attack-card"
                         + (clickable ? "" : " static")
                         + (dim ? " dimmed" : "");
-                    <div class="field-card">
+                    <div class="field-card" data-field-index="@idx">
                         <CardView Card="fc.AttackCard!"
                                   CssClass="@attackCss"
                                   Active="_fieldActive.Contains(idx)"
@@ -64,10 +65,14 @@
                     var idx = i;
                     var selectable = _handSelectable.Contains(idx);
                     var selected = _handActive.Contains(idx);
-                    <CardView Card="_view.MyCards![idx]"
-                              CssClass="@(selectable ? "" : "dimmed")"
-                              Active="selected"
-                              OnClick="() => ToggleHand(idx)" />
+                    <div class="hand-slot"
+                         data-hand-index="@idx"
+                         data-playable="@(selectable ? "true" : "false")">
+                        <CardView Card="_view.MyCards![idx]"
+                                  CssClass="@(selectable ? "" : "dimmed")"
+                                  Active="selected"
+                                  OnClick="() => ToggleHand(idx)" />
+                    </div>
                 }
             </div>
 
@@ -121,6 +126,11 @@
     private string? _error;
     private Table? _subscribed;
 
+    private ElementReference _root;
+    private IJSObjectReference? _dndModule;
+    private DotNetObjectReference<GameTable>? _selfRef;
+    private bool _dndInited;
+
     protected override void OnParametersSet()
     {
         if (!ReferenceEquals(_subscribed, Table))
@@ -131,6 +141,19 @@
         }
 
         Rebuild();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_dndInited || _view == null)
+        {
+            return;
+        }
+
+        _dndInited = true;
+        _selfRef = DotNetObjectReference.Create(this);
+        _dndModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Game/GameTable.razor.js");
+        await _dndModule.InvokeVoidAsync("init", _root, _selfRef);
     }
 
     private void OnTableChanged() => InvokeAsync(() =>
@@ -215,6 +238,83 @@
         UpdateSelectables();
     }
 
+    /// <summary>
+    /// Зоны сброса для карты руки <paramref name="handIndex"/>: поле (атака/подкид)
+    /// и/или индексы неотбитых атакующих карт, которые эта карта побьёт (отбой).
+    /// Вызывается из GameTable.razor.js в момент захвата — один раз за перетаскивание.
+    /// </summary>
+    [JSInvokable]
+    public DropTargets GetDropTargets(int handIndex)
+    {
+        if (_view?.MyCards == null
+            || handIndex < 0
+            || handIndex >= _view.MyCards.Length
+            || !_handSelectable.Contains(handIndex))
+        {
+            return new DropTargets(false, []);
+        }
+
+        int[] hand = [handIndex];
+        var field = PlayLogic.CanPlayCards(_view, hand, []);
+
+        var defence = new List<int>();
+        var cards = _view.Cards ?? [];
+
+        for (var i = 0; i < cards.Length; i++)
+        {
+            if (cards[i].DefenceCard == null
+                && cards[i].AttackCard != null
+                && PlayLogic.CanPlayCards(_view, hand, [i]))
+            {
+                defence.Add(i);
+            }
+        }
+
+        return new DropTargets(field, [.. defence]);
+    }
+
+    /// <summary>
+    /// Карту из руки бросили на зону: -1 — поле (атака/подкид), иначе индекс атакующей
+    /// карты (отбой). Возвращает true при успешном ходе — JS играет снап и искры; при
+    /// false — упругий возврат карты в руку.
+    /// </summary>
+    [JSInvokable]
+    public async Task<bool> OnCardDropped(int handIndex, int fieldIndex)
+    {
+        if (_view == null)
+        {
+            return false;
+        }
+
+        int[] hand = [handIndex];
+        int[] field = fieldIndex >= 0 ? [fieldIndex] : [];
+        int? attackIndex = fieldIndex >= 0 ? fieldIndex : null;
+
+        if (!PlayLogic.CanPlayCards(_view, hand, field))
+        {
+            return false;
+        }
+
+        try
+        {
+            Table.PlayCards(Me.AuthSecret, hand, attackIndex);
+        }
+        catch (BusinessException ex)
+        {
+            _error = ex.Message;
+            await OnChanged.InvokeAsync();
+            return false;
+        }
+
+        _handActive.Clear();
+        _fieldActive.Clear();
+        UpdateSelectables();
+        await OnChanged.InvokeAsync();
+        return true;
+    }
+
+    public record DropTargets(bool Field, int[] Defence);
+
     private async Task Take()
     {
         await Guard(() => Table.Take(Me.AuthSecret));
@@ -240,8 +340,22 @@
         await OnChanged.InvokeAsync();
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         if (_subscribed != null) _subscribed.Changed -= OnTableChanged;
+
+        if (_dndModule != null)
+        {
+            try
+            {
+                await _dndModule.InvokeVoidAsync("dispose");
+                await _dndModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+
+        _selfRef?.Dispose();
     }
 }
