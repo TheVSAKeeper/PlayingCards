@@ -8,20 +8,33 @@ public class BotTests
 {
 
     [Test]
-    public void AddBot_SeatsBotAndBecomesOwner()
+    public void AddBot_OwnerSeatsBot_HumanRemainsOwner()
     {
         var holder = new TableHolder();
         var table = holder.CreateTable();
+        holder.Join(table.Id, "s0", "Alice");
 
-        holder.AddBot(table.Id);
+        holder.AddBot(table.Id, "s0");
 
         Assert.Multiple(() =>
         {
-            Assert.That(table.Players, Has.Count.EqualTo(1));
-            Assert.That(table.Players[0].IsBot, Is.True);
-            Assert.That(table.Players[0].Player.Name, Is.EqualTo("Бот 1"));
-            Assert.That(table.Owner, Is.SameAs(table.Players[0].Player));
+            Assert.That(table.Players, Has.Count.EqualTo(2));
+            Assert.That(table.Players[1].IsBot, Is.True);
+            Assert.That(table.Players[1].Player.Name, Is.EqualTo("Бот 1"));
+            Assert.That(table.Owner!.Name, Is.EqualTo("Alice"));
         });
+    }
+
+    [Test]
+    public void AddBot_NonOwner_Throws()
+    {
+        var holder = new TableHolder();
+        var table = holder.CreateTable();
+        holder.Join(table.Id, "s0", "Alice");
+        holder.Join(table.Id, "s1", "Bob");
+
+        var ex = Assert.Throws<BusinessException>(() => holder.AddBot(table.Id, "s1"));
+        Assert.That(ex!.Message, Is.EqualTo("only owner can add bot"));
     }
 
     [Test]
@@ -29,7 +42,7 @@ public class BotTests
     {
         var holder = new TableHolder();
 
-        var ex = Assert.Throws<BusinessException>(() => holder.AddBot(Guid.NewGuid()));
+        var ex = Assert.Throws<BusinessException>(() => holder.AddBot(Guid.NewGuid(), "s0"));
         Assert.That(ex!.Message, Is.EqualTo("table not found"));
     }
 
@@ -38,13 +51,14 @@ public class BotTests
     {
         var holder = new TableHolder();
         var table = holder.CreateTable();
+        holder.Join(table.Id, "s0", "Alice");
 
-        for (var i = 0; i < 6; i++)
+        for (var i = 0; i < 5; i++)
         {
-            holder.AddBot(table.Id);
+            holder.AddBot(table.Id, "s0");
         }
 
-        var ex = Assert.Throws<BusinessException>(() => holder.AddBot(table.Id));
+        var ex = Assert.Throws<BusinessException>(() => holder.AddBot(table.Id, "s0"));
         Assert.That(ex!.Message, Is.EqualTo("max player count = 6"));
     }
 
@@ -53,11 +67,11 @@ public class BotTests
     {
         var holder = new TableHolder();
         var table = holder.CreateTable();
-        holder.AddBot(table.Id);
-        holder.AddBot(table.Id);
+        holder.Join(table.Id, "s0", "Alice");
+        holder.AddBot(table.Id, "s0");
         table.StartGame();
 
-        var ex = Assert.Throws<BusinessException>(() => holder.AddBot(table.Id));
+        var ex = Assert.Throws<BusinessException>(() => holder.AddBot(table.Id, "s0"));
         Assert.That(ex!.Message, Does.Contain("bad status for join"));
     }
 
@@ -106,8 +120,10 @@ public class BotTests
     {
         var holder = new TableHolder();
         var table = holder.CreateTable();
-        holder.AddBot(table.Id);
-        holder.AddBot(table.Id);
+        holder.Join(table.Id, "s0", "Owner");
+        holder.AddBot(table.Id, "s0");
+        holder.AddBot(table.Id, "s0");
+        table.Players.Single(x => x.AuthSecret == "s0").IsBot = true;
         table.StartGame();
 
         var guard = 0;

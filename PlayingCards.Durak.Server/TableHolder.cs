@@ -116,18 +116,25 @@ public class TableHolder
     }
 
     /// <summary>
-    /// Посадить за стол ИИ-болванчика для отладки. Сажается как обычный игрок:
-    /// уважает лимит 6 мест и статус (нельзя в идущую игру), назначается владельцем при пустом столе.
+    /// Посадить за стол ИИ-болванчика. Разрешено только владельцу стола.
+    /// Уважает лимит 6 мест и статус (нельзя в идущую игру).
     /// </summary>
     /// <param name="tableId">Идентификатор стола.</param>
-    /// <exception cref="BusinessException">Стол не найден / идёт игра / нет мест.</exception>
-    public void AddBot(Guid tableId)
+    /// <param name="playerSecret">Секрет вызывающего — обязан быть владельцем.</param>
+    /// <exception cref="BusinessException">Стол не найден / не владелец / идёт игра / нет мест.</exception>
+    public void AddBot(Guid tableId, string playerSecret)
     {
         lock (_sync)
         {
             if (_tables.TryGetValue(tableId, out var table) == false)
             {
                 throw new BusinessException("table not found");
+            }
+
+            var caller = table.Players.FirstOrDefault(x => x.AuthSecret == playerSecret)?.Player;
+            if (caller == null || table.Owner != caller)
+            {
+                throw new BusinessException("only owner can add bot");
             }
 
             var botSecret = Guid.NewGuid().ToString();

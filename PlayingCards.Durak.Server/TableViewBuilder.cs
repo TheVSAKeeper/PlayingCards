@@ -80,6 +80,7 @@ public static class TableViewBuilder
             .Select(x => new TableModel
             {
                 Id = x.Id,
+                Status = (int)x.Game.Status,
                 Players = x.Players
                     .Select(p => new PlayerModel { Name = p.Player.Name })
                     .ToArray(),

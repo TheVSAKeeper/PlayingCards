@@ -1,5 +1,6 @@
 ﻿@inject TableHolder TableHolder
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 @implements IAsyncDisposable
 
 @if (_view != null)
@@ -14,6 +15,7 @@
                 Начать игру
             </button>
             <div class="topbar-right">
+                <button class="btn btn-share" @onclick="ToggleInvite">🔗 Ссылка</button>
                 <button class="btn btn-bot"
                         @onclick="AddBot"
                         hidden="@(!CanAddBot)"
@@ -23,6 +25,15 @@
                 <button class="btn btn-warning" @onclick="Leave">Выйти из-за стола</button>
             </div>
         </header>
+
+        @if (_showInvite)
+        {
+            <div class="invite-bar">
+                <span class="invite-label">Пригласить за стол:</span>
+                <input class="invite-link" readonly value="@InviteLink"
+                       onclick="this.select()" onfocus="this.select()" />
+            </div>
+        }
 
         <section class="opponents">
             <PlayersRing View="_view" />
@@ -119,6 +130,9 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private TableModel? _view;
+    private bool _showInvite;
+    /// <summary>Ссылка-приглашение на этот стол: открыв её, гость авто-подсаживается за стол.</summary>
+    private string InviteLink => $"{Navigation.BaseUri}?table={Table.Id}";
     private readonly HashSet<int> _handActive = [];
     private readonly HashSet<int> _fieldActive = [];
     private HashSet<int> _handSelectable = [];
@@ -224,7 +238,7 @@
 
     private async Task AddBot()
     {
-        await Guard(() => TableHolder.AddBot(Table.Id));
+        await Guard(() => TableHolder.AddBot(Table.Id, Me.AuthSecret));
     }
 
     private async Task Play()
@@ -320,6 +334,8 @@
     {
         await Guard(() => Table.Take(Me.AuthSecret));
     }
+
+    private void ToggleInvite() => _showInvite = !_showInvite;
 
     private async Task Leave()
     {

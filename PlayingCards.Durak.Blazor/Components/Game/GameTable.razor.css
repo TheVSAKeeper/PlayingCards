@@ -56,6 +56,46 @@
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(196, 164, 92, 0.18);
 }
 
+.btn-share {
+    background: transparent;
+    color: #d8c08a;
+    border: 1px solid rgba(196, 164, 92, 0.5);
+    box-shadow: none;
+}
+
+.btn-share:hover:not(:disabled) {
+    background: rgba(196, 164, 92, 0.14);
+    color: #f1e6c8;
+    box-shadow: none;
+}
+
+.invite-bar {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.invite-label {
+    color: rgba(216, 201, 163, 0.85);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+}
+
+.invite-link {
+    flex: 1 1 16rem;
+    min-width: 12rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 0.5rem;
+    background: rgba(8, 24, 16, 0.55);
+    border: 1px solid rgba(196, 164, 92, 0.4);
+    color: #f1e6c8;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+}
+
 .game-topbar {
     position: relative;
     z-index: 2;

@@ -45,7 +45,7 @@ setInterval(function () {
 function createTable() {
     SendRequest({
         method: 'Post',
-        url: '/Home/CreateTable',
+        url: appBase + '/Home/CreateTable',
         body: {
             playerSecret: user.secret,
             playerName: user.name,
@@ -65,7 +65,7 @@ function joinToTableClick(elem) {
 function joinToTable(tableId) {
     SendRequest({
         method: 'Post',
-        url: '/Home/Join',
+        url: appBase + '/Home/Join',
         body: {
             tableId: tableId,
             playerSecret: user.secret,
@@ -81,7 +81,7 @@ function joinToTable(tableId) {
 function leaveFromTable() {
     SendRequest({
         method: 'Post',
-        url: '/Home/Leave',
+        url: appBase + '/Home/Leave',
         body: {
             playerSecret: user.secret
         },
@@ -94,7 +94,7 @@ function leaveFromTable() {
 function startGame() {
     SendRequest({
         method: 'Post',
-        url: '/Home/StartGame',
+        url: appBase + '/Home/StartGame',
         body: {
             tableId: gameStatus.table.id,
             playerSecret: user.secret,
@@ -123,7 +123,7 @@ function getStatus() {
     }
     SendRequest({
         method: 'Get',
-        url: '/Home/GetStatus?playerSecret=' + user.secret + "&version=" + (gameStatus == null ? null : gameStatus.version),
+        url: appBase + '/Home/GetStatus?playerSecret=' + user.secret + "&version=" + (gameStatus == null ? null : gameStatus.version),
         success(data) {
             let status = JSON.parse(data.responseText);
             if (gameStatus != null && gameStatus.version == status.version) {
@@ -495,7 +495,7 @@ function play() {
     if (canPlayCards(defenceCardIndexes, attackCardIndexes)) {
         SendRequest({
             method: 'Post',
-            url: '/Home/PlayCards',
+            url: appBase + '/Home/PlayCards',
             body: {
                 tableId: gameStatus.table.id,
                 playerSecret: user.secret,
@@ -534,7 +534,7 @@ function getHandActiveCardIndexes() {
 function take() {
     SendRequest({
         method: 'Post',
-        url: '/Home/Take',
+        url: appBase + '/Home/Take',
         body: {
             tableId: gameStatus.table.id,
             playerSecret: user.secret,

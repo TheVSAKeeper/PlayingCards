@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject PlayerSession Session
 @inject TableHolder TableHolder
+@inject NavigationManager Navigation
 @implements IDisposable
 
 <PageTitle>Дурач☻к</PageTitle>
@@ -26,7 +27,7 @@ else
 
     @if (_currentTable == null)
     {
-        <Lobby PlayerSecret="@(Session.Secret!)" PlayerName="@(Session.Name!)" OnChanged="Refresh" />
+        <Lobby PlayerSecret="@(Session.Secret!)" PlayerName="@(Session.Name!)" ExternalError="_joinError" OnChanged="Refresh" />
     }
     else
     {
@@ -35,10 +36,17 @@ else
 }
 
 @code {
+    /// <summary>
+    /// Идентификатор стола из ссылки-приглашения (<c>/?table={guid}</c>) — авто-подсадка после входа.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "table")]
+    public string? TableParam { get; set; }
+
     private bool _loaded;
     private bool _disposed;
     private Table? _currentTable;
     private TablePlayer? _me;
+    private string? _joinError;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -70,6 +78,32 @@ else
     private async Task OnSessionChanged()
     {
         Refresh();
+        await TryAutoJoinAsync();
+    }
+
+    /// <summary>
+    /// Если пришли по ссылке-приглашению и ещё не сидим за столом — подсаживаемся за указанный стол.
+    /// Ссылку в адресе после попытки убираем, чтобы повторный рендер/выход не переподсаживал.
+    /// </summary>
+    private async Task TryAutoJoinAsync()
+    {
+        if (!Session.IsAuthenticated || _currentTable != null || !Guid.TryParse(TableParam, out var tableId))
+        {
+            return;
+        }
+
+        try
+        {
+            TableHolder.Join(tableId, Session.Secret!, Session.Name!);
+            _joinError = null;
+        }
+        catch (BusinessException ex)
+        {
+            _joinError = ex.Message;
+        }
+
+        Navigation.NavigateTo("/", replace: true);
+        Refresh();
         await Task.CompletedTask;
     }
 
@@ -78,6 +112,8 @@ else
         if (Session.IsAuthenticated)
         {
             _currentTable = TableHolder.GetBySecret(Session.Secret!, out _me);
+            if (_currentTable != null)
+                _joinError = null;
         }
         else
         {

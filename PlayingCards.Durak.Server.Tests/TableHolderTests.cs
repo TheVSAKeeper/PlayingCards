@@ -109,8 +109,8 @@ public class TableHolderTests
     {
         var table = _holder.CreateTable();
         _holder.Join(table.Id, "s1", "Alice");
-        _holder.AddBot(table.Id);
-        _holder.AddBot(table.Id);
+        _holder.AddBot(table.Id, "s1");
+        _holder.AddBot(table.Id, "s1");
 
         _holder.Leave("s1");
 
@@ -126,7 +126,7 @@ public class TableHolderTests
     {
         var table = _holder.CreateTable();
         _holder.Join(table.Id, "s1", "Alice");
-        _holder.AddBot(table.Id);
+        _holder.AddBot(table.Id, "s1");
         _holder.Join(table.Id, "s2", "Bob");
 
         _holder.Leave("s1");

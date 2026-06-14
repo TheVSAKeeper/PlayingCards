@@ -105,3 +105,37 @@
     filter: brightness(1.07);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(196, 164, 92, 0.16);
 }
+
+.table > .btn-share {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border-radius: 0.55rem;
+    border: 1px solid rgba(196, 164, 92, 0.5);
+    background: transparent;
+    color: #d8c08a;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.table > .btn-share:hover {
+    background: rgba(196, 164, 92, 0.14);
+    color: #f1e6c8;
+}
+
+.table > .invite-link {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 0.45rem 0.65rem;
+    border-radius: 0.5rem;
+    background: rgba(8, 20, 14, 0.6);
+    border: 1px solid rgba(196, 164, 92, 0.4);
+    color: #f1e6c8;
+    font-size: 0.8rem;
+    letter-spacing: 0.01em;
+}

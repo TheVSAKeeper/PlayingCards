@@ -4,15 +4,15 @@
 <div class="table-main">
     <button class="btn btn-success" @onclick="CreateTable">Создать стол</button>
 
-    @if (_error != null)
+    @if (_error != null || ExternalError != null)
     {
-        <div class="lobby-error">@_error</div>
+        <div class="lobby-error">@(_error ?? ExternalError)</div>
     }
 
     <div class="tables">
         @foreach (var t in _tables)
         {
-            <TableCard Model="t" OnJoin="Join" OnAddBot="AddBot" />
+            <TableCard Model="t" OnJoin="Join" />
         }
     </div>
 </div>
@@ -20,6 +20,8 @@
 @code {
     [Parameter, EditorRequired] public string PlayerSecret { get; set; } = default!;
     [Parameter, EditorRequired] public string PlayerName { get; set; } = default!;
+    /// <summary>Ошибка авто-подсадки по ссылке-приглашению (стол полон / идёт игра / не найден).</summary>
+    [Parameter] public string? ExternalError { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private TableModel[] _tables = [];
@@ -65,19 +67,6 @@
             TableHolder.Join(tableId, PlayerSecret, PlayerName);
             _error = null;
             await OnChanged.InvokeAsync();
-        }
-        catch (BusinessException ex)
-        {
-            _error = ex.Message;
-        }
-    }
-
-    private void AddBot(Guid tableId)
-    {
-        try
-        {
-            TableHolder.AddBot(tableId);
-            _error = null;
         }
         catch (BusinessException ex)
         {
