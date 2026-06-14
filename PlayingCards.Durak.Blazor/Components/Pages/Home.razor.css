@@ -74,3 +74,14 @@
     color: #14241a;
     transform: translateY(-1px);
 }
+
+@media (max-width: 560px) {
+    .top-bar {
+        padding: 0.55rem 0.85rem;
+        margin-bottom: 1rem;
+    }
+
+    .name-label {
+        font-size: 1.02rem;
+    }
+}

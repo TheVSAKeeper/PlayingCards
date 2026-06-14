@@ -51,6 +51,22 @@
     max-width: 1080px;
 }
 
+@media (max-width: 720px) {
+    .game-header {
+        height: 3.1rem;
+        padding: 0 1rem;
+    }
+
+    .brand {
+        font-size: 1.15rem;
+        letter-spacing: 0.12em;
+    }
+
+    .stage {
+        padding: 1rem 0.6rem 2rem;
+    }
+}
+
 #blazor-error-ui {
     color-scheme: dark only;
     position: fixed;

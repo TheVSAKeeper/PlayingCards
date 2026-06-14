@@ -1,52 +1,102 @@
-﻿@foreach (var seat in Seats)
-{
-    <PlayerBadge Name="@seat.Player.Name"
-                 GameIndex="seat.GameIndex"
-                 IsActive="seat.GameIndex == View.ActivePlayerIndex"
-                 IsDefence="seat.GameIndex == View.DefencePlayerIndex"
-                 IsLooser="seat.GameIndex == View.LooserPlayerIndex"
-                 CardsCount="seat.Player.CardsCount"
-                 ShowTrump="ShowTrump(seat)"
-                 MinTrumpCard="MinTrumpCard"
-                 AfkEndTime="seat.Player.AfkEndTime" />
-}
+﻿
 
-@if (View.LeavePlayer is { } leaver)
-{
-    <PlayerBadge Name="@leaver.Name" IsLeaver="true" CardsCount="leaver.CardsCount" />
-}
+<div class="players-ring">
+    @foreach (var item in RingPlayers)
+    {
+        @if (item.IsLeaver)
+        {
+            <PlayerBadge Name="@item.Player.Name" IsLeaver="true" CardsCount="item.Player.CardsCount" />
+        }
+        else
+        {
+            <PlayerBadge Name="@item.Player.Name"
+                         GameIndex="item.GameIndex"
+                         IsActive="item.GameIndex == View.ActivePlayerIndex"
+                         IsDefence="item.GameIndex == View.DefencePlayerIndex"
+                         IsLooser="item.GameIndex == View.LooserPlayerIndex"
+                         CardsCount="item.Player.CardsCount"
+                         ShowTrump="ShowTrump(item.GameIndex)"
+                         MinTrumpCard="MinTrumpCard"
+                         AfkEndTime="item.Player.AfkEndTime"
+                         StopRoundStatus="View.StopRoundStatus"
+                         StopRoundEndDate="View.StopRoundEndDate" />
+        }
+    }
+</div>
 
 @code {
     [Parameter, EditorRequired] public TableModel View { get; set; } = default!;
 
-    private record Seat(PlayerModel Player, int GameIndex);
+    private record RingPlayer(PlayerModel Player, int GameIndex, bool IsLeaver);
 
-    private List<Seat> Seats
+    /// <summary>
+    /// Соперники по кругу относительно меня плюс «крыса» на месте ушедшего (порт логики из game.js).
+    /// </summary>
+    private List<RingPlayer> RingPlayers
     {
         get
         {
-            var result = new List<Seat>();
             var others = View.Players;
             var my = View.MyPlayerIndex;
+            var result = new List<RingPlayer>();
 
             for (var i = my - 1; i >= 0; i--)
             {
-                result.Add(new Seat(others[i], i));
+                result.Add(new RingPlayer(others[i], i, false));
             }
 
             for (var i = others.Length - 1; i >= my; i--)
             {
-                result.Add(new Seat(others[i], i + 1));
+                result.Add(new RingPlayer(others[i], i + 1, false));
             }
 
+            if (View.LeavePlayer is not { } leaver)
+            {
+                return result;
+            }
+
+            InsertLeaver(result, new RingPlayer(leaver, -1, true), leaver.Index, my, others.Length);
             return result;
         }
     }
 
-    private bool ShowTrump(Seat seat) =>
+    /// <summary>
+    /// Поставить «крысу» на место ушедшего по его игровому индексу (паритет с game.js).
+    /// </summary>
+    private static void InsertLeaver(List<RingPlayer> ring, RingPlayer leaver, int leaverIndex, int my, int othersLength)
+    {
+        if (leaverIndex == my)
+        {
+            ring.Insert(0, leaver);
+            return;
+        }
+
+        if (leaverIndex > othersLength)
+        {
+            leaverIndex = 0;
+        }
+
+        if (othersLength == 0)
+        {
+            ring.Add(leaver);
+            return;
+        }
+
+        if (leaverIndex == my)
+        {
+            ring.Insert(0, leaver);
+            return;
+        }
+
+        var afterPos = ring.FindIndex(x => !x.IsLeaver && x.GameIndex == leaverIndex);
+
+        ring.Insert(afterPos < 0 ? ring.Count : afterPos + 1, leaver);
+    }
+
+    private bool ShowTrump(int gameIndex) =>
         View.NeedShowCardMinTrumpValue != null
         && View.Trump != null
-        && seat.GameIndex == View.ActivePlayerIndex;
+        && gameIndex == View.ActivePlayerIndex;
 
     private CardModel? MinTrumpCard =>
         View.NeedShowCardMinTrumpValue is { } rank && View.Trump is { } trump

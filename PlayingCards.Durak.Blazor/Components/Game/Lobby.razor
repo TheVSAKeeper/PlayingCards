@@ -1,12 +1,18 @@
 ﻿@inject TableHolder TableHolder
+@implements IDisposable
 
 <div class="table-main">
     <button class="btn btn-success" @onclick="CreateTable">Создать стол</button>
 
+    @if (_error != null)
+    {
+        <div class="lobby-error">@_error</div>
+    }
+
     <div class="tables">
         @foreach (var t in _tables)
         {
-            <TableCard Model="t" OnJoin="Join" />
+            <TableCard Model="t" OnJoin="Join" OnAddBot="AddBot" />
         }
     </div>
 </div>
@@ -17,21 +23,70 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private TableModel[] _tables = [];
+    private string? _error;
 
     protected override void OnParametersSet() => ReloadTables();
+
+    protected override void OnInitialized()
+    {
+        TableHolder.Changed += OnHolderChanged;
+    }
+
+    private void OnHolderChanged()
+    {
+        InvokeAsync(() =>
+        {
+            ReloadTables();
+            StateHasChanged();
+        });
+    }
 
     private void ReloadTables() => _tables = TableViewBuilder.BuildLobby(TableHolder.GetTables());
 
     private async Task CreateTable()
     {
-        var table = TableHolder.CreateTable();
-        TableHolder.Join(table.Id, PlayerSecret, PlayerName);
-        await OnChanged.InvokeAsync();
+        try
+        {
+            var table = TableHolder.CreateTable();
+            TableHolder.Join(table.Id, PlayerSecret, PlayerName);
+            _error = null;
+            await OnChanged.InvokeAsync();
+        }
+        catch (BusinessException ex)
+        {
+            _error = ex.Message;
+        }
     }
 
     private async Task Join(Guid tableId)
     {
-        TableHolder.Join(tableId, PlayerSecret, PlayerName);
-        await OnChanged.InvokeAsync();
+        try
+        {
+            TableHolder.Join(tableId, PlayerSecret, PlayerName);
+            _error = null;
+            await OnChanged.InvokeAsync();
+        }
+        catch (BusinessException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private void AddBot(Guid tableId)
+    {
+        try
+        {
+            TableHolder.AddBot(tableId);
+            _error = null;
+        }
+        catch (BusinessException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    public void Dispose()
+    {
+        TableHolder.Changed -= OnHolderChanged;
     }
 }

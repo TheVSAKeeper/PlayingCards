@@ -4,75 +4,106 @@
 @if (_view != null)
 {
     <div class="game">
-        @if (CanStart)
-        {
-            <button class="btn btn-info" @onclick="StartGame">Начать игру</button>
-        }
 
-        <button class="btn btn-warning" @onclick="Leave">Выйти из-за стола</button>
+        <header class="game-topbar">
+            <button class="btn btn-info"
+                    @onclick="StartGame"
+                    hidden="@(!(CanStart))"
+                    disabled="@(!CanStart)">
+                Начать игру
+            </button>
+            <div class="topbar-right">
+                <button class="btn btn-bot"
+                        @onclick="AddBot"
+                        hidden="@(!CanAddBot)"
+                        disabled="@(!CanAddBot)">
+                    ＋ Бот
+                </button>
+                <button class="btn btn-warning" @onclick="Leave">Выйти из-за стола</button>
+            </div>
+        </header>
 
-        <PlayersRing View="_view" />
+        <section class="opponents">
+            <PlayersRing View="_view" />
+        </section>
 
-        @if (_view.StopRoundStatus is { } srs && _view.StopRoundEndDate is { } end)
-        {
-            <Countdown EndTime="end" Format="@(s => srs == 0 ? $"я забираю через {s} секунд" : $"отбито через {s} секунд")" />
-        }
+        <section class="table-center">
+            <div class="field">
+                @{
+                    var amDefender = _view.DefencePlayerIndex == _view.MyPlayerIndex;
+                }
+                @for (var i = 0; i < (_view.Cards?.Length ?? 0); i++)
+                {
+                    var idx = i;
+                    var fc = _view.Cards![idx];
+                    var covered = fc.DefenceCard != null;
+                    var clickable = amDefender && !covered;
+                    var dim = clickable && !_fieldSelectable.Contains(idx);
+                    var attackCss = "attack-card"
+                        + (clickable ? "" : " static")
+                        + (dim ? " dimmed" : "");
+                    <div class="field-card">
+                        <CardView Card="fc.AttackCard!"
+                                  CssClass="@attackCss"
+                                  Active="_fieldActive.Contains(idx)"
+                                  OnClick="() => ToggleField(idx)" />
+                        @if (fc.DefenceCard != null)
+                        {
+                            <CardView Card="fc.DefenceCard" CssClass="defence-card" />
+                        }
+                    </div>
+                }
+            </div>
+            <Deck View="_view" />
+        </section>
 
-        <div class="actions-up">
-            @if (CanTake)
+        <section class="me">
+            <div class="hand">
+                @for (var i = 0; i < (_view.MyCards?.Length ?? 0); i++)
+                {
+                    var idx = i;
+                    var selectable = _handSelectable.Contains(idx);
+                    var selected = _handActive.Contains(idx);
+                    <CardView Card="_view.MyCards![idx]"
+                              CssClass="@(selectable ? "" : "dimmed")"
+                              Active="selected"
+                              OnClick="() => ToggleHand(idx)" />
+                }
+            </div>
+
+            @if (_contextHint != null)
             {
-                <button class="btn btn-warning" @onclick="Take">Забрать карты</button>
+                <div class="context-hint">@_contextHint</div>
             }
-        </div>
 
-        <PlayerBadge Name="@Me.Player.Name"
-                     GameIndex="_view.MyPlayerIndex"
-                     IsActive="_view.MyPlayerIndex == _view.ActivePlayerIndex"
-                     IsDefence="_view.MyPlayerIndex == _view.DefencePlayerIndex"
-                     IsLooser="_view.MyPlayerIndex == _view.LooserPlayerIndex"
-                     AfkEndTime="_view.AfkEndTime" />
+            <div class="me-actions">
+                <button class="btn btn-info"
+                        @onclick="Play"
+                        disabled="@(!CanPlay)">
+                    Сыграть
+                </button>
+                <button class="btn btn-warning"
+                        @onclick="Take"
+                        disabled="@(!CanTake)">
+                    Забрать карты
+                </button>
+            </div>
 
-        <div class="hand">
-            @for (var i = 0; i < (_view.MyCards?.Length ?? 0); i++)
-            {
-                var idx = i;
-                <CardView Card="_view.MyCards![idx]"
-                          Active="_handActive.Contains(idx)"
-                          OnClick="() => ToggleHand(idx)" />
-            }
-        </div>
-
-        <div class="actions">
-            @if (CanPlay)
-            {
-                <button class="btn btn-info" @onclick="Play">Сыграть</button>
-            }
-        </div>
-
-        <div class="field">
-            @for (var i = 0; i < (_view.Cards?.Length ?? 0); i++)
-            {
-                var idx = i;
-                var fc = _view.Cards![idx];
-                <div class="field-card">
-                    <CardView Card="fc.AttackCard!"
-                              CssClass="attack-card"
-                              Active="_fieldActive.Contains(idx)"
-                              OnClick="() => ToggleField(idx)" />
-                    @if (fc.DefenceCard != null)
-                    {
-                        <CardView Card="fc.DefenceCard" CssClass="defence-card" />
-                    }
-                </div>
-            }
-        </div>
-
-        <Deck View="_view" />
+            <PlayerBadge Name="@Me.Player.Name"
+                         GameIndex="_view.MyPlayerIndex"
+                         IsActive="_view.MyPlayerIndex == _view.ActivePlayerIndex"
+                         IsDefence="_view.MyPlayerIndex == _view.DefencePlayerIndex"
+                         IsLooser="_view.MyPlayerIndex == _view.LooserPlayerIndex"
+                         AfkEndTime="_view.AfkEndTime"
+                         StopRoundStatus="_view.StopRoundStatus"
+                         StopRoundEndDate="_view.StopRoundEndDate" />
+        </section>
 
         @if (_error != null)
         {
             <ErrorToast Message="@_error" OnDismiss="() => _error = null" />
         }
+
     </div>
 }
 
@@ -84,6 +115,9 @@
     private TableModel? _view;
     private readonly HashSet<int> _handActive = [];
     private readonly HashSet<int> _fieldActive = [];
+    private HashSet<int> _handSelectable = [];
+    private HashSet<int> _fieldSelectable = [];
+    private string? _contextHint;
     private string? _error;
     private Table? _subscribed;
 
@@ -107,13 +141,32 @@
 
     private void Rebuild()
     {
+        if (Table.Players.All(x => x.Player != Me.Player))
+        {
+            _view = null;
+            return;
+        }
+
         _view = TableViewBuilder.BuildTable(Table, Me);
         _handActive.RemoveWhere(i => i >= (_view.MyCards?.Length ?? 0));
         _fieldActive.RemoveWhere(i => i >= (_view.Cards?.Length ?? 0));
+        UpdateSelectables();
+    }
+
+    private void UpdateSelectables()
+    {
+        if (_view == null) return;
+        _handSelectable = PlayLogic.GetPlayableHandIndexes(_view, _handActive, _fieldActive);
+        _fieldSelectable = PlayLogic.GetBeatableFieldIndexes(_view, _handActive);
+        _contextHint = PlayLogic.GetContextHint(_view);
     }
 
     private bool CanStart => _view!.Status != (int)GameStatus.InProcess
         && _view.Players.Length > 0
+        && _view.MyPlayerIndex == _view.OwnerIndex;
+
+    private bool CanAddBot => _view!.Status != (int)GameStatus.InProcess
+        && _view.Players.Length + 1 < 6
         && _view.MyPlayerIndex == _view.OwnerIndex;
 
     private bool CanTake => _view!.Cards is { Length: > 0 }
@@ -122,17 +175,32 @@
 
     private bool CanPlay => PlayLogic.CanPlayCards(_view!, [.. _handActive], [.. _fieldActive]);
 
-    private void ToggleHand(int i) { if (!_handActive.Add(i)) _handActive.Remove(i); }
+    private void ToggleHand(int i)
+    {
+        if (_view!.Status == (int)GameStatus.InProcess && !_handSelectable.Contains(i)) return;
+
+        if (!_handActive.Add(i)) _handActive.Remove(i);
+        UpdateSelectables();
+    }
 
     private void ToggleField(int i)
     {
         if (_view!.Cards![i].DefenceCard != null) return;
+        if (_view.DefencePlayerIndex != _view.MyPlayerIndex) return;
+        if (_view.Status == (int)GameStatus.InProcess && !_fieldSelectable.Contains(i)) return;
+
         if (!_fieldActive.Add(i)) _fieldActive.Remove(i);
+        UpdateSelectables();
     }
 
     private async Task StartGame()
     {
         await Guard(() => Table.StartGame());
+    }
+
+    private async Task AddBot()
+    {
+        await Guard(() => TableHolder.AddBot(Table.Id));
     }
 
     private async Task Play()
@@ -144,6 +212,7 @@
         await Guard(() => Table.PlayCards(Me.AuthSecret, hand, attackIndex));
         _handActive.Clear();
         _fieldActive.Clear();
+        UpdateSelectables();
     }
 
     private async Task Take()

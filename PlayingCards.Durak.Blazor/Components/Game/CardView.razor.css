@@ -80,24 +80,56 @@
 }
 
 .play-card.attack-card {
-    width: 4rem;
-    height: 5.7rem;
+    width: 4.4rem;
+    height: 6.2rem;
 }
 
 .play-card.defence-card {
     position: absolute;
     top: 1.5rem;
-    left: 1.1rem;
-    width: 4rem;
-    height: 5.7rem;
+    left: 1.3rem;
+    width: 4.4rem;
+    height: 6.2rem;
     cursor: default;
-    transform: rotate(8deg);
+    transform: rotate(7deg);
     box-shadow:
         0 10px 20px rgba(0, 0, 0, 0.45),
         inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 .play-card.defence-card:hover {
-    transform: rotate(8deg);
+    transform: rotate(7deg);
     filter: none;
+}
+
+.play-card.disabled,
+.play-card.unplayable,
+.play-card.dimmed {
+    cursor: not-allowed;
+    filter: grayscale(0.18) brightness(0.86);
+    opacity: 0.5;
+}
+
+.play-card.disabled:hover,
+.play-card.unplayable:hover,
+.play-card.dimmed:hover {
+    transform: none;
+    filter: grayscale(0.18) brightness(0.86);
+    box-shadow:
+        0 6px 14px rgba(0, 0, 0, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        inset 0 -2px 6px rgba(120, 96, 44, 0.12);
+}
+
+.play-card.attack-card.static {
+    cursor: default;
+}
+
+.play-card.attack-card.static:hover {
+    transform: none;
+    filter: none;
+    box-shadow:
+        0 6px 14px rgba(0, 0, 0, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        inset 0 -2px 6px rgba(120, 96, 44, 0.12);
 }

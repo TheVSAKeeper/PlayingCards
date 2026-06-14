@@ -4,9 +4,16 @@
         <label>@p.Name</label>
     }
     <button class="btn btn-info" @onclick="() => OnJoin.InvokeAsync(Model.Id)">Подсесть</button>
+    @if (CanAddBot)
+    {
+        <button class="btn btn-bot" @onclick="() => OnAddBot.InvokeAsync(Model.Id)">＋ Бот</button>
+    }
 </div>
 
 @code {
     [Parameter, EditorRequired] public TableModel Model { get; set; } = default!;
     [Parameter] public EventCallback<Guid> OnJoin { get; set; }
+    [Parameter] public EventCallback<Guid> OnAddBot { get; set; }
+
+    private bool CanAddBot => Model.Status != (int)GameStatus.InProcess && Model.Players.Length < 6;
 }

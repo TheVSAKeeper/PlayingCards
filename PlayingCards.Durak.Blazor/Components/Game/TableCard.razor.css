@@ -83,3 +83,25 @@
 .table > .btn-info:active {
     transform: translateY(0);
 }
+
+.table > .btn-bot {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 0.55rem 1rem;
+    border-radius: 0.55rem;
+    border: 1px solid rgba(196, 164, 92, 0.5);
+    background: linear-gradient(135deg, #2f6b46, #1c4a30);
+    color: #f4ecd2;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.table > .btn-bot:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.07);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(196, 164, 92, 0.16);
+}

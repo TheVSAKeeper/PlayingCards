@@ -5,17 +5,33 @@ namespace PlayingCards.Durak.Server;
 public class TableHolder
 {
     /// <summary>
-    /// Время на окончание раунда.
+    /// Время на окончание раунда при удачной защите (даём время на подкид).
     /// </summary>
     public const int STOP_ROUND_SECONDS = 10;
+
+    /// <summary>
+    /// Время на окончание раунда при «беру»: подкидывать особо некому, поэтому ждём меньше (issue #5).
+    /// </summary>
+    public const int STOP_ROUND_TAKE_SECONDS = 5;
 
     /// <summary>
     /// Время на принятие решения.
     /// </summary>
     public const int AFK_SECONDS = 60;
 
-    private static readonly Dictionary<Guid, Table> _tables = new();
+    private readonly Dictionary<Guid, Table> _tables = new();
+
+    /// <summary>
+    /// Защищает <see cref="_tables" /> и счётчики от гонок между фоновым таймером и запросами игроков.
+    /// </summary>
+    private readonly object _sync = new();
+
     private int _tablesVersion;
+
+    /// <summary>
+    /// Счётчик для имён болванчиков («Бот N»).
+    /// </summary>
+    private int _botNumber = 1;
 
     public int TablesVersion
     {
@@ -33,17 +49,28 @@ public class TableHolder
     public event Action? Changed;
     public int TableNumber = 1;
 
+    /// <summary>
+    /// Время на окончание раунда в зависимости от причины остановки.
+    /// </summary>
+    public static int GetStopRoundSeconds(StopRoundStatus status)
+    {
+        return status == StopRoundStatus.Take ? STOP_ROUND_TAKE_SECONDS : STOP_ROUND_SECONDS;
+    }
+
     public Table CreateTable()
     {
-        var table = new Table { Id = Guid.NewGuid(), Number = TableNumber, Game = new(), Players = new() };
-        table.Version = 0;
-        _tables.Add(table.Id, table);
-        TablesVersion++;
+        lock (_sync)
+        {
+            var table = new Table { Id = Guid.NewGuid(), Number = TableNumber, Game = new(), Players = new() };
+            table.Version = 0;
+            _tables.Add(table.Id, table);
+            TableNumber++;
 
-        WriteLog(table, null, "create table");
-        TableNumber++;
+            WriteLog(table, null, "create table");
+            TablesVersion++;
 
-        return table;
+            return table;
+        }
     }
 
     public void Join(Guid tableId, string playerSecret, string playerName)
@@ -53,200 +80,319 @@ public class TableHolder
             throw new BusinessException("Авторизуйтесь");
         }
 
-        foreach (var table2 in _tables.Values)
+        lock (_sync)
         {
-            if (table2.Players.Any(x => x.AuthSecret == playerSecret))
+            foreach (var table2 in _tables.Values)
             {
-                throw new BusinessException("Вы уже сидите за столиком");
+                if (table2.Players.Any(x => x.AuthSecret == playerSecret))
+                {
+                    throw new BusinessException("Вы уже сидите за столиком");
+                }
+            }
+
+            if (_tables.TryGetValue(tableId, out var table))
+            {
+                var player = table.Game.AddPlayer(playerName);
+
+                table.Players.Add(new()
+                    { Player = player, AuthSecret = playerSecret });
+
+                WriteLog(table, playerSecret, "join to table");
+
+                if (table.Owner == null)
+                {
+                    table.Owner = player;
+                }
+
+                table.CleanLeaverPlayer();
+                table.Version++;
+                TablesVersion++;
+            }
+            else
+            {
+                throw new BusinessException("table not found");
             }
         }
+    }
 
-        if (_tables.TryGetValue(tableId, out var table))
+    /// <summary>
+    /// Посадить за стол ИИ-болванчика для отладки. Сажается как обычный игрок:
+    /// уважает лимит 6 мест и статус (нельзя в идущую игру), назначается владельцем при пустом столе.
+    /// </summary>
+    /// <param name="tableId">Идентификатор стола.</param>
+    /// <exception cref="BusinessException">Стол не найден / идёт игра / нет мест.</exception>
+    public void AddBot(Guid tableId)
+    {
+        lock (_sync)
         {
-            var debug = false;
-
-            if (playerName != "maksim")
+            if (_tables.TryGetValue(tableId, out var table) == false)
             {
-                debug = false;
+                throw new BusinessException("table not found");
             }
 
-            if (debug)
-            {
-            }
+            var botSecret = Guid.NewGuid().ToString();
+            var botName = "Бот " + _botNumber;
 
-            var player = table.Game.AddPlayer(playerName);
+            var player = table.Game.AddPlayer(botName);
+            _botNumber++;
 
             table.Players.Add(new()
-                { Player = player, AuthSecret = playerSecret });
+                { Player = player, AuthSecret = botSecret, IsBot = true });
 
-            WriteLog(table, playerSecret, "join to table");
+            WriteLog(table, botSecret, "add bot: " + botName);
 
             if (table.Owner == null)
             {
                 table.Owner = player;
             }
 
-            if (debug)
-            {
-                var player1 = table.Game.AddPlayer("1 кореш " + playerName);
-
-                table.Players.Add(new() { Player = player1, AuthSecret = "123" });
-
-                var player2 = table.Game.AddPlayer("2 кореш " + playerName);
-
-                table.Players.Add(new() { Player = player2, AuthSecret = "123" });
-
-                var player4 = table.Game.AddPlayer("4 У меня длинное имя для проверки вёрстки");
-
-                table.Players.Add(new() { Player = player4, AuthSecret = "123" });
-
-                var player5 = table.Game.AddPlayer("5 Лучик света продуктовой разработки");
-
-                table.Players.Add(new() { Player = player5, AuthSecret = "123" });
-            }
-
-            var debug2 = false;
-
-            if (debug2)
-            {
-                table.Game.AddPlayer("я всегда проигрываю");
-                table.Game.StartGame();
-                table.Game.Deck.Cards = new();
-
-                if (table.Game.Players.IndexOf(table.Game.ActivePlayer) == 0)
-                {
-                    table.Game.Players[0].Hand.RemoveRange(1, 5);
-                }
-
-                if (table.Game.Players.IndexOf(table.Game.ActivePlayer) == 1)
-                {
-                    table.Game.Players[1].Hand.RemoveRange(1, 5);
-                    table.Game.Players[1].Hand.StartAttack(new[] { 0 });
-                }
-            }
-
             table.CleanLeaverPlayer();
             table.Version++;
             TablesVersion++;
-        }
-        else
-        {
-            throw new BusinessException("table not found");
         }
     }
 
     public void Leave(string playerSecret)
     {
-        var table = GetBySecret(playerSecret, out var tablePlayer);
-        table.CleanLeaverPlayer();
-        Leave(table, tablePlayer);
+        lock (_sync)
+        {
+            var table = GetBySecret(playerSecret, out var tablePlayer);
+
+            if (table == null || tablePlayer == null)
+            {
+                return;
+            }
+
+            table.CleanLeaverPlayer();
+            Leave(table, tablePlayer);
+        }
     }
 
     public void Leave(Table table, TablePlayer tablePlayer)
     {
-        WriteLog(table, tablePlayer.AuthSecret, "leave from table");
-
-        var playerIndex = table.Game.Players.IndexOf(tablePlayer.Player);
-
-        if (table.Game.Status == GameStatus.InProcess)
+        lock (_sync)
         {
-            table.LeavePlayer = tablePlayer.Player;
-            table.LeavePlayerIndex = playerIndex;
-            WriteLog(table, "", "leaver: " + tablePlayer.Player.Name);
-        }
+            WriteLog(table, tablePlayer.AuthSecret, "leave from table");
 
-        table.Game.LeavePlayer(playerIndex);
-        table.Players.Remove(tablePlayer);
+            var playerIndex = table.Game.Players.IndexOf(tablePlayer.Player);
 
-        if (table.Players.Count == 0)
-        {
-            _tables.Remove(table.Id);
-        }
-        else
-        {
-            if (table.Players.All(x => x.Player != table.Owner))
+            if (table.Game.Status == GameStatus.InProcess)
             {
-                table.Owner = table.Players.First().Player;
+                table.LeavePlayer = tablePlayer.Player;
+                table.LeavePlayerIndex = playerIndex;
+                WriteLog(table, "", "leaver: " + tablePlayer.Player.Name);
             }
-        }
 
-        TablesVersion++;
-        table.Version++;
+            table.Game.LeavePlayer(playerIndex);
+            table.Players.Remove(tablePlayer);
+
+            if (table.Game.Status != GameStatus.InProcess)
+            {
+                table.CleanStopRound();
+                table.CleanAllAfkTime();
+            }
+
+            if (table.Players.All(x => x.IsBot))
+            {
+                _tables.Remove(table.Id);
+            }
+            else
+            {
+                if (table.Players.All(x => x.Player != table.Owner))
+                {
+                    table.Owner = table.Players.First(x => x.IsBot == false).Player;
+                }
+            }
+
+            TablesVersion++;
+            table.Version++;
+        }
     }
 
     public Table Get(Guid tableId)
     {
-        var table = _tables[tableId];
-        return table;
+        lock (_sync)
+        {
+            return _tables[tableId];
+        }
     }
 
     public Table? GetBySecret(string playerSecret, out TablePlayer? player)
     {
-        player = null;
-
-        foreach (var table in _tables.Values)
+        lock (_sync)
         {
-            player = table.Players.FirstOrDefault(x => x.AuthSecret == playerSecret);
+            player = null;
 
-            if (player != null)
+            foreach (var table in _tables.Values)
             {
-                return table;
-            }
-        }
+                player = table.Players.FirstOrDefault(x => x.AuthSecret == playerSecret);
 
-        return null;
+                if (player != null)
+                {
+                    return table;
+                }
+            }
+
+            return null;
+        }
     }
 
     public Table[] GetTables()
     {
-        return _tables.Values.ToArray();
+        lock (_sync)
+        {
+            return _tables.Values.ToArray();
+        }
     }
 
     public void BackgroundProcess()
     {
-        CheckStopRound();
-        CheckAfkPlayers();
+        lock (_sync)
+        {
+            CheckStopRound();
+            CheckAfkPlayers();
+            CheckBots();
+        }
+    }
+
+    /// <summary>
+    /// Драйвер болванчиков: за тик исполняет НЕ БОЛЕЕ ОДНОГО хода бота на каждом столе в InProcess
+    /// (естественная пауза ~1 с, чтобы ходы были видны). Под общим <see cref="_sync" />.
+    /// </summary>
+    private void CheckBots()
+    {
+        foreach (var table in _tables.Values.ToArray())
+        {
+            if (table.Game.Status != GameStatus.InProcess)
+            {
+                continue;
+            }
+
+            TablePlayer? defenderBot = null;
+            BotMove defenderMove = default;
+            TablePlayer? otherBot = null;
+            BotMove otherMove = default;
+
+            foreach (var tablePlayer in table.Players)
+            {
+                if (tablePlayer.IsBot == false)
+                {
+                    continue;
+                }
+
+                var candidate = BotBrain.DecideMove(table.Game, tablePlayer.Player);
+
+                if (candidate.Kind == BotMoveKind.None)
+                {
+                    continue;
+                }
+
+                if (table.StopRoundBeginDate != null
+                    && candidate.Kind is BotMoveKind.Defence or BotMoveKind.Take)
+                {
+                    continue;
+                }
+
+                if (tablePlayer.Player == table.Game.DefencePlayer)
+                {
+                    defenderBot = tablePlayer;
+                    defenderMove = candidate;
+                    break;
+                }
+
+                if (otherBot == null)
+                {
+                    otherBot = tablePlayer;
+                    otherMove = candidate;
+                }
+            }
+
+            var botToMove = defenderBot ?? otherBot;
+
+            if (botToMove == null)
+            {
+                continue;
+            }
+
+            ExecuteBotMove(table, botToMove, defenderBot != null ? defenderMove : otherMove);
+        }
+    }
+
+    /// <summary>
+    /// Исполнить один ход бота через методы <see cref="Table" /> (они валидируют правила и делают Version++).
+    /// Любая <see cref="BusinessException" /> гасится и логируется, чтобы единичная нелегальная попытка
+    /// не валила фоновый тик.
+    /// </summary>
+    private void ExecuteBotMove(Table table, TablePlayer bot, BotMove move)
+    {
+        try
+        {
+            switch (move.Kind)
+            {
+                case BotMoveKind.StartAttack:
+                case BotMoveKind.Attack:
+                    table.PlayCards(bot.AuthSecret, move.CardIndexes);
+                    break;
+
+                case BotMoveKind.Defence:
+                    table.PlayCards(bot.AuthSecret, move.CardIndexes, move.AttackCardIndex);
+                    break;
+
+                case BotMoveKind.Take:
+                    table.Take(bot.AuthSecret);
+                    break;
+            }
+        }
+        catch (BusinessException ex)
+        {
+            var logger = LogManager.GetCurrentClassLogger()
+                .WithProperty("TableId", table.Number + " " + table.Id);
+
+            logger.Warn("bot move rejected (" + bot.Player.Name + ", " + move.Kind + "): " + ex.Message);
+        }
     }
 
     private void CheckStopRound()
     {
-        // todo потокобезопасность натянуть
-        foreach (var table in _tables.Values)
+        foreach (var table in _tables.Values.ToArray())
         {
-            if (table.StopRoundBeginDate != null)
+            if (table.StopRoundBeginDate == null)
             {
-                try
+                continue;
+            }
+
+            try
+            {
+                if (table.StopRoundStatus == null)
                 {
-                    var finishTime = table.StopRoundBeginDate.Value.AddSeconds(STOP_ROUND_SECONDS);
-
-                    if (DateTime.UtcNow >= finishTime)
-                    {
-                        if (table.StopRoundStatus == null)
-                        {
-                            throw new("stop round status is null");
-                        }
-
-                        table.StopRoundStatus = null;
-                        table.StopRoundBeginDate = null;
-                        table.Game.StopRound();
-                        table.SetActivePlayerAfkStartTime();
-                        table.Version++;
-                    }
+                    throw new("stop round status is null");
                 }
-                catch (Exception ex)
+
+                var seconds = GetStopRoundSeconds(table.StopRoundStatus.Value);
+                var finishTime = table.StopRoundBeginDate.Value.AddSeconds(seconds);
+
+                if (DateTime.UtcNow >= finishTime)
                 {
-                    var logger = LogManager.GetCurrentClassLogger()
-                        .WithProperty("TableId", table.Number + " " + table.Id);
-
-                    logger.Error("background stop round error: " + ex.Message, ex);
+                    table.StopRoundStatus = null;
+                    table.StopRoundBeginDate = null;
+                    table.Game.StopRound();
+                    table.SetActivePlayerAfkStartTime();
+                    table.Version++;
                 }
+            }
+            catch (Exception ex)
+            {
+                var logger = LogManager.GetCurrentClassLogger()
+                    .WithProperty("TableId", table.Number + " " + table.Id);
+
+                logger.Error("background stop round error: " + ex.Message, ex);
             }
         }
     }
 
     private void CheckAfkPlayers()
     {
-        foreach (var table in _tables.Values)
+        foreach (var table in _tables.Values.ToArray())
         {
             for (var i = 0; i < table.Players.Count; i++)
             {

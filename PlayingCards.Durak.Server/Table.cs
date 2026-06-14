@@ -104,6 +104,15 @@ public class Table
         LeavePlayerIndex = null;
     }
 
+    /// <summary>
+    /// Сбросить отсчёт остановки раунда, чтобы он не «выстрелил» на уже завершённой/новой партии.
+    /// </summary>
+    public void CleanStopRound()
+    {
+        StopRoundStatus = null;
+        StopRoundBeginDate = null;
+    }
+
     public void StartGame()
     {
         Game.StartGame();
@@ -116,6 +125,7 @@ public class Table
         }
 
         CleanLeaverPlayer();
+        CleanStopRound();
         SetActivePlayerAfkStartTime();
         Version++;
 

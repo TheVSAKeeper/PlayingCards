@@ -319,12 +319,33 @@ public class Game
     public Player LeavePlayer(int playerIndex)
     {
         var player = Players[playerIndex];
+
+        var continueInProcess = Status == GameStatus.InProcess
+            && player.Hand.Cards.Count == 0
+            && Players.Count - 1 >= 2;
+
         Players.Remove(player);
+
+        if (continueInProcess)
+        {
+            if (_activePlayerIndex > playerIndex)
+            {
+                _activePlayerIndex--;
+            }
+
+            if (_defencePlayerIndex > playerIndex)
+            {
+                _defencePlayerIndex--;
+            }
+
+            return player;
+        }
+
+        SetActivePlayerIndex(null);
 
         if (Status == GameStatus.InProcess)
         {
             Status = GameStatus.Finish;
-            _activePlayerIndex = null;
         }
         else
         {

@@ -6,7 +6,6 @@
     flex-direction: column;
     align-items: center;
     gap: 0.4rem;
-    margin: 0 0.6rem 0.6rem 0;
     padding: 0.7rem 0.85rem 0.85rem;
     border-radius: 0.9rem;
     background: radial-gradient(120% 120% at 50% 0%, rgba(30, 64, 44, 0.92), rgba(11, 26, 18, 0.95));
@@ -40,8 +39,16 @@
 
 .player-cards {
     display: flex;
-    gap: 0.12rem;
+    justify-content: center;
     min-height: 2.15rem;
+}
+
+.player-cards ::deep .card-back.mini {
+    margin-left: -0.8rem;
+}
+
+.player-cards ::deep .card-back.mini:first-child {
+    margin-left: 0;
 }
 
 .player.active-player {
@@ -51,6 +58,31 @@
         0 16px 32px rgba(0, 0, 0, 0.5),
         0 0 0 2px rgba(196, 164, 92, 0.55),
         inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    animation: active-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes active-pulse {
+    0%, 100% {
+        box-shadow:
+            0 16px 32px rgba(0, 0, 0, 0.5),
+            0 0 0 2px rgba(196, 164, 92, 0.55),
+            0 0 0 0 rgba(196, 164, 92, 0),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    50% {
+        box-shadow:
+            0 16px 32px rgba(0, 0, 0, 0.5),
+            0 0 0 2px rgba(196, 164, 92, 0.85),
+            0 0 18px 3px rgba(196, 164, 92, 0.28),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .player.active-player {
+        animation: none;
+    }
 }
 
 .player.defence-player {
@@ -58,6 +90,18 @@
     box-shadow:
         0 12px 28px rgba(0, 0, 0, 0.45),
         0 0 0 2px rgba(108, 162, 214, 0.4);
+}
+
+.badge-bubbles {
+    position: absolute;
+    bottom: calc(100% + 0.25rem);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    pointer-events: none;
 }
 
 .player ::deep .speak-text,

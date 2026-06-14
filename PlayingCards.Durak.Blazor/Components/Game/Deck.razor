@@ -2,11 +2,15 @@
     <div class="deck-cards">
         @if (View.Trump != null && View.DeckCardsCount > 0)
         {
+            @if (View.DeckCardsCount > 1)
+            {
+                <CardBack CssClass="deck-pile" />
+            }
             <CardView Card="View.Trump" />
-        }
-        @if (View.DeckCardsCount > 1)
-        {
-            <CardBack CssClass="deck-back">@(View.DeckCardsCount - 1)</CardBack>
+            @if (View.DeckCardsCount > 1)
+            {
+                <span class="deck-count">@View.DeckCardsCount</span>
+            }
         }
     </div>
     @if (View.Trump != null && View.DeckCardsCount == 0)

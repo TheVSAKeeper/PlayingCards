@@ -28,13 +28,17 @@ public static class TableViewBuilder
             Trump = game.Deck.TrumpCard == null ? null : new CardModel(game.Deck.TrumpCard),
             Status = (int)game.Status,
             StopRoundStatus = table.StopRoundStatus == null ? null : (int)table.StopRoundStatus,
-            StopRoundEndDate = table.StopRoundBeginDate?.AddSeconds(TableHolder.STOP_ROUND_SECONDS),
+            StopRoundEndDate = table.StopRoundBeginDate == null || table.StopRoundStatus == null
+                ? null
+                : table.StopRoundBeginDate.Value.AddSeconds(TableHolder.GetStopRoundSeconds(table.StopRoundStatus.Value)),
         };
 
-        tableDto.MyCards = game.Players.First(x => x == me.Player)
-            .Hand.Cards
-            .Select(x => new CardModel(x))
-            .ToArray();
+        var mePlayer = game.Players.FirstOrDefault(x => x == me.Player);
+        tableDto.MyCards = mePlayer == null
+            ? []
+            : mePlayer.Hand.Cards
+                .Select(x => new CardModel(x))
+                .ToArray();
 
         tableDto.Cards = game.Cards.Select(x => new TableCardModel
             {

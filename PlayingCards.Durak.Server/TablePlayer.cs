@@ -19,4 +19,9 @@ public class TablePlayer
     /// Секрет авторизации.
     /// </summary>
     public string AuthSecret { get; set; }
+
+    /// <summary>
+    /// Игрок управляется ИИ-болванчиком (для отладки), а не человеком.
+    /// </summary>
+    public bool IsBot { get; set; }
 }

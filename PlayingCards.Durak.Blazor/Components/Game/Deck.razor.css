@@ -4,24 +4,55 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    align-self: center;
-    margin-left: auto;
+    min-width: 4.4rem;
+    min-height: 6.2rem;
 }
 
 .deck-cards {
     position: relative;
-    width: 4.4rem;
-    height: 6.2rem;
+    width: 5.6rem;
+    height: 6.6rem;
 }
 
 .deck-cards ::deep .play-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
     cursor: default;
 }
 
 .deck-cards ::deep .play-card:hover {
     transform: none;
     filter: none;
+}
+
+.deck-cards ::deep .deck-pile {
+    position: absolute;
+    top: 0.4rem;
+    left: 1.05rem;
+    z-index: 0;
+}
+
+.deck-count {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.4rem;
+    z-index: 2;
+    min-width: 1.5rem;
+    padding: 0.08rem 0.4rem;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #c4a45c, #a8843f);
+    border: 1px solid rgba(8, 24, 16, 0.45);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+    color: #14241a;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
 }
 
 .trump-info {

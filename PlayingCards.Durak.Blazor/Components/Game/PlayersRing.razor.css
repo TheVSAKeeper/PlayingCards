@@ -1,0 +1,21 @@
+﻿
+.players-ring {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.6rem 0.7rem;
+    width: 100%;
+    min-height: 6.6rem;
+}
+
+.players-ring:empty::after {
+    content: 'Ожидаем соперников…';
+    align-self: center;
+    margin: 0 auto;
+    font-size: 0.85rem;
+    letter-spacing: 0.07em;
+    color: rgba(216, 201, 163, 0.4);
+}

@@ -34,8 +34,3 @@
         inset 0 0 0 1px rgba(196, 164, 92, 0.3);
 }
 
-.card-back.deck-back {
-    position: absolute;
-    top: -0.55rem;
-    left: -0.55rem;
-}
