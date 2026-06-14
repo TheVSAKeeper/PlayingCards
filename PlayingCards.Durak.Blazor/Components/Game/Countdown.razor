@@ -1,8 +1,33 @@
-﻿
+﻿@implements IDisposable
+@using System.Timers
 
-<span class="countdown">@Format(0)</span>
+<label class="speak-text">@_text</label>
 
 @code {
     [Parameter, EditorRequired] public DateTime EndTime { get; set; }
-    [Parameter] public Func<int, string> Format { get; set; } = s => s.ToString();
+    [Parameter, EditorRequired] public Func<int, string> Format { get; set; } = default!;
+
+    private System.Timers.Timer? _timer;
+    private string _text = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        Tick();
+        _timer = new System.Timers.Timer(1000);
+        _timer.Elapsed += (_, _) => InvokeAsync(() => { Tick(); StateHasChanged(); });
+        _timer.AutoReset = true;
+        _timer.Start();
+    }
+
+    private void Tick()
+    {
+        var seconds = (int)Math.Round((EndTime - DateTime.UtcNow).TotalSeconds);
+        _text = Format(Math.Max(seconds, 0));
+    }
+
+    public void Dispose()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
+    }
 }

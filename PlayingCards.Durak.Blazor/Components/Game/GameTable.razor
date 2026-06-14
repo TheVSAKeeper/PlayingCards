@@ -13,6 +13,11 @@
 
         <PlayersRing View="_view" />
 
+        @if (_view.StopRoundStatus is { } srs && _view.StopRoundEndDate is { } end)
+        {
+            <Countdown EndTime="end" Format="@(s => srs == 0 ? $"я забираю через {s} секунд" : $"отбито через {s} секунд")" />
+        }
+
         <div class="actions-up">
             @if (CanTake)
             {

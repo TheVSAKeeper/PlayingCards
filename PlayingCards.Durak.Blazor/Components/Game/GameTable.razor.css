@@ -74,6 +74,21 @@
     min-height: 2.4rem;
 }
 
+.game > ::deep .speak-text {
+    position: relative;
+    z-index: 1;
+    align-self: center;
+    padding: 0.35rem 1.1rem;
+    border-radius: 0.6rem;
+    background: rgba(8, 24, 16, 0.55);
+    border: 1px solid rgba(196, 164, 92, 0.4);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    color: #f3d9ad;
+}
+
 .actions > .btn-info {
     align-self: center;
 }
