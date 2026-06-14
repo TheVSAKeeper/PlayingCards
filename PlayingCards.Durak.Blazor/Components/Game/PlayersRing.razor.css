@@ -115,8 +115,12 @@
 }
 
 .player ::deep .show-card {
+    width: 1.5rem;
+    height: 2.15rem;
+    border-radius: 0.28rem;
+    cursor: default;
     box-shadow:
         0 0 0 1px rgba(196, 164, 92, 0.9),
-        0 6px 14px rgba(0, 0, 0, 0.4);
+        0 4px 10px rgba(0, 0, 0, 0.45);
     transform: translateY(-2px);
 }
