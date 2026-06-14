@@ -25,6 +25,13 @@
             }
         </div>
 
+        <PlayerBadge Name="@Me.Player.Name"
+                     GameIndex="_view.MyPlayerIndex"
+                     IsActive="_view.MyPlayerIndex == _view.ActivePlayerIndex"
+                     IsDefence="_view.MyPlayerIndex == _view.DefencePlayerIndex"
+                     IsLooser="_view.MyPlayerIndex == _view.LooserPlayerIndex"
+                     AfkEndTime="_view.AfkEndTime" />
+
         <div class="hand">
             @for (var i = 0; i < (_view.MyCards?.Length ?? 0); i++)
             {

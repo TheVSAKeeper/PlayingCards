@@ -1,0 +1,57 @@
+﻿
+
+<div class="player @(IsActive ? "active-player" : "") @(IsDefence ? "defence-player" : "") @(IsLeaver ? "leave-player" : "")"
+     data-player-index="@GameIndex">
+    @if (IsLooser)
+    {
+        <label class="speak-text looser-text">я дурач☻к</label>
+    }
+    @if (IsLeaver)
+    {
+        <label class="speak-text rat-text">я вышел, как крыса</label>
+    }
+    <img src="/images/player.png" />
+    <label class="player-name" title="@Name">@Name</label>
+    @if (CardsCount > 0)
+    {
+        <div class="player-cards">
+            @for (var j = 0; j < CardsCount; j++)
+            {
+                @if (ShowTrump && MinTrumpCard != null && j == CardsCount - 1)
+                {
+                    <CardView Card="MinTrumpCard" CssClass="show-card" />
+                }
+                else
+                {
+                    <CardBack CssClass="mini" />
+                }
+            }
+        </div>
+    }
+    @if (AfkEndTime is { } afk)
+    {
+        <Countdown EndTime="afk" Format="@(s => $"осталось {s} секунд")" />
+    }
+</div>
+
+@code {
+    [Parameter] public string Name { get; set; } = string.Empty;
+
+    [Parameter] public int GameIndex { get; set; } = -1;
+
+    [Parameter] public bool IsActive { get; set; }
+
+    [Parameter] public bool IsDefence { get; set; }
+
+    [Parameter] public bool IsLooser { get; set; }
+
+    [Parameter] public bool IsLeaver { get; set; }
+
+    [Parameter] public int CardsCount { get; set; }
+
+    [Parameter] public bool ShowTrump { get; set; }
+
+    [Parameter] public CardModel? MinTrumpCard { get; set; }
+
+    [Parameter] public DateTime? AfkEndTime { get; set; }
+}

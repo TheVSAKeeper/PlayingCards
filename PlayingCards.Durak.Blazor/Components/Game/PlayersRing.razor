@@ -1,46 +1,19 @@
 ﻿@foreach (var seat in Seats)
 {
-    <div class="player @StateClass(seat) @(seat.GameIndex == View.DefencePlayerIndex ? "defence-player" : "")"
-         data-player-index="@seat.GameIndex">
-        @if (seat.GameIndex == View.LooserPlayerIndex)
-        {
-            <label class="speak-text looser-text">я дурач☻к</label>
-        }
-        <img src="/images/player.png" />
-        <label class="player-name" title="@seat.Player.Name">@seat.Player.Name</label>
-        <div class="player-cards">
-            @for (var j = 0; j < seat.Player.CardsCount; j++)
-            {
-                @if (ShowTrump(seat) && j == seat.Player.CardsCount - 1)
-                {
-                    <CardView Card="MinTrumpCard!" CssClass="show-card" />
-                }
-                else
-                {
-                    <CardBack CssClass="mini" />
-                }
-            }
-        </div>
-        @if (seat.Player.AfkEndTime is { } afk)
-        {
-            <Countdown EndTime="afk" Format="@(s => $"осталось {s} секунд")" />
-        }
-    </div>
+    <PlayerBadge Name="@seat.Player.Name"
+                 GameIndex="seat.GameIndex"
+                 IsActive="seat.GameIndex == View.ActivePlayerIndex"
+                 IsDefence="seat.GameIndex == View.DefencePlayerIndex"
+                 IsLooser="seat.GameIndex == View.LooserPlayerIndex"
+                 CardsCount="seat.Player.CardsCount"
+                 ShowTrump="ShowTrump(seat)"
+                 MinTrumpCard="MinTrumpCard"
+                 AfkEndTime="seat.Player.AfkEndTime" />
 }
 
 @if (View.LeavePlayer is { } leaver)
 {
-    <div class="player leave-player">
-        <label class="speak-text rat-text">я вышел, как крыса</label>
-        <img src="/images/player.png" />
-        <label class="player-name" title="@leaver.Name">@leaver.Name</label>
-        <div class="player-cards">
-            @for (var j = 0; j < leaver.CardsCount; j++)
-            {
-                <CardBack CssClass="mini" />
-            }
-        </div>
-    </div>
+    <PlayerBadge Name="@leaver.Name" IsLeaver="true" CardsCount="leaver.CardsCount" />
 }
 
 @code {
@@ -69,9 +42,6 @@
             return result;
         }
     }
-
-    private string StateClass(Seat seat) =>
-        seat.GameIndex == View.ActivePlayerIndex ? "active-player" : "";
 
     private bool ShowTrump(Seat seat) =>
         View.NeedShowCardMinTrumpValue != null

@@ -36,13 +36,9 @@ else
 
 @code {
     private bool _loaded;
+    private bool _disposed;
     private Table? _currentTable;
     private TablePlayer? _me;
-
-    protected override void OnInitialized()
-    {
-        TableHolder.Changed += OnHolderChanged;
-    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -50,11 +46,26 @@ else
         {
             await Session.LoadAsync();
             _loaded = true;
+            TableHolder.Changed += OnHolderChanged;
             await OnSessionChanged();
         }
     }
 
-    private void OnHolderChanged() => InvokeAsync(Refresh);
+    private void OnHolderChanged()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        try
+        {
+            InvokeAsync(Refresh);
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
 
     private async Task OnSessionChanged()
     {
@@ -90,6 +101,7 @@ else
 
     public void Dispose()
     {
+        _disposed = true;
         TableHolder.Changed -= OnHolderChanged;
     }
 }
