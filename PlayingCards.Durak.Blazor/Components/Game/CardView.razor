@@ -1,6 +1,13 @@
 ﻿<div class="play-card @(Active ? "active" : "") @CssClass" @onclick="OnClickInternal">
-    <div class="card-rank @(IsRed ? "red" : "")">@RankText</div>
-    <div class="card-suit @(IsRed ? "red" : "")">@SuitText</div>
+    <div class="card-index card-index-tl @(IsRed ? "red" : "")">
+        <span class="card-rank">@RankText</span>
+        <span class="card-suit">@SuitText</span>
+    </div>
+    <div class="card-pip @(IsRed ? "red" : "")">@SuitText</div>
+    <div class="card-index card-index-br @(IsRed ? "red" : "")">
+        <span class="card-rank">@RankText</span>
+        <span class="card-suit">@SuitText</span>
+    </div>
 </div>
 
 @code {

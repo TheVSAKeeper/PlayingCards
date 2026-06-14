@@ -2,12 +2,10 @@
 
 .play-card {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+
+    isolation: isolate;
     width: 4.4rem;
     height: 6.2rem;
-    padding: 0.45rem 0.5rem;
     border-radius: 0.55rem;
     background:
         radial-gradient(120% 100% at 28% 18%, #fffdf6, #f3ead2 62%, #e6d6ad);
@@ -43,26 +41,49 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-.card-rank {
-    position: relative;
-    z-index: 1;
-    font-size: 1.35rem;
+.card-index {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 0.92;
+}
+
+.card-index-tl {
+    top: 0.34rem;
+    left: 0.42rem;
+}
+
+.card-index-br {
+    right: 0.42rem;
+    bottom: 0.34rem;
+    transform: rotate(180deg);
+}
+
+.card-index .card-rank {
+    font-size: 1.05rem;
     font-weight: 700;
-    line-height: 1;
     letter-spacing: 0.01em;
 }
 
-.card-suit {
-    position: relative;
-    z-index: 1;
-    align-self: flex-end;
-    font-size: 1.85rem;
-    line-height: 1;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
+.card-index .card-suit {
+    font-size: 0.92rem;
 }
 
-.card-rank.red,
-.card-suit.red {
+.card-pip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 1;
+    transform: translate(-50%, -50%);
+    font-size: 2.7rem;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.card-index.red,
+.card-pip.red {
     color: #b21e2f;
 }
 
