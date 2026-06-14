@@ -97,6 +97,15 @@ public class Game
     public Deck Deck { get; set; }
 
     /// <summary>
+    /// Сколько карт ушло в отбой (бито) за текущую партию.
+    /// </summary>
+    /// <remarks>
+    /// Растёт только при удачной защите (карты со стола уходят в бито); при «беру»
+    /// карты возвращаются в руку защищающегося и счётчик не меняется. Обнуляется на старте.
+    /// </remarks>
+    public int DiscardCardsCount { get; private set; }
+
+    /// <summary>
     /// Начать раунд, сыграв карту.
     /// </summary>
     /// <param name="player">Игрок.</param>
@@ -373,6 +382,7 @@ public class Game
         SetActivePlayerIndex(null);
         _isSuccessDefenceExists = false;
         Cards = [];
+        DiscardCardsCount = 0;
         Status = GameStatus.InProcess;
         int? looserPlayerIndex = null;
 
@@ -490,6 +500,7 @@ public class Game
         else
         {
             _isSuccessDefenceExists = true;
+            DiscardCardsCount += Cards.Sum(x => x.DefenceCard != null ? 2 : 1);
         }
 
         Cards = [];

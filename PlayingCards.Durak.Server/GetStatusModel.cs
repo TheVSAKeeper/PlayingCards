@@ -14,6 +14,8 @@ public class GetStatusModel
 
         public int DeckCardsCount { get; set; }
 
+        public int DiscardCardsCount { get; set; }
+
         public CardModel[]? MyCards { get; set; }
 
         public CardModel? Trump { get; set; }

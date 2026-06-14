@@ -1,0 +1,61 @@
+﻿
+
+.discard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 4.4rem;
+    min-height: 6.2rem;
+}
+
+.discard-cards {
+    position: relative;
+    width: 5.6rem;
+    height: 6.6rem;
+}
+
+.discard-cards ::deep .discard-pile {
+    position: absolute;
+    top: 0.2rem;
+    left: 0.6rem;
+}
+
+.discard-cards ::deep .discard-pile-1 {
+    top: 0.45rem;
+    left: 0.95rem;
+    transform: rotate(6deg);
+}
+
+.discard-cards ::deep .discard-pile-2 {
+    top: 0.1rem;
+    left: 0.25rem;
+    transform: rotate(-5deg);
+}
+
+.discard-count {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.4rem;
+    z-index: 3;
+    min-width: 1.5rem;
+    padding: 0.08rem 0.4rem;
+    border-radius: 1rem;
+    background: rgba(8, 20, 14, 0.85);
+    border: 1px solid rgba(196, 164, 92, 0.5);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+    color: #d8c08a;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.discard-label {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    color: rgba(216, 201, 163, 0.7);
+}

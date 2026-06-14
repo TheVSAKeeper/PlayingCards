@@ -1,0 +1,20 @@
+﻿
+<div class="discard">
+    <div class="discard-cards">
+        @if (View.DiscardCardsCount > 0)
+        {
+            <CardBack CssClass="discard-pile discard-pile-2" />
+            <CardBack CssClass="discard-pile discard-pile-1" />
+            <CardBack CssClass="discard-pile" />
+            <span class="discard-count" title="Карт в бито">@View.DiscardCardsCount</span>
+        }
+    </div>
+    @if (View.DiscardCardsCount > 0)
+    {
+        <span class="discard-label">Бито</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TableModel View { get; set; } = default!;
+}

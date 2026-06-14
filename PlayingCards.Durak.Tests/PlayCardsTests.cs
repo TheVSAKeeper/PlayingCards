@@ -162,4 +162,37 @@ public class PlayCardsTests
 
         Assert.Throws<BusinessException>(() => _attackPlayer.Hand.PlayCards("Q♦", "Q♥"));
     }
+
+    /// <summary>
+    /// После удачной защиты карты со стола уходят в бито — счётчик отбоя растёт.
+    /// </summary>
+    /// <remarks>
+    /// Проверяет, что до конца раунда счётчик нулевой (обнуляется на старте),
+    /// а после удачного отбоя пары атака+защита он равен двум картам.
+    /// </remarks>
+    [Test]
+    public void StopRoundSuccessDefenceIncrementsDiscardCount()
+    {
+        _attackPlayer.Hand.PlayCards("Q♦");
+        _defencePlayer.Hand.PlayCards("A♦", "Q♦");
+
+        Assert.That(_game.DiscardCardsCount, Is.EqualTo(0));
+
+        _game.StopRound();
+
+        Assert.That(_game.DiscardCardsCount, Is.EqualTo(2));
+    }
+
+    /// <summary>
+    /// Когда защищающийся забирает карты, в бито ничего не уходит — счётчик отбоя не меняется.
+    /// </summary>
+    [Test]
+    public void StopRoundTakeKeepsDiscardCountZero()
+    {
+        _attackPlayer.Hand.PlayCards("Q♦");
+
+        _game.StopRound();
+
+        Assert.That(_game.DiscardCardsCount, Is.EqualTo(0));
+    }
 }

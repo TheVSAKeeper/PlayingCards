@@ -25,6 +25,7 @@ public static class TableViewBuilder
             LooserPlayerIndex = game.LooserPlayer == null ? null : game.Players.IndexOf(game.LooserPlayer),
             NeedShowCardMinTrumpValue = game.NeedShowCardMinTrumpValue,
             DeckCardsCount = game.Deck.CardsCount,
+            DiscardCardsCount = game.DiscardCardsCount,
             Trump = game.Deck.TrumpCard == null ? null : new CardModel(game.Deck.TrumpCard),
             Status = (int)game.Status,
             StopRoundStatus = table.StopRoundStatus == null ? null : (int)table.StopRoundStatus,
