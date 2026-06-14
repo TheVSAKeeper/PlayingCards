@@ -1,23 +1,22 @@
 ﻿@inherits LayoutComponentBase
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+    <header class="game-header">
+        <span class="brand">
+            <span class="brand-suits" aria-hidden="true">♠&#8201;♥&#8201;♦&#8201;♣</span>
+            Дурак
+        </span>
+    </header>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https:
-        </div>
-
-        <article class="content px-4">
+    <main class="stage">
+        <article class="content">
             @Body
         </article>
     </main>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    Произошла непредвиденная ошибка.
+    <a href="." class="reload">Перезагрузить</a>
     <span class="dismiss">🗙</span>
 </div>

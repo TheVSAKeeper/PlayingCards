@@ -1,98 +1,83 @@
-﻿.page {
+﻿
+
+.page {
     position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
 }
 
-main {
-    flex: 1;
-}
-
-.sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
-}
-
-.top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
-    justify-content: flex-end;
-    height: 3.5rem;
+.game-header {
     display: flex;
     align-items: center;
+    justify-content: center;
+    height: 3.6rem;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid rgba(196, 164, 92, 0.28);
+    background: linear-gradient(180deg, rgba(10, 30, 20, 0.92), rgba(8, 24, 16, 0.78));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 1.5rem;
-        text-decoration: none;
-    }
-
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        text-decoration: underline;
-    }
-
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-@media (max-width: 640.98px) {
-    .top-row {
-        justify-content: space-between;
-    }
-
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
-    }
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #f4ecd2;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
-@media (min-width: 641px) {
-    .page {
-        flex-direction: row;
-    }
+.brand-suits {
+    font-size: 1.05rem;
+    letter-spacing: 0;
+    color: #c4a45c;
+    opacity: 0.9;
+}
 
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
-    }
+.stage {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding: 1.6rem 1rem 3rem;
+}
 
-    .top-row {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
-    }
-
-    .top-row, article {
-        padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
-    }
+.content {
+    width: 100%;
+    max-width: 1080px;
 }
 
 #blazor-error-ui {
-    color-scheme: light only;
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    box-sizing: border-box;
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    color-scheme: dark only;
     position: fixed;
-    width: 100%;
+    bottom: 0;
+    left: 0;
     z-index: 1000;
+    display: none;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.7rem 1.25rem;
+    background: linear-gradient(135deg, #7a2230, #4a121c);
+    border-top: 1px solid rgba(196, 164, 92, 0.45);
+    color: #f7e7d3;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    letter-spacing: 0.02em;
+    box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.45);
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
+#blazor-error-ui .reload {
+    margin-left: 0.5rem;
+    color: #f3d9ad;
+    text-decoration: underline;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 1rem;
+    top: 0.55rem;
+}
