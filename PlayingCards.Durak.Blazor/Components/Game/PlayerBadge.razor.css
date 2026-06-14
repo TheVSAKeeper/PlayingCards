@@ -41,6 +41,7 @@
     display: flex;
     justify-content: center;
     min-height: 2.15rem;
+    min-width: 5rem;
 }
 
 .player-cards ::deep .card-back.mini {

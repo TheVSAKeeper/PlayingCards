@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using PlayingCards.Durak.Server;
 
-namespace PlayingCards.Durak.Tests;
+namespace PlayingCards.Durak.Server.Tests;
 
 [TestFixture]
 public class TableHolderTests
@@ -125,11 +125,11 @@ public class TableHolderTests
     public void Leave_OneHumanRemainsAmongBots_KeepsTableAndPrefersHumanOwner()
     {
         var table = _holder.CreateTable();
-        _holder.Join(table.Id, "s1", "Alice"); // владелец
+        _holder.Join(table.Id, "s1", "Alice");
         _holder.AddBot(table.Id);
         _holder.Join(table.Id, "s2", "Bob");
 
-        _holder.Leave("s1"); // вышел владелец-человек, остаются бот + Bob
+        _holder.Leave("s1");
 
         Assert.Multiple(() =>
         {

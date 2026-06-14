@@ -1,12 +1,11 @@
 ﻿using PlayingCards.Durak.Server;
-using static PlayingCards.Durak.Tests.ServerTestHelper;
+using static PlayingCards.Durak.Server.Tests.ServerTestHelper;
 
-namespace PlayingCards.Durak.Tests;
+namespace PlayingCards.Durak.Server.Tests;
 
 [TestFixture]
 public class TableTests
 {
-    // p0 — минимальный козырь 7♦ → ходит первым, p1 защищается.
     private static readonly string[] Hands =
     [
         "A♠ Q♦ Q♣ Q♥ 10♥ 7♦",
@@ -100,7 +99,6 @@ public class TableTests
     [Test]
     public void PlayCards_WhenGameNotInProcess_Throws()
     {
-        // одиночный стол без старта игры
         var game = new Game { Deck = new(new SortedDeckCardGenerator(Hands, "6♦")) };
         var p0 = game.AddPlayer("p0");
         game.AddPlayer("p1");

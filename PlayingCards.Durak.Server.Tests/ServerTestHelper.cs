@@ -1,6 +1,6 @@
 ﻿using PlayingCards.Durak.Server;
 
-namespace PlayingCards.Durak.Tests;
+namespace PlayingCards.Durak.Server.Tests;
 
 /// <summary>
 /// Помощник для тестов Server-слоя: собирает стол с детерминированной раздачей.

@@ -1,12 +1,11 @@
 ﻿using PlayingCards.Durak;
 using PlayingCards.Durak.Server;
 
-namespace PlayingCards.Durak.Tests;
+namespace PlayingCards.Durak.Server.Tests;
 
 [TestFixture]
 public class BotTests
 {
-    // --- TableHolder.AddBot ---
 
     [Test]
     public void AddBot_SeatsBotAndBecomesOwner()
@@ -62,8 +61,6 @@ public class BotTests
         Assert.That(ex!.Message, Does.Contain("bad status for join"));
     }
 
-    // --- BotBrain.DecideMove ---
-
     [Test]
     public void DecideMove_ActiveOnEmptyTable_StartsWithLowestNonTrump()
     {
@@ -101,11 +98,8 @@ public class BotTests
         var table = ServerTestHelper.BuildStartedTable(hands, "6♦", out _);
         var defender = table.Game.DefencePlayer!;
 
-        // на пустом столе защитнику нечего отбивать — пас
         Assert.That(BotBrain.DecideMove(table.Game, defender).Kind, Is.EqualTo(BotMoveKind.None));
     }
-
-    // --- Интеграция: драйвер ботов доигрывает партию до конца ---
 
     [Test]
     public void BotsOnlyTable_BackgroundProcess_PlaysGameToFinish()
@@ -120,8 +114,6 @@ public class BotTests
 
         while (table.Game.Status == GameStatus.InProcess && guard++ < 5000)
         {
-            // Отсчёт остановки раунда завязан на реальное время; в тесте перематываем его
-            // в прошлое, чтобы CheckStopRound завершал раунд и партия двигалась без ожидания.
             if (table.StopRoundBeginDate != null)
             {
                 table.StopRoundBeginDate = DateTime.UtcNow.AddSeconds(-30);

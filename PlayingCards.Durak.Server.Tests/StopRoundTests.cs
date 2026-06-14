@@ -1,7 +1,7 @@
 ﻿using PlayingCards.Durak.Server;
-using static PlayingCards.Durak.Tests.ServerTestHelper;
+using static PlayingCards.Durak.Server.Tests.ServerTestHelper;
 
-namespace PlayingCards.Durak.Tests;
+namespace PlayingCards.Durak.Server.Tests;
 
 /// <summary>
 /// Issue #5: при «беру» подкидывать особо некому — отсчёт короче (5с), при удачной защите остаётся 10с.
@@ -37,7 +37,6 @@ public class StopRoundTests
         Assert.That((vm.StopRoundEndDate!.Value - begin).TotalSeconds, Is.EqualTo(expectedSeconds).Within(0.001));
     }
 
-    // Суть #5: 6 секунд достаточно, чтобы завершить «беру», но мало для удачной защиты (там всё ещё 10).
     [TestCase(StopRoundStatus.Take, 6, true)]
     [TestCase(StopRoundStatus.Take, 3, false)]
     [TestCase(StopRoundStatus.SuccessDefence, 6, false)]
@@ -82,7 +81,6 @@ public class StopRoundTests
         table.StopRoundStatus = StopRoundStatus.Take;
         table.StopRoundBeginDate = DateTime.UtcNow;
 
-        // игрок с картами уходит → партия прерывается; устаревший отсчёт нельзя оставлять
         holder.Leave("s0");
 
         Assert.Multiple(() =>
@@ -101,7 +99,6 @@ public class StopRoundTests
         table.StopRoundStatus = StopRoundStatus.Take;
         table.StopRoundBeginDate = begin;
 
-        // уход игрока без карт (#6) — игра продолжается, отсчёт защищающегося трогать нельзя
         var neutral = table.Players.First(x =>
             x.Player != table.Game.ActivePlayer && x.Player != table.Game.DefencePlayer);
         neutral.Player.Hand.Clear();
@@ -119,7 +116,6 @@ public class StopRoundTests
     [Test]
     public void StartGame_ClearsStaleStopRound()
     {
-        // стол в ReadyToStart (игра ещё не начата) с зависшим от прошлой партии отсчётом
         var game = new Game { Deck = new(new SortedDeckCardGenerator(Hands, "6♦")) };
         game.AddPlayer("p0");
         game.AddPlayer("p1");

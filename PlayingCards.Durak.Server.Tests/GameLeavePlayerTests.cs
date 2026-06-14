@@ -1,6 +1,6 @@
 ﻿using PlayingCards.Durak.Server;
 
-namespace PlayingCards.Durak.Tests;
+namespace PlayingCards.Durak.Server.Tests;
 
 /// <summary>
 /// Issue #6: если игрок без карт (уже вышедший из партии) покидает стол — игра остальных не прерывается.
@@ -8,7 +8,6 @@ namespace PlayingCards.Durak.Tests;
 [TestFixture]
 public class GameLeavePlayerTests
 {
-    // active = p0 (минимальный козырь 7♦), defence = p1, p2 — сбоку.
     private static readonly string[] ActiveFirstHands =
     [
         "7♦ 8♠ 9♠ 10♠ J♠ Q♠",
@@ -16,7 +15,6 @@ public class GameLeavePlayerTests
         "8♣ 9♣ 10♣ J♣ Q♣ K♣",
     ];
 
-    // active = p2 (минимальный козырь 7♦), defence = p0 (по кругу).
     private static readonly string[] ActiveLastHands =
     [
         "8♠ 9♠ 10♠ J♠ Q♠ K♠",
@@ -24,7 +22,6 @@ public class GameLeavePlayerTests
         "7♦ 8♣ 9♣ 10♣ J♣ Q♣",
     ];
 
-    // active = p1 (минимальный козырь 7♦), defence = p2 (последний индекс).
     private static readonly string[] DefenceLastHands =
     [
         "8♠ 9♠ 10♠ J♠ Q♠ K♠",
@@ -66,7 +63,6 @@ public class GameLeavePlayerTests
     {
         var game = StartGame(ActiveFirstHands);
 
-        // ушёл игрок с картами — это прерывает партию (с ≥2 оставшимися движок переводит в ReadyToStart).
         game.LeavePlayer(1);
 
         Assert.Multiple(() =>
@@ -80,10 +76,10 @@ public class GameLeavePlayerTests
     public void LeavePlayer_NoCardsBeforeTurnPointers_KeepsTurnOnSamePlayers()
     {
         var game = StartGame(ActiveLastHands);
-        var activeBefore = game.ActivePlayer;   // p2
-        var defenceBefore = game.DefencePlayer; // p0
+        var activeBefore = game.ActivePlayer;
+        var defenceBefore = game.DefencePlayer;
 
-        game.Players[1].Hand.Clear();           // p1 — левее ходящего/защищающегося
+        game.Players[1].Hand.Clear();
         game.LeavePlayer(1);
 
         Assert.Multiple(() =>
@@ -97,8 +93,6 @@ public class GameLeavePlayerTests
     [Test]
     public void LeavePlayer_InterruptsGame_ClearsTurnPointers()
     {
-        // active = p1, defence = p2 (последний индекс). Уходит p0 с картами —
-        // партия прерывается, список игроков сжимается до 2 (валидные индексы 0..1).
         var game = StartGame(DefenceLastHands);
         Assert.That(game.DefencePlayer, Is.SameAs(game.Players[2]));
 
@@ -108,8 +102,6 @@ public class GameLeavePlayerTests
         {
             Assert.That(game.Status, Is.EqualTo(GameStatus.ReadyToStart));
             Assert.That(game.ActivePlayer, Is.Null);
-            // без сброса _defencePlayerIndex обращение к DefencePlayer кидало
-            // ArgumentOutOfRangeException (протухший индекс 2 за границей списка из 2 игроков).
             Assert.That(game.DefencePlayer, Is.Null);
         });
     }
@@ -117,8 +109,6 @@ public class GameLeavePlayerTests
     [Test]
     public void TableHolder_Leave_BuildTable_DoesNotThrow()
     {
-        // Воспроизводит баг из боя: Leave → Version++ → TableViewBuilder.BuildTable
-        // читает DefencePlayer с протухшим индексом.
         var table = ServerTestHelper.BuildStartedTable(DefenceLastHands, "6♦", out var players);
         var holder = new TableHolder();
 
@@ -130,8 +120,6 @@ public class GameLeavePlayerTests
     [Test]
     public void BuildTable_ForDepartedPlayer_DoesNotThrow()
     {
-        // Воспроизводит баг из боя: Blazor push (Version++) перестраивает вид глазами
-        // игрока, который только что вышел и уже удалён из Players (BuildTable падал на First).
         var table = ServerTestHelper.BuildStartedTable(DefenceLastHands, "6♦", out var players);
         var departed = players[0];
         new TableHolder().Leave(table, departed);
@@ -156,7 +144,6 @@ public class GameLeavePlayerTests
         holder.Join(table.Id, "s2", "p2");
         table.StartGame();
 
-        // игрок, который сейчас не ходит и не защищается — имитируем, что он отыгрался (нет карт)
         var neutral = table.Players.First(x =>
             x.Player != table.Game.ActivePlayer && x.Player != table.Game.DefencePlayer);
         neutral.Player.Hand.Clear();

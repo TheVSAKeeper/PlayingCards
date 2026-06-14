@@ -2,19 +2,18 @@
 using PlayingCards.Durak.Server;
 using static PlayingCards.Durak.Server.GetStatusModel;
 
-namespace PlayingCards.Durak.Tests;
+namespace PlayingCards.Durak.Server.Tests;
 
 [TestFixture]
 public class PlayLogicTests
 {
-    // Козырь — ♦ (suit 1)
     private static readonly CardModel Trump = new() { Rank = 6, Suit = 1 };
 
-    [TestCase(2, 2, 13, 12, true)]   // защита козырем по козырю, старше — ок
-    [TestCase(2, 2, 12, 13, false)]  // защита козырем по козырю, младше — нет
-    [TestCase(0, 1, 7, 14, true)]    // козырем (1) по не-козырю (0) — ок
-    [TestCase(0, 3, 14, 7, false)]   // не-козырь по не-козырю иной масти — нет
-    [TestCase(3, 3, 14, 13, true)]   // одна масть не-козырь, старше — ок
+    [TestCase(2, 2, 13, 12, true)]
+    [TestCase(2, 2, 12, 13, false)]
+    [TestCase(0, 1, 7, 14, true)]
+    [TestCase(0, 3, 14, 7, false)]
+    [TestCase(3, 3, 14, 13, true)]
     public void IsValidDefence_Cases(int attackSuit, int defenceSuit, int defenceRank, int attackRank, bool expected)
     {
         var attack = new CardModel { Rank = attackRank, Suit = attackSuit };
@@ -90,8 +89,8 @@ public class PlayLogicTests
         Assert.That(PlayLogic.CanPlayCards(table, [0], []), Is.False);
     }
 
-    [TestCase(14, ExpectedResult = true)]  // та же масть, старше — отбивается
-    [TestCase(6, ExpectedResult = false)]  // та же масть, младше — нет
+    [TestCase(14, ExpectedResult = true)]
+    [TestCase(6, ExpectedResult = false)]
     public bool CanPlayCards_Defence_DependsOnCardStrength(int defenceRank)
     {
         var table = new TableModel
@@ -124,8 +123,6 @@ public class PlayLogicTests
         Assert.That(PlayLogic.CanPlayCards(table, [], []), Is.False);
     }
 
-    // --- Гейтинг подсветки карт (защита от ошибок) ---
-
     private static TableModel AttackerTable(int[] handRanks, params TableCardModel[] field) => new()
     {
         Players = [],
@@ -149,7 +146,6 @@ public class PlayLogicTests
     {
         var table = AttackerTable([7, 7, 9]);
 
-        // выбрана семёрка (индекс 0) — подсвечиваем только семёрки
         Assert.That(PlayLogic.GetPlayableHandIndexes(table, [0], []), Is.EquivalentTo(new[] { 0, 1 }));
     }
 
@@ -159,11 +155,11 @@ public class PlayLogicTests
         var table = new TableModel
         {
             Players = [],
-            MyPlayerIndex = 2,                 // не мой ход и не моя защита — подкидывающий
+            MyPlayerIndex = 2,
             ActivePlayerIndex = 0,
             DefencePlayerIndex = 1,
             Cards = [new TableCardModel { AttackCard = Card(7, 0) }],
-            MyCards = [Card(7, 3), Card(9, 2)], // 7♠ совпадает по рангу, 9♥ — нет
+            MyCards = [Card(7, 3), Card(9, 2)],
         };
 
         Assert.That(PlayLogic.GetPlayableHandIndexes(table, [], []), Is.EquivalentTo(new[] { 0 }));
@@ -178,9 +174,9 @@ public class PlayLogicTests
             MyPlayerIndex = 1,
             ActivePlayerIndex = 0,
             DefencePlayerIndex = 1,
-            Trump = Card(6, 1),                // козырь ♦
-            Cards = [new TableCardModel { AttackCard = Card(7, 0) }], // 7♣
-            MyCards = [Card(8, 0), Card(6, 1), Card(5, 2)], // 8♣ бьёт, 6♦ козырь бьёт, 5♥ — нет
+            Trump = Card(6, 1),
+            Cards = [new TableCardModel { AttackCard = Card(7, 0) }],
+            MyCards = [Card(8, 0), Card(6, 1), Card(5, 2)],
         };
 
         Assert.That(PlayLogic.GetPlayableHandIndexes(table, [], []), Is.EquivalentTo(new[] { 0, 1 }));
@@ -198,9 +194,9 @@ public class PlayLogicTests
             Trump = Card(6, 1),
             Cards =
             [
-                new TableCardModel { AttackCard = Card(7, 0) },                          // 0: 7♣ — бьётся 8♣
-                new TableCardModel { AttackCard = Card(10, 1), DefenceCard = Card(11, 1) }, // 1: уже отбита — исключить
-                new TableCardModel { AttackCard = Card(13, 2) },                         // 2: K♥ — нечем бить
+                new TableCardModel { AttackCard = Card(7, 0) },
+                new TableCardModel { AttackCard = Card(10, 1), DefenceCard = Card(11, 1) },
+                new TableCardModel { AttackCard = Card(13, 2) },
             ],
             MyCards = [Card(8, 0)],
         };
@@ -222,7 +218,6 @@ public class PlayLogicTests
             MyCards = [Card(8, 0)],
         };
 
-        // выбрана 8♣ — бьёт только 7♣ (индекс 0), но не K♥
         Assert.That(PlayLogic.GetBeatableFieldIndexes(table, [0]), Is.EquivalentTo(new[] { 0 }));
     }
 
