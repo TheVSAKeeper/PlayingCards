@@ -1,4 +1,4 @@
-#requires -Version 7
+﻿#requires -Version 7
 <#
 .SYNOPSIS
   Деплой обеих версий «Дурака» на vps2: Blazor (durak.keep2space.ru/) и classic MVC (durak.keep2space.ru/classic).
@@ -32,8 +32,8 @@ $ErrorActionPreference = 'Stop'
 # --- Координаты vps2 (канон — ops/; при желании вынести в ops/deploy.config.ps1) -----
 $SshAlias     = 'vps2'
 $RemoteDir    = '/opt/durak'
-$BlazorImage  = 'thevsakeeper/durak:latest'
-$ClassicImage = 'thevsakeeper/durak-classic:latest'
+$BlazorRepo   = 'thevsakeeper/durak'
+$ClassicRepo  = 'thevsakeeper/durak-classic'
 $BlazorPort   = 2180
 $ClassicPort  = 2181
 $Domain       = 'durak.keep2space.ru'
@@ -41,10 +41,45 @@ $Domain       = 'durak.keep2space.ru'
 $RepoRoot  = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $DeployDir = Join-Path $RepoRoot 'deploy\durak'
 
+# Иммутабельный тег для отката: short-SHA (+ -dirty при незакоммиченных правках в дереве).
+$GitSha = (& git -C $RepoRoot rev-parse --short HEAD).Trim()
+if (& git -C $RepoRoot status --porcelain) { $GitSha = "$GitSha-dirty" }
+$BlazorTags  = @("${BlazorRepo}:latest",  "${BlazorRepo}:$GitSha")
+$ClassicTags = @("${ClassicRepo}:latest", "${ClassicRepo}:$GitSha")
+
+# Идентификатор сборки для UI (Blazor показывает его в «Настройках» — удостовериться, что фронт обновился).
+$BuildDate  = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm') + ' UTC'
+$BlazorArgs = @("BUILD_VERSION=$GitSha", "BUILD_DATE=$BuildDate")
+
 function Exec([string]$file, [string[]]$argv) {
     Write-Host "▶ $file $($argv -join ' ')" -ForegroundColor Cyan
     & $file @argv
     if ($LASTEXITCODE -ne 0) { throw "Команда упала (код $LASTEXITCODE): $file $($argv -join ' ')" }
+}
+
+# Сборка образа сразу под все теги (latest + SHA) одним проходом — контекст снимается один раз.
+function DockerBuild([string[]]$tags, [string]$dockerfile, [string[]]$buildArgs = @()) {
+    $argv = @('build')
+    foreach ($t in $tags) { $argv += @('-t', $t) }
+    foreach ($a in $buildArgs) { $argv += @('--build-arg', $a) }
+    $argv += @('-f', $dockerfile, '.')
+    Exec 'docker' $argv
+}
+
+function DockerPush([string[]]$tags) {
+    foreach ($t in $tags) { Exec 'docker' @('push', $t) }
+}
+
+# Внешний smoke публичного пути (DNS -> angie -> TLS -> контейнер). curl.exe есть в Windows 10+.
+function SmokeExternal([string]$url, [string]$label) {
+    $PSNativeCommandUseErrorActionPreference = $false  # non-zero exit curl на старте не должен ронять цикл
+    Write-Host "▶ external smoke ${label}: $url" -ForegroundColor Cyan
+    for ($i = 1; $i -le 20; $i++) {
+        $code = (& curl.exe -s -o NUL -w '%{http_code}' --max-time 5 $url 2>$null)
+        if ($code -eq '200') { Write-Host "$label OK 200" -ForegroundColor Green; return }
+        Start-Sleep -Seconds 1
+    }
+    throw "$label FAIL: $url не вернул 200 (проверь DNS/angie/cert)"
 }
 
 $doBlazor  = -not $ClassicOnly
@@ -54,7 +89,9 @@ Push-Location $RepoRoot
 try {
     # 1. Pre-flight
     if (-not $SkipBuild) {
-        Exec 'dotnet' @('build', 'PlayingCards.sln', '-c', 'Release', '--nologo')
+        # RestoreLockedMode: pre-flight падает, если packages.lock.json разошёлся с csproj/props (как и Docker-restore).
+        # У dotnet build нет ключа --locked-mode (это опция restore) — задаётся MSBuild-свойством.
+        Exec 'dotnet' @('build', 'PlayingCards.sln', '-c', 'Release', '--nologo', '-p:RestoreLockedMode=true')
         if (-not $SkipTests) {
             Exec 'dotnet' @('test', 'PlayingCards.sln', '-c', 'Release', '--nologo')
         }
@@ -62,15 +99,15 @@ try {
 
     # 2. Build образов (контекст — корень репозитория)
     if ($doBlazor) {
-        Exec 'docker' @('build', '-t', $BlazorImage,  '-f', 'PlayingCards.Durak.Blazor/Dockerfile', '.')
+        DockerBuild $BlazorTags  'PlayingCards.Durak.Blazor/Dockerfile' $BlazorArgs
     }
     if ($doClassic) {
-        Exec 'docker' @('build', '-t', $ClassicImage, '-f', 'PlayingCards.Durak.Web/Dockerfile',    '.')
+        DockerBuild $ClassicTags 'PlayingCards.Durak.Web/Dockerfile'
     }
 
-    # 3. Push в Docker Hub (нужен ! docker login под thevsakeeper)
-    if ($doBlazor)  { Exec 'docker' @('push', $BlazorImage) }
-    if ($doClassic) { Exec 'docker' @('push', $ClassicImage) }
+    # 3. Push в Docker Hub (нужен ! docker login под thevsakeeper) — оба тега: latest и SHA
+    if ($doBlazor)  { DockerPush $BlazorTags }
+    if ($doClassic) { DockerPush $ClassicTags }
 
     # 4. Каталог + compose.yaml на vps2 (idempotent, льём каждый раз)
     Exec 'ssh' @($SshAlias, "sudo mkdir -p $RemoteDir && sudo chown `$(whoami) $RemoteDir")
@@ -83,8 +120,12 @@ try {
         Write-Host "DNS: заведи A-запись 'durak' -> 2.26.255.227 (reg.ru). Wildcard-cert *.keep2space.ru поддомен покрывает." -ForegroundColor Yellow
     }
 
-    # 5. Cutover
-    Exec 'ssh' @($SshAlias, "cd $RemoteDir && docker compose pull && docker compose up -d")
+    # 5. Cutover — только затронутые сервисы (при -BlazorOnly/-ClassicOnly второй не пересоздаётся)
+    $services = @()
+    if ($doBlazor)  { $services += 'durak' }
+    if ($doClassic) { $services += 'durak-classic' }
+    $svc = $services -join ' '
+    Exec 'ssh' @($SshAlias, "cd $RemoteDir && docker compose pull $svc && docker compose up -d $svc")
 
     # 6. Smoke — внутренние порты на vps2, с ожиданием старта (Blazor net10 на 1 vCPU
     # поднимается несколько секунд; без ретраев curl ловит reset сразу после up -d).
@@ -96,7 +137,11 @@ try {
         Exec 'ssh' @($SshAlias, $smokeTpl.Replace('URL', "http://127.0.0.1:$ClassicPort/classic").Replace('LABEL', 'classic'))
     }
 
-    Write-Host "Готово: https://$Domain/ (Blazor), https://$Domain/classic (MVC)" -ForegroundColor Green
+    # 7. Внешний smoke — публичный путь целиком (внутренние smoke выше проверяют только контейнер)
+    if ($doBlazor)  { SmokeExternal "https://$Domain/"        'ext-blazor ' }
+    if ($doClassic) { SmokeExternal "https://$Domain/classic" 'ext-classic' }
+
+    Write-Host "Готово: https://$Domain/ (Blazor), https://$Domain/classic (MVC); теги: latest + $GitSha" -ForegroundColor Green
 }
 finally {
     Pop-Location
