@@ -34,6 +34,11 @@ public class PlayerHand
     public IReadOnlyList<Card> Cards => _cards;
 
     /// <summary>
+    /// Режим сортировки карт в руке.
+    /// </summary>
+    public HandSortMode SortMode { get; private set; } = HandSortMode.ByRankTrumpInline;
+
+    /// <summary>
     /// Взять карту в руку.
     /// </summary>
     /// <param name="card">Карта.</param>
@@ -172,15 +177,46 @@ public class PlayerHand
     }
 
     /// <summary>
-    /// Сортировка сначала по старшинству, затем по масти.
+    /// Сменить режим сортировки и сразу пересортировать руку.
     /// </summary>
-    /// <remarks>Козырная карта при сортировке по масти будет крайней правой.</remarks>
+    /// <param name="mode">Новый режим сортировки.</param>
+    /// <remarks>
+    /// Меняет порядок (а значит и индексы) карт, поэтому вызывающая сторона обязана
+    /// уведомить клиента (bump версии стола) до того, как игрок снова сделает ход.
+    /// </remarks>
+    public void SetSortMode(HandSortMode mode)
+    {
+        SortMode = mode;
+        SortCards();
+    }
+
+    /// <summary>
+    /// Сортировка карт в руке согласно текущему <see cref="SortMode" />.
+    /// </summary>
+    /// <remarks>Сортировка стабильна; до раздачи козырь может отсутствовать — это допускается.</remarks>
     private void SortCards()
     {
-        _cards = _cards
-            .OrderBy(card => card.Rank.Value)
-            .ThenBy(card => card.Suit == Game.Deck.TrumpCard.Suit)
-            .ThenBy(card => card.Suit.Value)
-            .ToList();
+        var trumpSuit = Game.Deck.TrumpCard?.Suit;
+
+        _cards = SortMode switch
+        {
+            HandSortMode.TrumpsSeparated => _cards
+                .OrderBy(card => card.Suit == trumpSuit)
+                .ThenBy(card => card.Rank.Value)
+                .ThenBy(card => card.Suit.Value)
+                .ToList(),
+
+            HandSortMode.BySuit => _cards
+                .OrderBy(card => card.Suit == trumpSuit)
+                .ThenBy(card => card.Suit.Value)
+                .ThenBy(card => card.Rank.Value)
+                .ToList(),
+
+            _ => _cards
+                .OrderBy(card => card.Rank.Value)
+                .ThenBy(card => card.Suit == trumpSuit)
+                .ThenBy(card => card.Suit.Value)
+                .ToList(),
+        };
     }
 }
