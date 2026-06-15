@@ -2,5 +2,5 @@
 
 public class AuthModel
 {
-    public string PlayerSecret { get; set; }
+    public string PlayerSecret { get; set; } = null!;
 }

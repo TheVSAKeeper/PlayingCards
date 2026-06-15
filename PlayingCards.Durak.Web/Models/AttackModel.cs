@@ -2,5 +2,5 @@
 
 public class AttackModel : BaseTableModel
 {
-    public int[] CardIndexes { get; set; }
+    public int[] CardIndexes { get; set; } = null!;
 }

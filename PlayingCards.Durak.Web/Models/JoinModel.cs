@@ -2,5 +2,5 @@
 
 public class JoinModel : BaseTableModel
 {
-    public string PlayerName { get; set; }
+    public string PlayerName { get; set; } = null!;
 }
