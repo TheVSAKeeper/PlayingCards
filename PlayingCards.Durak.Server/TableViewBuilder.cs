@@ -13,6 +13,13 @@ public static class TableViewBuilder
     public static TableModel BuildTable(Table table, TablePlayer me)
     {
         var game = table.Game;
+        var now = DateTime.UtcNow;
+
+        string? FreshReply(TablePlayer p) =>
+            p is { Reply: { } text, ReplyDate: { } at }
+            && now - at < TimeSpan.FromSeconds(TableHolder.REPLY_SECONDS)
+                ? text
+                : null;
 
         var tableDto = new TableModel
         {
@@ -32,6 +39,12 @@ public static class TableViewBuilder
             StopRoundEndDate = table.StopRoundBeginDate == null || table.StopRoundStatus == null
                 ? null
                 : table.StopRoundBeginDate.Value.AddSeconds(TableHolder.GetStopRoundSeconds(table.StopRoundStatus.Value)),
+            MyReply = FreshReply(me),
+            CanBeat = table.StopRoundBeginDate != null
+                && table.StopRoundStatus == StopRoundStatus.SuccessDefence
+                && game.DefencePlayer != me.Player
+                && me.Player.Hand.Cards.Count > 0
+                && me.SaidBeat == false,
         };
 
         var mePlayer = game.Players.FirstOrDefault(x => x == me.Player);
@@ -55,6 +68,8 @@ public static class TableViewBuilder
                 Name = x.Player.Name,
                 CardsCount = x.Player.Hand.Cards.Count,
                 AfkEndTime = x.AfkStartTime?.AddSeconds(TableHolder.AFK_SECONDS),
+                IsBot = x.IsBot,
+                Reply = FreshReply(x),
             })
             .ToArray();
 

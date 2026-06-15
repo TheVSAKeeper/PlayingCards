@@ -22,7 +22,7 @@ public class GetStatusModel
 
         public TableCardModel[]? Cards { get; set; }
 
-        public PlayerModel[] Players { get; set; }
+        public PlayerModel[] Players { get; set; } = null!;
 
         public int MyPlayerIndex { get; set; }
 
@@ -45,6 +45,16 @@ public class GetStatusModel
         public PlayerModel? LeavePlayer { get; set; }
 
         public DateTime? AfkEndTime { get; set; }
+
+        /// <summary>
+        /// Свежая реплика самого игрока («Бито!») — баббл над своим бейджем (issue F5).
+        /// </summary>
+        public string? MyReply { get; set; }
+
+        /// <summary>
+        /// Мне доступно «Бито» — я атакующий в окне удачной защиты и могу закрыть раунд (issue F5).
+        /// </summary>
+        public bool CanBeat { get; set; }
     }
 
     public class CardModel
@@ -73,10 +83,20 @@ public class GetStatusModel
     {
         public int Index { get; set; }
 
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
         public int CardsCount { get; set; }
 
         public DateTime? AfkEndTime { get; set; }
+
+        /// <summary>
+        /// Игрок управляется ИИ-болванчиком (для значка/подписи на бейдже и кнопки кика).
+        /// </summary>
+        public bool IsBot { get; set; }
+
+        /// <summary>
+        /// Свежая реплика соперника («Бито!») — баббл над его бейджем (issue F5).
+        /// </summary>
+        public string? Reply { get; set; }
     }
 }

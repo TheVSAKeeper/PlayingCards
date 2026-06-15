@@ -15,6 +15,11 @@ public class TableHolder
     public const int STOP_ROUND_TAKE_SECONDS = 5;
 
     /// <summary>
+    /// Сколько секунд показываем реплику игрока («Бито!») над его бейджем (issue F5).
+    /// </summary>
+    public const int REPLY_SECONDS = 3;
+
+    /// <summary>
     /// Время на принятие решения.
     /// </summary>
     public const int AFK_SECONDS = 60;
@@ -54,7 +59,11 @@ public class TableHolder
     /// </summary>
     public static int GetStopRoundSeconds(StopRoundStatus status)
     {
-        return status == StopRoundStatus.Take ? STOP_ROUND_TAKE_SECONDS : STOP_ROUND_SECONDS;
+        return status switch
+        {
+            StopRoundStatus.Take => STOP_ROUND_TAKE_SECONDS,
+            _ => STOP_ROUND_SECONDS,
+        };
     }
 
     public Table CreateTable()
@@ -138,10 +147,21 @@ public class TableHolder
             }
 
             var botSecret = Guid.NewGuid().ToString();
-            var botName = "Бот " + _botNumber;
+
+            var takenNames = table.Players.Select(x => x.Player.Name).ToHashSet(StringComparer.Ordinal);
+            string botName;
+
+            if (BotNames.PickName(takenNames) is { } themedName)
+            {
+                botName = themedName;
+            }
+            else
+            {
+                botName = "Бот " + _botNumber;
+                _botNumber++;
+            }
 
             var player = table.Game.AddPlayer(botName);
-            _botNumber++;
 
             table.Players.Add(new()
                 { Player = player, AuthSecret = botSecret, IsBot = true });
@@ -156,6 +176,56 @@ public class TableHolder
             table.CleanLeaverPlayer();
             table.Version++;
             TablesVersion++;
+        }
+    }
+
+    /// <summary>
+    /// Выгнать игрока (бота или человека) из-за стола. Разрешено только владельцу; работает и в лобби,
+    /// и во время партии (issue F2). Реиспользует штатный <see cref="Leave(Table, TablePlayer)" />,
+    /// поэтому корректно завершает/продолжает партию, ставит «крысу» и переназначает владельца.
+    /// </summary>
+    /// <param name="callerSecret">Секрет вызывающего — обязан быть владельцем стола.</param>
+    /// <param name="tableId">Идентификатор стола.</param>
+    /// <param name="targetGameIndex">Игровой индекс цели (как клиент видит соперника в кольце).</param>
+    /// <exception cref="BusinessException">Стол не найден / не владелец / неверная цель / попытка выгнать себя.</exception>
+    public void Kick(string callerSecret, Guid tableId, int targetGameIndex)
+    {
+        lock (_sync)
+        {
+            if (_tables.TryGetValue(tableId, out var table) == false)
+            {
+                throw new BusinessException("table not found");
+            }
+
+            var caller = table.Players.FirstOrDefault(x => x.AuthSecret == callerSecret)?.Player;
+
+            if (caller == null || table.Owner != caller)
+            {
+                throw new BusinessException("Выгонять может только владелец стола");
+            }
+
+            if (targetGameIndex < 0 || targetGameIndex >= table.Game.Players.Count)
+            {
+                throw new BusinessException("Игрок не найден");
+            }
+
+            var targetPlayer = table.Game.Players[targetGameIndex];
+
+            if (targetPlayer == caller)
+            {
+                throw new BusinessException("Нельзя выгнать самого себя");
+            }
+
+            var target = table.Players.FirstOrDefault(x => x.Player == targetPlayer);
+
+            if (target == null)
+            {
+                throw new BusinessException("Игрок не найден");
+            }
+
+            WriteLog(table, callerSecret, "kick: " + targetPlayer.Name);
+            table.CleanLeaverPlayer();
+            Leave(table, target);
         }
     }
 
@@ -258,7 +328,60 @@ public class TableHolder
         {
             CheckStopRound();
             CheckAfkPlayers();
+            CheckBotBeats();
             CheckBots();
+        }
+    }
+
+    /// <summary>
+    /// Боты-атакующие, которым больше нечего подкинуть, сразу говорят «Бито» в окне удачной защиты —
+    /// тогда раунд закрывается, как только отказались все атакующие, а не висит до общего таймера (issue F5).
+    /// Бот, у которого ещё есть подходящий подкид, молчит: его ход исполнит <see cref="CheckBots" /> на этом же
+    /// тике. Под общим <see cref="_sync" />. Голос «Бито» сбрасывается на каждом новом окне остановки раунда.
+    /// </summary>
+    private void CheckBotBeats()
+    {
+        foreach (var table in _tables.Values.ToArray())
+        {
+            if (table.Game.Status != GameStatus.InProcess
+                || table.StopRoundBeginDate == null
+                || table.StopRoundStatus != StopRoundStatus.SuccessDefence)
+            {
+                continue;
+            }
+
+            foreach (var tablePlayer in table.Players.ToArray())
+            {
+                if (table.StopRoundBeginDate == null)
+                {
+                    break;
+                }
+
+                if (tablePlayer.IsBot == false
+                    || tablePlayer.SaidBeat
+                    || tablePlayer.Player == table.Game.DefencePlayer
+                    || tablePlayer.Player.Hand.Cards.Count == 0)
+                {
+                    continue;
+                }
+
+                if (BotBrain.DecideMove(table.Game, tablePlayer.Player).Kind != BotMoveKind.None)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    table.Beat(tablePlayer.AuthSecret);
+                }
+                catch (BusinessException ex)
+                {
+                    var logger = LogManager.GetCurrentClassLogger()
+                        .WithProperty("TableId", table.Number + " " + table.Id);
+
+                    logger.Warn("bot beat rejected (" + tablePlayer.Player.Name + "): " + ex.Message);
+                }
+            }
         }
     }
 

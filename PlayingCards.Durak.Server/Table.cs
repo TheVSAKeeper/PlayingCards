@@ -17,17 +17,17 @@ public class Table
     /// <summary>
     /// Игра.
     /// </summary>
-    public Game Game { get; set; }
+    public Game Game { get; set; } = null!;
 
     /// <summary>
     /// Секреты игроков, чтоб понять, кто есть кто.
     /// </summary>
-    public List<TablePlayer> Players { get; set; }
+    public List<TablePlayer> Players { get; set; } = null!;
 
     /// <summary>
     /// Хозяин стола.
     /// </summary>
-    public Player Owner { get; set; }
+    public Player Owner { get; set; } = null!;
 
     /// <summary>
     /// Время начала отсчёта об окончании раунда.
@@ -76,18 +76,38 @@ public class Table
 
     public void SetActivePlayerAfkStartTime()
     {
-        Players.First(x => x.Player == Game.ActivePlayer).AfkStartTime = DateTime.UtcNow;
+        SetAfk(Game.ActivePlayer, DateTime.UtcNow);
     }
 
     public void SetDefencePlayerAfkStartTime()
     {
-        Players.First(x => x.Player == Game.ActivePlayer).AfkStartTime = null;
-        Players.First(x => x.Player == Game.DefencePlayer).AfkStartTime = DateTime.UtcNow;
+        SetAfk(Game.ActivePlayer, null);
+        SetAfk(Game.DefencePlayer, DateTime.UtcNow);
     }
 
     public void CleanDefencePlayerAfkStartTime()
     {
-        Players.First(x => x.Player == Game.DefencePlayer).AfkStartTime = null;
+        SetAfk(Game.DefencePlayer, null);
+    }
+
+    /// <summary>
+    /// Проставить AFK-засечку игроку по его игровому <see cref="Player" />. Если такого за столом уже
+    /// нет (только что вышел/кикнут) или указатель хода пуст — тихо пропускаем: незалоченный рендер
+    /// или ход не должен ронять circuit на <c>First</c> («Sequence contains no matching element»).
+    /// </summary>
+    private void SetAfk(Player? gamePlayer, DateTime? value)
+    {
+        if (gamePlayer == null)
+        {
+            return;
+        }
+
+        var tablePlayer = Players.FirstOrDefault(x => x.Player == gamePlayer);
+
+        if (tablePlayer != null)
+        {
+            tablePlayer.AfkStartTime = value;
+        }
     }
 
     public void CleanAllAfkTime()
@@ -111,6 +131,7 @@ public class Table
     {
         StopRoundStatus = null;
         StopRoundBeginDate = null;
+        ClearBeatVotes();
     }
 
     public void StartGame()
@@ -177,6 +198,92 @@ public class Table
         StopRoundStatus = SRS.Take;
         CleanDefencePlayerAfkStartTime();
         WriteLog(playerSecret, "take");
+        Version++;
+    }
+
+    /// <summary>Реплики атакующего, объявляющего «Бито».</summary>
+    private static readonly string[] ReplyPhrases = ["Бито", "Бито!", "Закрываю"];
+
+    /// <summary>
+    /// «Бито»: атакующий объявляет, что больше не подкидывает (issue F5). Раунд закрывается досрочно,
+    /// только когда «Бито» сказали ВСЕ атакующие; иначе по-прежнему ждём общий таймер удачной защиты.
+    /// Пришло на смену авто-таймеру «никто не может ходить», который выдавал отсутствие карт у других.
+    /// Над сказавшим всплывает реплика.
+    /// </summary>
+    public void Beat(string playerSecret)
+    {
+        CheckGameInProcess();
+
+        var tablePlayer = Players.Single(x => x.AuthSecret == playerSecret);
+
+        if (StopRoundBeginDate == null || StopRoundStatus != SRS.SuccessDefence)
+        {
+            throw new BusinessException("Сейчас нельзя закрыть раунд");
+        }
+
+        if (Game.DefencePlayer == tablePlayer.Player)
+        {
+            throw new BusinessException("Защищающийся не закрывает раунд");
+        }
+
+        tablePlayer.SaidBeat = true;
+        tablePlayer.Reply = ReplyPhrases[Random.Shared.Next(ReplyPhrases.Length)];
+        tablePlayer.ReplyDate = DateTime.UtcNow;
+        WriteLog(playerSecret, "beat");
+
+        if (AllAttackersSaidBeat())
+        {
+            StopRoundStatus = null;
+            StopRoundBeginDate = null;
+            Game.StopRound();
+            SetActivePlayerAfkStartTime();
+        }
+
+        Version++;
+    }
+
+    /// <summary>
+    /// Все атакующие (не защищающийся, с картами на руках) объявили «Бито». Боты тоже голосуют:
+    /// фоновый драйвер говорит «Бито» за бота, которому больше нечего подкинуть (TableHolder.CheckBotBeats).
+    /// </summary>
+    private bool AllAttackersSaidBeat()
+    {
+        foreach (var tablePlayer in Players)
+        {
+            if (tablePlayer.Player == Game.DefencePlayer || tablePlayer.Player.Hand.Cards.Count == 0)
+            {
+                continue;
+            }
+
+            if (tablePlayer.SaidBeat == false)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Сбросить голоса «Бито» — на каждом новом окне остановки раунда и новой партии.</summary>
+    private void ClearBeatVotes()
+    {
+        foreach (var tablePlayer in Players)
+        {
+            tablePlayer.SaidBeat = false;
+        }
+    }
+
+    /// <summary>
+    /// Сменить режим сортировки руки игрока (по его секрету) и уведомить клиентов (issue F3).
+    /// </summary>
+    /// <remarks>
+    /// Пересортировка меняет порядок (и индексы) карт, поэтому обязателен <see cref="Version" />++ —
+    /// иначе очередной клик игрока разрешится против устаревшего порядка и сыграет не ту карту.
+    /// </remarks>
+    public void SetSortMode(string playerSecret, HandSortMode mode)
+    {
+        var tablePlayer = Players.Single(player => player.AuthSecret == playerSecret);
+        tablePlayer.Player.Hand.SetSortMode(mode);
         Version++;
     }
 
@@ -290,6 +397,8 @@ public class Table
         }
 
         StopRoundBeginDate = DateTime.UtcNow;
+
+        ClearBeatVotes();
     }
 
     private void CheckEndGame()

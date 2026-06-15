@@ -10,4 +10,9 @@
     <ProjectReference Include="..\PlayingCards.Durak\PlayingCards.Durak.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Имена ботов (issue F8). Лежит в проекте, а не в корне репо — иначе не попадает в Docker-контекст. -->
+    <EmbeddedResource Include="names.txt" />
+  </ItemGroup>
+
 </Project>
