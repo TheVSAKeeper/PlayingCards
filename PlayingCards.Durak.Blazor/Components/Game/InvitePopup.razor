@@ -1,0 +1,125 @@
+﻿@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+@using System.Timers
+
+<button class="btn btn-share invite-trigger" @onclick="Open">🔗 @TriggerText</button>
+
+@if (_open)
+{
+    <div class="invite-overlay" @onclick="Close">
+
+        <div class="invite-dialog" @onclick:stopPropagation="true" role="dialog" aria-modal="true">
+            <button class="invite-x" @onclick="Close" title="Закрыть" aria-label="Закрыть">✕</button>
+            <div class="invite-title">Пригласить за стол</div>
+            <div class="invite-sub">Откройте ссылку — гость авто-подсядет за этот стол.</div>
+
+            <div class="invite-row">
+                <input @ref="_input" class="invite-link" readonly value="@InviteLink"
+                       onclick="this.select()" onfocus="this.select()" />
+                <button class="btn btn-info invite-copy" @onclick="CopyAsync">
+                    @(_copied ? "Скопировано!" : "Копировать")
+                </button>
+            </div>
+
+            @if (_copied)
+            {
+                <div class="invite-copied" aria-live="polite">Ссылка в буфере обмена ✓</div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Идентификатор стола; ссылка строится как <c>{BaseUri}?table={Table}</c>.</summary>
+    [Parameter, EditorRequired] public Guid Table { get; set; }
+
+    /// <summary>Подпись рядом с иконкой ссылки на кнопке-триггере.</summary>
+    [Parameter] public string TriggerText { get; set; } = "Ссылка";
+
+    private bool _open;
+    private bool _copied;
+    private ElementReference _input;
+    private System.Timers.Timer? _copiedTimer;
+    private IJSObjectReference? _module;
+
+    /// <summary>Ссылка-приглашение на этот стол: открыв её, гость авто-подсаживается за стол.</summary>
+    private string InviteLink => $"{Navigation.BaseUri}?table={Table}";
+
+    private void Open()
+    {
+        _copied = false;
+        _open = true;
+    }
+
+    private void Close()
+    {
+        _open = false;
+        _copied = false;
+        _copiedTimer?.Stop();
+    }
+
+    private async Task CopyAsync()
+    {
+        var ok = false;
+
+        try
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Game/clipboard.js");
+            ok = await _module.InvokeAsync<bool>("copyText", InviteLink);
+        }
+        catch (JSException)
+        {
+            ok = false;
+        }
+        catch (JSDisconnectedException)
+        {
+            return;
+        }
+
+        if (!ok)
+        {
+            try
+            {
+                await _input.FocusAsync();
+            }
+            catch (JSException)
+            {
+            }
+
+            return;
+        }
+
+        _copied = true;
+        _copiedTimer ??= CreateCopiedTimer();
+        _copiedTimer.Stop();
+        _copiedTimer.Start();
+    }
+
+    private System.Timers.Timer CreateCopiedTimer()
+    {
+        var timer = new System.Timers.Timer(2200) { AutoReset = false };
+        timer.Elapsed += (_, _) => InvokeAsync(() =>
+        {
+            _copied = false;
+            StateHasChanged();
+        });
+        return timer;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _copiedTimer?.Dispose();
+
+        if (_module != null)
+        {
+            try
+            {
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}

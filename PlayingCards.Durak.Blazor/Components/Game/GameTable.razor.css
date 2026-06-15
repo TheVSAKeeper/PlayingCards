@@ -56,6 +56,16 @@
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(196, 164, 92, 0.18);
 }
 
+.btn-beat {
+    background: linear-gradient(135deg, #3a784a, #265a32);
+    color: #eafbe0;
+    border: 1px solid rgba(150, 210, 140, 0.5);
+}
+
+.btn-beat:hover:not(:disabled) {
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(150, 210, 140, 0.22);
+}
+
 .btn-share {
     background: transparent;
     color: #d8c08a;

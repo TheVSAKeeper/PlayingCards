@@ -3,29 +3,41 @@
 <div class="players-ring">
     @foreach (var item in RingPlayers)
     {
+
         @if (item.IsLeaver)
         {
-            <PlayerBadge Name="@item.Player.Name" IsLeaver="true" CardsCount="item.Player.CardsCount" />
+            <PlayerBadge @key="item.GameIndex" Name="@item.Player.Name" IsLeaver="true" CardsCount="item.Player.CardsCount" />
         }
         else
         {
-            <PlayerBadge Name="@item.Player.Name"
+            <PlayerBadge @key="item.GameIndex"
+                         Name="@item.Player.Name"
                          GameIndex="item.GameIndex"
                          IsActive="item.GameIndex == View.ActivePlayerIndex"
                          IsDefence="item.GameIndex == View.DefencePlayerIndex"
                          IsLooser="item.GameIndex == View.LooserPlayerIndex"
+                         IsBot="item.Player.IsBot"
+                         Reply="item.Player.Reply"
                          CardsCount="item.Player.CardsCount"
                          ShowTrump="ShowTrump(item.GameIndex)"
                          MinTrumpCard="MinTrumpCard"
                          AfkEndTime="item.Player.AfkEndTime"
                          StopRoundStatus="View.StopRoundStatus"
-                         StopRoundEndDate="View.StopRoundEndDate" />
+                         StopRoundEndDate="View.StopRoundEndDate"
+                         CanKick="CanKick"
+                         OnKick="OnKick" />
         }
     }
 </div>
 
 @code {
     [Parameter, EditorRequired] public TableModel View { get; set; } = default!;
+
+    /// <summary>Я — владелец стола: на бейджах соперников показываем кнопку «выгнать».</summary>
+    [Parameter] public bool CanKick { get; set; }
+
+    /// <summary>Выгнать соперника по его игровому индексу (game.Players index == RingPlayer.GameIndex).</summary>
+    [Parameter] public EventCallback<int> OnKick { get; set; }
 
     private record RingPlayer(PlayerModel Player, int GameIndex, bool IsLeaver);
 
@@ -37,7 +49,7 @@
         get
         {
             var others = View.Players;
-            var my = View.MyPlayerIndex;
+            var my = Math.Clamp(View.MyPlayerIndex, 0, others.Length);
             var result = new List<RingPlayer>();
 
             for (var i = my - 1; i >= 0; i--)

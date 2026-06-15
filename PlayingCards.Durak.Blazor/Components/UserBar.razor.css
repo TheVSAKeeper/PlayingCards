@@ -1,0 +1,125 @@
+﻿
+
+.user-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.65rem 1.25rem;
+    margin-bottom: 1.25rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, rgba(20, 46, 33, 0.95), rgba(12, 28, 20, 0.95));
+    border: 1px solid rgba(196, 164, 92, 0.35);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.name-label {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #f1e6c8;
+    letter-spacing: 0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.name-label::before {
+    content: '♠';
+    margin-right: 0.5rem;
+    color: var(--gold);
+}
+
+.user-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+}
+
+.settings-wrap {
+    position: relative;
+    z-index: 50;
+    display: inline-flex;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    padding: 0;
+    border-radius: 0.5rem;
+    border: 1px solid var(--gold);
+    background: transparent;
+    color: var(--gold);
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.icon-btn .gear {
+    font-size: 1.2rem;
+    line-height: 1;
+    transition: transform 0.35s ease;
+}
+
+.icon-btn:hover {
+    background: var(--gold);
+    color: #14241a;
+}
+
+.icon-btn:hover .gear,
+.icon-btn.is-open .gear {
+    transform: rotate(90deg);
+}
+
+.icon-btn.is-open {
+    background: var(--gold);
+    color: #14241a;
+}
+
+.icon-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 0.18rem rgba(196, 164, 92, 0.3);
+}
+
+.logout-btn {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    border-radius: 0.5rem;
+    padding: 0.35rem 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    box-shadow: none;
+}
+
+.logout-btn:hover:not(:disabled) {
+    background: var(--gold);
+    color: #14241a;
+    transform: translateY(-1px);
+    filter: none;
+}
+
+.settings-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: transparent;
+}
+
+@media (max-width: 560px) {
+    .user-bar {
+        padding: 0.55rem 0.85rem;
+        margin-bottom: 1rem;
+    }
+
+    .name-label {
+        font-size: 1.02rem;
+    }
+
+    .logout-btn {
+        padding: 0.35rem 0.85rem;
+    }
+}

@@ -13,6 +13,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<TableHolder>();
+builder.Services.AddSingleton<BuildInfo>();
 builder.Services.AddHostedService<BackgroundExecutorService>();
 builder.Services.AddScoped<PlayerSession>();
 

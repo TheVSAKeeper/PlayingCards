@@ -1,0 +1,145 @@
+﻿
+
+.invite-trigger {
+    background: transparent;
+    color: #d8c08a;
+    border: 1px solid rgba(196, 164, 92, 0.5);
+    box-shadow: none;
+}
+
+.invite-trigger:hover:not(:disabled) {
+    background: rgba(196, 164, 92, 0.14);
+    color: #f1e6c8;
+    box-shadow: none;
+}
+
+.invite-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(6, 16, 11, 0.62);
+    backdrop-filter: blur(2px);
+    animation: invite-fade 0.2s ease-out;
+}
+
+.invite-dialog {
+    position: relative;
+    width: min(30rem, 100%);
+    padding: 1.5rem 1.6rem 1.4rem;
+    border-radius: 1rem;
+    background:
+        radial-gradient(120% 90% at 50% 0%, rgba(45, 92, 63, 0.55), transparent 62%),
+        linear-gradient(160deg, #1f4c34, #0f2c1d);
+    border: 1px solid rgba(196, 164, 92, 0.45);
+    box-shadow:
+        0 26px 60px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    animation: invite-pop 0.34s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.invite-x {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.7rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    padding: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    border: 1px solid rgba(196, 164, 92, 0.35);
+    color: #d8c08a;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.invite-x:hover {
+    background: rgba(176, 106, 44, 0.25);
+    border-color: rgba(231, 200, 134, 0.7);
+    color: #f7ecd6;
+}
+
+.invite-title {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+    color: #f1e6c8;
+}
+
+.invite-sub {
+    margin-top: 0.25rem;
+    margin-bottom: 1rem;
+    color: rgba(216, 201, 163, 0.72);
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+}
+
+.invite-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.invite-link {
+    flex: 1 1 14rem;
+    min-width: 10rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background: rgba(8, 24, 16, 0.6);
+    border: 1px solid rgba(196, 164, 92, 0.4);
+    color: #f1e6c8;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+}
+
+.invite-link:focus {
+    outline: none;
+    border-color: rgba(231, 200, 134, 0.85);
+    box-shadow: 0 0 0 0.16rem rgba(196, 164, 92, 0.25);
+}
+
+.invite-copy {
+    flex: 0 0 auto;
+    background: linear-gradient(135deg, #c4a45c, #a8843f);
+    color: #14241a;
+}
+
+.invite-copied {
+    margin-top: 0.8rem;
+    color: #e3c886;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    animation: invite-fade 0.22s ease-out;
+}
+
+@keyframes invite-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes invite-pop {
+    from {
+        opacity: 0;
+        transform: translateY(0.8rem) scale(0.94);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .invite-overlay,
+    .invite-dialog,
+    .invite-copied {
+        animation: none;
+    }
+}

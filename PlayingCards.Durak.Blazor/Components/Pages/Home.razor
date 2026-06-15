@@ -20,14 +20,11 @@ else if (!Session.IsAuthenticated)
 }
 else
 {
-    <div class="top-bar">
-        <span class="name-label">@Session.Name</span>
-        <button class="btn btn-info" @onclick="Logout">Выйти</button>
-    </div>
+    <UserBar OnLoggedOut="OnLoggedOut" />
 
     @if (_currentTable == null)
     {
-        <Lobby PlayerSecret="@(Session.Secret!)" PlayerName="@(Session.Name!)" ExternalError="_joinError" OnChanged="Refresh" />
+        <Lobby PlayerSecret="@(Session.Secret!)" PlayerName="@(Session.Name!)" ExternalError="@_joinError" OnChanged="Refresh" />
     }
     else
     {
@@ -124,16 +121,11 @@ else
         StateHasChanged();
     }
 
-    private async Task Logout()
-    {
-        if (_currentTable != null)
-        {
-            TableHolder.Leave(Session.Secret!);
-        }
-
-        await Session.LogoutAsync();
-        Refresh();
-    }
+    /// <summary>
+    /// Выход выполняет <see cref="UserBar"/> (встаёт из-за стола + сбрасывает личность);
+    /// здесь лишь перестраиваем экран обратно на панель логина.
+    /// </summary>
+    private void OnLoggedOut() => Refresh();
 
     public void Dispose()
     {

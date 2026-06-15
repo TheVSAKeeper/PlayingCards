@@ -182,3 +182,53 @@ body.dnd-dragging * {
     0% { transform: scale(0.4); opacity: 0.9; }
     100% { transform: scale(3.8); opacity: 0; }
 }
+
+.board-anim-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 9990;
+    pointer-events: none;
+}
+
+.anim-card {
+    position: fixed;
+    width: 2.6rem;
+    height: 3.7rem;
+    border-radius: 0.4rem;
+    pointer-events: none;
+    will-change: transform, opacity;
+    box-shadow:
+        0 14px 30px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(196, 164, 92, 0.5);
+}
+
+.anim-card-face {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(120% 100% at 28% 18%, #fffdf6, #f3ead2 62%, #e6d6ad);
+    border: 1px solid rgba(120, 96, 44, 0.45);
+    color: #1d2a20;
+    font-family: var(--serif);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.anim-card-face.red {
+    color: #b21e2f;
+}
+
+.anim-card-back {
+    background:
+        repeating-linear-gradient(45deg, rgba(196, 164, 92, 0.16) 0 4px, transparent 4px 8px),
+        repeating-linear-gradient(-45deg, rgba(196, 164, 92, 0.16) 0 4px, transparent 4px 8px),
+        radial-gradient(120% 110% at 50% 30%, #7a2230, #4a121c 70%, #320a12);
+    border: 1px solid rgba(196, 164, 92, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .board-anim-layer {
+        display: none;
+    }
+}

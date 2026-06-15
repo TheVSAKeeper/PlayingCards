@@ -1,6 +1,6 @@
 ﻿@inject TableHolder TableHolder
 @inject IJSRuntime JS
-@inject NavigationManager Navigation
+@inject PlayerSession Session
 @implements IAsyncDisposable
 
 @if (_view != null)
@@ -15,7 +15,7 @@
                 Начать игру
             </button>
             <div class="topbar-right">
-                <button class="btn btn-share" @onclick="ToggleInvite">🔗 Ссылка</button>
+                <InvitePopup Table="Table.Id" />
                 <button class="btn btn-bot"
                         @onclick="AddBot"
                         hidden="@(!CanAddBot)"
@@ -26,17 +26,8 @@
             </div>
         </header>
 
-        @if (_showInvite)
-        {
-            <div class="invite-bar">
-                <span class="invite-label">Пригласить за стол:</span>
-                <input class="invite-link" readonly value="@InviteLink"
-                       onclick="this.select()" onfocus="this.select()" />
-            </div>
-        }
-
         <section class="opponents">
-            <PlayersRing View="_view" />
+            <PlayersRing View="_view" CanKick="AmOwner" OnKick="Kick" />
         </section>
 
         <section class="table-center">
@@ -51,7 +42,7 @@
                     var fc = _view.Cards![idx];
                     var covered = fc.DefenceCard != null;
                     var clickable = amDefender && !covered;
-                    var dim = clickable && !_fieldSelectable.Contains(idx);
+                    var dim = !Session.NoHints && clickable && !_fieldSelectable.Contains(idx);
                     var attackCss = "attack-card"
                         + (clickable ? "" : " static")
                         + (dim ? " dimmed" : "");
@@ -77,18 +68,19 @@
                     var idx = i;
                     var selectable = _handSelectable.Contains(idx);
                     var selected = _handActive.Contains(idx);
+                    var handCss = !selectable && !Session.NoHints ? "dimmed" : "";
                     <div class="hand-slot"
                          data-hand-index="@idx"
                          data-playable="@(selectable ? "true" : "false")">
                         <CardView Card="_view.MyCards![idx]"
-                                  CssClass="@(selectable ? "" : "dimmed")"
+                                  CssClass="@handCss"
                                   Active="selected"
                                   OnClick="() => ToggleHand(idx)" />
                     </div>
                 }
             </div>
 
-            @if (_contextHint != null)
+            @if (_contextHint != null && !Session.NoHints)
             {
                 <div class="context-hint">@_contextHint</div>
             }
@@ -104,6 +96,13 @@
                         disabled="@(!CanTake)">
                     Забрать карты
                 </button>
+
+                <button class="btn btn-beat"
+                        @onclick="Beat"
+                        hidden="@(!_view.CanBeat)"
+                        disabled="@(!_view.CanBeat)">
+                    Бито
+                </button>
             </div>
 
             <PlayerBadge Name="@Me.Player.Name"
@@ -111,6 +110,7 @@
                          IsActive="_view.MyPlayerIndex == _view.ActivePlayerIndex"
                          IsDefence="_view.MyPlayerIndex == _view.DefencePlayerIndex"
                          IsLooser="_view.MyPlayerIndex == _view.LooserPlayerIndex"
+                         Reply="@_view.MyReply"
                          AfkEndTime="_view.AfkEndTime"
                          StopRoundStatus="_view.StopRoundStatus"
                          StopRoundEndDate="_view.StopRoundEndDate" />
@@ -130,9 +130,6 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private TableModel? _view;
-    private bool _showInvite;
-    /// <summary>Ссылка-приглашение на этот стол: открыв её, гость авто-подсаживается за стол.</summary>
-    private string InviteLink => $"{Navigation.BaseUri}?table={Table.Id}";
     private readonly HashSet<int> _handActive = [];
     private readonly HashSet<int> _fieldActive = [];
     private HashSet<int> _handSelectable = [];
@@ -141,10 +138,23 @@
     private string? _error;
     private Table? _subscribed;
 
+    /// <summary>Я — владелец стола: показываем кик соперникам и кнопку «Начать».</summary>
+    private bool AmOwner => _view is { } v && v.MyPlayerIndex == v.OwnerIndex;
+
+    private BoardSnapshot? _prevSnapshot;
+    private BoardDiff? _pendingDiff;
+    private readonly HashSet<string> _justPlayedByMe = [];
+    private HandSortMode? _appliedSort;
+
     private ElementReference _root;
     private IJSObjectReference? _dndModule;
     private DotNetObjectReference<GameTable>? _selfRef;
     private bool _dndInited;
+
+    protected override void OnInitialized()
+    {
+        Session.SettingsChanged += OnSettingsChanged;
+    }
 
     protected override void OnParametersSet()
     {
@@ -153,22 +163,83 @@
             if (_subscribed != null) _subscribed.Changed -= OnTableChanged;
             Table.Changed += OnTableChanged;
             _subscribed = Table;
+            _appliedSort = null;
         }
 
         Rebuild();
+        _ = ApplySortIfNeededAsync();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    /// <summary>
+    /// Настройки игрока изменились: перерисовываемся (подсказки F7 могли скрыться/появиться)
+    /// и, если поменялся режим сортировки, просим сервер пересортировать руку (push вернёт новый порядок).
+    /// </summary>
+    private void OnSettingsChanged() => InvokeAsync(async () =>
     {
-        if (_dndInited || _view == null)
+        await ApplySortIfNeededAsync();
+        StateHasChanged();
+    });
+
+    /// <summary>
+    /// Шлёт <see cref="Table.SetSortMode"/> только при реальной смене режима — не на каждый push.
+    /// Клиент НЕ переупорядочивает руку сам: протокол адресует карты индексом в серверном порядке,
+    /// поэтому достаточно дёрнуть серверный ресорт, а его push перерисует новый порядок.
+    /// </summary>
+    private async Task ApplySortIfNeededAsync()
+    {
+        if (_view == null || _view.MyPlayerIndex < 0)
         {
             return;
         }
 
-        _dndInited = true;
-        _selfRef = DotNetObjectReference.Create(this);
-        _dndModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Game/GameTable.razor.js");
-        await _dndModule.InvokeVoidAsync("init", _root, _selfRef);
+        if (_appliedSort == Session.HandSort)
+        {
+            return;
+        }
+
+        _appliedSort = Session.HandSort;
+
+        try
+        {
+            Table.SetSortMode(Me.AuthSecret, Session.HandSort);
+        }
+        catch (BusinessException)
+        {
+            _appliedSort = null;
+        }
+
+        await Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_view != null && !_dndInited)
+        {
+            _dndInited = true;
+            _selfRef = DotNetObjectReference.Create(this);
+            _dndModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Game/GameTable.razor.js");
+            await _dndModule.InvokeVoidAsync("init", _root, _selfRef);
+        }
+
+        if (_pendingDiff is { IsEmpty: false } diff && _dndModule != null && !firstRender)
+        {
+            _pendingDiff = null;
+
+            try
+            {
+                await _dndModule.InvokeVoidAsync("animate", diff.ToPayload());
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (JSException)
+            {
+            }
+        }
+        else
+        {
+            _pendingDiff = null;
+        }
     }
 
     private void OnTableChanged() => InvokeAsync(() =>
@@ -182,13 +253,39 @@
         if (Table.Players.All(x => x.Player != Me.Player))
         {
             _view = null;
+            _prevSnapshot = null;
             return;
         }
 
-        _view = TableViewBuilder.BuildTable(Table, Me);
+        TableModel view;
+
+        try
+        {
+            view = TableViewBuilder.BuildTable(Table, Me);
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        if (view.MyPlayerIndex < 0)
+        {
+            _view = null;
+            _prevSnapshot = null;
+            return;
+        }
+
+        var prev = _prevSnapshot;
+        var next = BoardSnapshot.From(view);
+
+        _view = view;
         _handActive.RemoveWhere(i => i >= (_view.MyCards?.Length ?? 0));
         _fieldActive.RemoveWhere(i => i >= (_view.Cards?.Length ?? 0));
         UpdateSelectables();
+
+        _pendingDiff = BoardDiff.Compute(prev, next, _justPlayedByMe);
+        _justPlayedByMe.Clear();
+        _prevSnapshot = next;
     }
 
     private void UpdateSelectables()
@@ -247,10 +344,31 @@
         var field = _fieldActive.OrderBy(x => x).ToArray();
         int? attackIndex = field.Length > 0 ? field[0] : null;
 
+        MarkPlayedByMe(hand);
+
         await Guard(() => Table.PlayCards(Me.AuthSecret, hand, attackIndex));
         _handActive.Clear();
         _fieldActive.Clear();
         UpdateSelectables();
+    }
+
+    /// <summary>Запоминает идентичность сыгранных мной карт (для фильтра «своего» подкида в диффе анимаций).</summary>
+    private void MarkPlayedByMe(int[] handIndexes)
+    {
+        var my = _view?.MyCards;
+
+        if (my == null)
+        {
+            return;
+        }
+
+        foreach (var i in handIndexes)
+        {
+            if (i >= 0 && i < my.Length)
+            {
+                _justPlayedByMe.Add(BoardSnapshot.Key(my[i]));
+            }
+        }
     }
 
     /// <summary>
@@ -310,6 +428,8 @@
             return false;
         }
 
+        MarkPlayedByMe(hand);
+
         try
         {
             Table.PlayCards(Me.AuthSecret, hand, attackIndex);
@@ -335,7 +455,25 @@
         await Guard(() => Table.Take(Me.AuthSecret));
     }
 
-    private void ToggleInvite() => _showInvite = !_showInvite;
+    /// <summary>
+    /// «Бито»: атакующий объявляет, что больше не подкидывает (issue F5). Раунд закроется, когда
+    /// «Бито» скажут все атакующие, иначе — по общему таймеру. Серверный <see cref="Table.Beat"/>
+    /// валидирует окно/роль и кидает <see cref="BusinessException"/>, которую Guard сольёт в ErrorToast.
+    /// </summary>
+    private async Task Beat()
+    {
+        await Guard(() => Table.Beat(Me.AuthSecret));
+    }
+
+    /// <summary>
+    /// Выгнать соперника (бота или человека) по его игровому индексу — доступно только владельцу,
+    /// в лобби и в игре. Нарушения (не владелец/неверная цель) серверный <see cref="TableHolder.Kick"/>
+    /// кидает <see cref="BusinessException"/>, которую Guard сольёт в ErrorToast.
+    /// </summary>
+    private async Task Kick(int gameIndex)
+    {
+        await Guard(() => TableHolder.Kick(Me.AuthSecret, Table.Id, gameIndex));
+    }
 
     private async Task Leave()
     {
@@ -360,6 +498,7 @@
     public async ValueTask DisposeAsync()
     {
         if (_subscribed != null) _subscribed.Changed -= OnTableChanged;
+        Session.SettingsChanged -= OnSettingsChanged;
 
         if (_dndModule != null)
         {
@@ -374,5 +513,169 @@
         }
 
         _selfRef?.Dispose();
+    }
+
+    private sealed record BoardSnapshot(
+        int Deck,
+        int Discard,
+        string[] FieldAttacks,
+        string[] FieldDefences,
+        int? ActiveIndex,
+        int? DefenceIndex,
+        int MyIndex,
+        string[] MyCards,
+        Dictionary<int, int> CountsByGameIndex)
+    {
+        public static string Key(CardModel? c) => c == null ? "" : $"{c.Rank}/{c.Suit}";
+
+        public static BoardSnapshot From(TableModel v)
+        {
+            var cards = v.Cards ?? [];
+            var attacks = cards.Where(c => c.AttackCard != null).Select(c => Key(c.AttackCard)).ToArray();
+            var defences = cards.Where(c => c.DefenceCard != null).Select(c => Key(c.DefenceCard)).ToArray();
+            var my = (v.MyCards ?? []).Select(Key).ToArray();
+
+            var counts = new Dictionary<int, int>();
+
+            foreach (var p in v.Players ?? [])
+            {
+                counts[p.Index] = p.CardsCount;
+            }
+
+            if (v.MyPlayerIndex >= 0)
+            {
+                counts[v.MyPlayerIndex] = my.Length;
+            }
+
+            return new BoardSnapshot(
+                v.DeckCardsCount,
+                v.DiscardCardsCount,
+                attacks,
+                defences,
+                v.ActivePlayerIndex,
+                v.DefencePlayerIndex,
+                v.MyPlayerIndex,
+                my,
+                counts);
+        }
+    }
+
+    private sealed record CardFace(int Rank, int Suit);
+
+    private sealed record ThrowIn(int Rank, int Suit, int FieldIndex, int ThrowerIndex);
+
+    private sealed record DrawTo(string ToType, int BadgeIndex, int Count);
+
+    private sealed record BoardDiff(
+        List<ThrowIn> ThrowIns,
+        List<DrawTo> Draws,
+        int TakeTarget,
+        List<CardFace> TakeCards,
+        List<CardFace> BeatCards)
+    {
+        public bool IsEmpty => ThrowIns.Count == 0 && Draws.Count == 0 && TakeCards.Count == 0 && BeatCards.Count == 0;
+
+        /// <summary>
+        /// Плоская camelCase-проекция для JS (GameTable.razor.js#animate). Имена фиксируем явно,
+        /// чтобы анимации не зависели от того, как JS-интероп сериализует имена свойств записей.
+        /// </summary>
+        public object ToPayload() => new
+        {
+            throwIns = ThrowIns.Select(t => new { rank = t.Rank, suit = t.Suit, fieldIndex = t.FieldIndex, throwerIndex = t.ThrowerIndex }),
+            draws = Draws.Select(d => new { toType = d.ToType, badgeIndex = d.BadgeIndex, count = d.Count }),
+            takeTarget = TakeTarget,
+            takeCards = TakeCards.Select(c => new { rank = c.Rank, suit = c.Suit }),
+            beatCards = BeatCards.Select(c => new { rank = c.Rank, suit = c.Suit }),
+        };
+
+        private static CardFace Face(string key)
+        {
+            var parts = key.Split('/');
+            return int.TryParse(parts.ElementAtOrDefault(0), out var r) && int.TryParse(parts.ElementAtOrDefault(1), out var s)
+                ? new CardFace(r, s)
+                : new CardFace(0, 0);
+        }
+
+        public static BoardDiff Compute(BoardSnapshot? prev, BoardSnapshot next, HashSet<string> justPlayedByMe)
+        {
+            var throwIns = new List<ThrowIn>();
+            var draws = new List<DrawTo>();
+            var takeCards = new List<CardFace>();
+            var beatCards = new List<CardFace>();
+            var takeTarget = -1;
+
+            if (prev == null || prev.MyIndex != next.MyIndex)
+            {
+                return new BoardDiff(throwIns, draws, takeTarget, takeCards, beatCards);
+            }
+
+            var prevAttackSet = new HashSet<string>(prev.FieldAttacks);
+            var nextField = next.FieldAttacks;
+            var prevFieldCount = prev.FieldAttacks.Length;
+            var nextFieldCount = nextField.Length;
+
+            if (nextFieldCount > prevFieldCount && next.ActiveIndex is { } thrower)
+            {
+                var seen = new HashSet<string>();
+
+                for (var i = 0; i < nextField.Length; i++)
+                {
+                    var key = nextField[i];
+
+                    if (!prevAttackSet.Contains(key) && !justPlayedByMe.Contains(key) && seen.Add(key))
+                    {
+                        var face = Face(key);
+                        throwIns.Add(new ThrowIn(face.Rank, face.Suit, i, thrower));
+                    }
+                }
+            }
+
+            if (prevFieldCount > 0 && nextFieldCount == 0)
+            {
+                var faces = prev.FieldAttacks.Concat(prev.FieldDefences).Select(Face).ToList();
+
+                if (next.Discard > prev.Discard)
+                {
+                    beatCards.AddRange(faces);
+                }
+                else
+                {
+                    takeTarget = prev.DefenceIndex ?? -1;
+                    takeCards.AddRange(faces);
+                }
+            }
+
+            var dealStage = nextFieldCount == 0 || prevFieldCount == 0;
+
+            if (dealStage)
+            {
+                foreach (var (gi, cnt) in next.CountsByGameIndex)
+                {
+                    var before = prev.CountsByGameIndex.TryGetValue(gi, out var b) ? b : cnt;
+                    var grew = cnt - before;
+
+                    if (grew <= 0)
+                    {
+                        continue;
+                    }
+
+                    if (takeTarget == gi)
+                    {
+                        continue;
+                    }
+
+                    if (gi == next.MyIndex)
+                    {
+                        draws.Add(new DrawTo("hand", -1, grew));
+                    }
+                    else
+                    {
+                        draws.Add(new DrawTo("badge", gi, grew));
+                    }
+                }
+            }
+
+            return new BoardDiff(throwIns, draws, takeTarget, takeCards, beatCards);
+        }
     }
 }

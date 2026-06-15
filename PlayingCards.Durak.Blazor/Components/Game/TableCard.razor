@@ -1,6 +1,4 @@
-﻿@inject NavigationManager Navigation
-
-<div class="table">
+﻿<div class="table">
     @foreach (var p in Model.Players)
     {
         <label>@p.Name</label>
@@ -9,19 +7,10 @@
     {
         <button class="btn btn-info" @onclick="() => OnJoin.InvokeAsync(Model.Id)">Подсесть</button>
     }
-    <button class="btn btn-share" @onclick="() => _showLink = !_showLink">🔗 Ссылка</button>
-    @if (_showLink)
-    {
-        <input class="invite-link" readonly value="@InviteLink"
-               onclick="this.select()" onfocus="this.select()" />
-    }
+    <InvitePopup Table="Model.Id" />
 </div>
 
 @code {
     [Parameter, EditorRequired] public TableModel Model { get; set; } = default!;
     [Parameter] public EventCallback<Guid> OnJoin { get; set; }
-
-    private bool _showLink;
-    /// <summary>Ссылка-приглашение на этот стол: открыв её, гость авто-подсаживается за стол.</summary>
-    private string InviteLink => $"{Navigation.BaseUri}?table={Model.Id}";
 }

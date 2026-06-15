@@ -1,0 +1,71 @@
+﻿@inject PlayerSession Session
+@inject BuildInfo Build
+
+<div class="settings-menu" @onclick:stopPropagation="true">
+    <div class="settings-arrow" aria-hidden="true"></div>
+
+    <h2 class="settings-title">Настройки</h2>
+
+    <section class="settings-section">
+        <label class="toggle-row">
+            <span class="toggle-text">
+                <span class="toggle-name">Подсказки по ходам</span>
+                <span class="toggle-hint">Подсветка карт, которыми можно сходить</span>
+            </span>
+            <span class="switch">
+                <input type="checkbox"
+                       checked="@(!Session.NoHints)"
+                       @onchange="OnHintsToggled" />
+                <span class="switch-track" aria-hidden="true"></span>
+            </span>
+        </label>
+    </section>
+
+    <section class="settings-section">
+        <span class="section-label">Сортировка руки</span>
+        <div class="sort-options" role="radiogroup" aria-label="Сортировка руки">
+            @foreach (var option in SortOptions)
+            {
+                var mode = option.Mode;
+                var selected = Session.HandSort == mode;
+                <button type="button"
+                        class="sort-option @(selected ? "is-selected" : null)"
+                        role="radio"
+                        aria-checked="@selected"
+                        @onclick="() => SelectSort(mode)">
+                    <span class="sort-tick" aria-hidden="true">@(selected ? "✓" : "")</span>
+                    <span class="sort-glyphs" aria-hidden="true">@option.Glyphs</span>
+                    <span class="sort-label">@option.Label</span>
+                </button>
+            }
+        </div>
+    </section>
+
+    <footer class="settings-footer">
+        <span class="build-id" title="@(Build.Date is null ? null : $"Собрано: {Build.Date}")">
+            Сборка <code>@Build.Version</code>
+        </span>
+    </footer>
+</div>
+
+@code {
+    private sealed record SortOption(HandSortMode Mode, string Label, string Glyphs);
+
+    private static readonly SortOption[] SortOptions =
+    [
+        new(HandSortMode.ByRankTrumpInline, "Как сейчас", "♠ ♥ ♦ ♣"),
+        new(HandSortMode.TrumpsSeparated, "Козыри в конце", "♠ ♥ | ♦"),
+        new(HandSortMode.BySuit, "По масти", "♠♠ ♥♥ ♦♦"),
+    ];
+
+    private async Task OnHintsToggled(ChangeEventArgs e)
+    {
+        var hintsOn = e.Value is true;
+        await Session.SetNoHintsAsync(!hintsOn);
+    }
+
+    private async Task SelectSort(HandSortMode mode)
+    {
+        await Session.SetHandSortAsync(mode);
+    }
+}

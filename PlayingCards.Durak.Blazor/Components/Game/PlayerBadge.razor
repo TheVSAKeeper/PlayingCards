@@ -3,7 +3,24 @@
 <div class="player @(IsActive ? "active-player" : "") @(IsDefence ? "defence-player" : "") @(IsLeaver ? "leave-player" : "")"
      data-player-index="@GameIndex">
 
+    @if (CanKick && !IsLeaver)
+    {
+        <button class="kick-btn" title="@(IsBot ? "Убрать бота" : "Выгнать игрока")"
+                aria-label="Выгнать"
+                @onclick="() => OnKick.InvokeAsync(GameIndex)"
+                @onclick:stopPropagation="true">✕</button>
+    }
+
+    @if (IsBot)
+    {
+        <span class="bot-tag" title="Бот" aria-label="Бот">🤖</span>
+    }
+
     <div class="badge-bubbles">
+        @if (Reply is { Length: > 0 } reply)
+        {
+            <label class="speak-text reply-text">@reply</label>
+        }
         @if (IsLooser)
         {
             <label class="speak-text looser-text">я дурач☻к</label>
@@ -54,6 +71,18 @@
     [Parameter] public bool IsLooser { get; set; }
 
     [Parameter] public bool IsLeaver { get; set; }
+
+    /// <summary>Игрок управляется ИИ — рисуем значок у имени.</summary>
+    [Parameter] public bool IsBot { get; set; }
+
+    /// <summary>Свежая реплика игрока («Бито!») — баббл над бейджем (issue F5).</summary>
+    [Parameter] public string? Reply { get; set; }
+
+    /// <summary>Показывать кнопку «выгнать» (только владельцу стола, не на «крысе»).</summary>
+    [Parameter] public bool CanKick { get; set; }
+
+    /// <summary>Выгнать этого игрока: вверх уходит его игровой индекс (<see cref="GameIndex"/>).</summary>
+    [Parameter] public EventCallback<int> OnKick { get; set; }
 
     [Parameter] public int CardsCount { get; set; }
 

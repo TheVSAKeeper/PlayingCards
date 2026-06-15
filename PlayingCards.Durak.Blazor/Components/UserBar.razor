@@ -1,0 +1,62 @@
+﻿@inject PlayerSession Session
+@inject TableHolder TableHolder
+
+<div class="user-bar">
+    <span class="name-label">@Session.Name</span>
+
+    <div class="user-bar-actions">
+        <div class="settings-wrap">
+            <button type="button"
+                    class="icon-btn settings-toggle @(_settingsOpen ? "is-open" : null)"
+                    title="Настройки"
+                    aria-label="Настройки"
+                    aria-expanded="@_settingsOpen"
+                    @onclick="ToggleSettings">
+                <span class="gear" aria-hidden="true">⚙</span>
+            </button>
+
+            @if (_settingsOpen)
+            {
+                <SettingsMenu />
+            }
+        </div>
+
+        <button type="button" class="btn btn-info logout-btn" @onclick="Logout">Выйти</button>
+    </div>
+</div>
+
+@if (_settingsOpen)
+{
+    <div class="settings-backdrop" @onclick="CloseSettings"></div>
+}
+
+@code {
+    /// <summary>
+    /// Сообщить хосту (Home), что сессия/стол изменились, чтобы он перестроил вид
+    /// (loading → LoginPanel → Lobby|GameTable).
+    /// </summary>
+    [Parameter] public EventCallback OnLoggedOut { get; set; }
+
+    private bool _settingsOpen;
+
+    private void ToggleSettings() => _settingsOpen = !_settingsOpen;
+
+    private void CloseSettings() => _settingsOpen = false;
+
+    /// <summary>
+    /// Выход: если игрок сидит за столом — сперва встаём из-за стола, затем сбрасываем личность.
+    /// Тот же порядок, что и в Home.Logout, но запускается из постоянной шапки на любом экране.
+    /// </summary>
+    private async Task Logout()
+    {
+        _settingsOpen = false;
+
+        if (TableHolder.GetBySecret(Session.Secret!, out _) != null)
+        {
+            TableHolder.Leave(Session.Secret!);
+        }
+
+        await Session.LogoutAsync();
+        await OnLoggedOut.InvokeAsync();
+    }
+}

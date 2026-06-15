@@ -4,6 +4,10 @@ let drag = null;
 
 const THRESHOLD = 6;
 
+let animToken = 0;
+let animLayer = null;
+const ANIM_MAX_CLONES = 14;
+
 export function init(rootEl, dotNetRef) {
     root = rootEl;
     dnet = dotNetRef;
@@ -17,6 +21,7 @@ export function dispose() {
 
     detachWindow();
     cleanup();
+    clearAnim();
     root = null;
     dnet = null;
 }
@@ -383,4 +388,327 @@ function sparkle(x, y) {
 
 function clamp(v, lo, hi) {
     return v < lo ? lo : (v > hi ? hi : v);
+}
+
+export function animate(diff) {
+    if (!diff || prefersReducedMotion() || !root) {
+        return;
+    }
+
+    clearAnim();
+    const token = ++animToken;
+    const layer = document.createElement('div');
+    layer.className = 'board-anim-layer';
+    document.body.appendChild(layer);
+    animLayer = layer;
+
+    let budget = ANIM_MAX_CLONES;
+
+    if (budget > 0 && diff.beatCards && diff.beatCards.length) {
+        const from = rectOf(root.querySelector('.field[data-drop="field"]'));
+        const to = rectOf(root.querySelector('[data-discard-anchor]'));
+
+        if (from && to) {
+            budget = flySweep(layer, token, diff.beatCards, from, to, budget, true);
+        }
+    }
+
+    if (budget > 0 && diff.takeCards && diff.takeCards.length && diff.takeTarget >= 0) {
+        const from = rectOf(root.querySelector('.field[data-drop="field"]'));
+        const to = rectOf(badge(diff.takeTarget));
+
+        if (from && to) {
+            budget = flySweep(layer, token, diff.takeCards, from, to, budget, false);
+        }
+    }
+
+    if (diff.throwIns && diff.throwIns.length) {
+        let k = 0;
+
+        for (const t of diff.throwIns) {
+            if (budget <= 0) {
+                break;
+            }
+
+            const slot = root.querySelector(`.field-card[data-field-index="${t.fieldIndex}"]`);
+            const from = rectOf(badge(t.throwerIndex));
+
+            if (slot && from) {
+                flyThrowIn(layer, token, slot, from, k * 70);
+                budget--;
+                k++;
+            }
+        }
+    }
+
+    if (budget > 0 && diff.draws && diff.draws.length) {
+        const deck = rectOf(root.querySelector('[data-deck-anchor]'));
+
+        if (deck) {
+            budget = flyDraws(layer, token, diff.draws, deck, budget);
+        }
+    }
+
+    if (!layer.childElementCount) {
+        clearAnim();
+    }
+}
+
+function flySweep(layer, token, cards, from, to, budget, faceDown) {
+    const n = Math.min(cards.length, budget);
+
+    for (let i = 0; i < n; i++) {
+        const node = faceDown ? backCard() : faceCard(cards[i].rank, cards[i].suit);
+        const jx = (i - (n - 1) / 2) * 16;
+        flyBetween(layer, token, node, from.x + jx, from.y, to.x, to.y, i * 45, true);
+    }
+
+    return budget - n;
+}
+
+function flyDraws(layer, token, draws, deck, budget) {
+    for (const d of draws) {
+        if (budget <= 0) {
+            break;
+        }
+
+        const targets = drawTargets(d);
+        const count = Math.min(d.count, targets.length || d.count);
+        const n = Math.min(count, budget);
+
+        for (let i = 0; i < n; i++) {
+            const tr = targets[i] || targets[targets.length - 1] || null;
+
+            if (!tr) {
+                continue;
+            }
+
+            flyBetween(layer, token, backCard(), deck.x, deck.y, tr.x, tr.y, i * 80, false);
+            budget--;
+        }
+    }
+
+    return budget;
+}
+
+function drawTargets(d) {
+    if (d.toType === 'hand') {
+        const slots = [...root.querySelectorAll('.hand-slot')];
+        const tail = slots.slice(Math.max(0, slots.length - d.count));
+        return tail.map(rectOf).filter(Boolean);
+    }
+
+    const r = rectOf(badge(d.badgeIndex));
+    return r ? [r] : [];
+}
+
+function flyBetween(layer, token, node, fromX, fromY, toX, toY, delay, fadeOut) {
+    node.style.position = 'fixed';
+    node.style.left = '0';
+    node.style.top = '0';
+    node.style.margin = '0';
+    node.style.pointerEvents = 'none';
+    node.style.opacity = fadeOut ? '1' : '0';
+    node.style.transform = `translate(${fromX}px, ${fromY}px) translate(-50%, -50%) scale(0.82)`;
+    node.style.willChange = 'transform, opacity';
+    layer.appendChild(node);
+
+    const start = performance.now() + delay;
+    const dur = 360;
+
+    function step(now) {
+        if (token !== animToken) {
+            return;
+        }
+
+        const t = (now - start) / dur;
+
+        if (t < 0) {
+            requestAnimationFrame(step);
+            return;
+        }
+
+        const p = t >= 1 ? 1 : ease(t);
+        const pop = t >= 1 ? 1 : Math.min(1, easeOutBack(t));
+        const x = fromX + (toX - fromX) * p;
+        const y = fromY + (toY - fromY) * p;
+        const scale = 0.82 + 0.18 * pop;
+        node.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${scale})`;
+
+        if (fadeOut) {
+            node.style.opacity = t > 0.7 ? String(Math.max(0, 1 - (t - 0.7) / 0.3)) : '1';
+        } else {
+            node.style.opacity = String(Math.min(1, t * 2));
+        }
+
+        if (t < 1) {
+            requestAnimationFrame(step);
+        } else if (fadeOut) {
+            node.remove();
+        } else {
+            node.style.transition = 'opacity .14s ease';
+            node.style.opacity = '0';
+            setTimeout(() => node.remove(), 160);
+        }
+    }
+
+    requestAnimationFrame(step);
+}
+
+function flyThrowIn(layer, token, slot, from, delay) {
+    const cardEl = slot.querySelector('.attack-card');
+
+    if (!cardEl) {
+        return;
+    }
+
+    const r = cardEl.getBoundingClientRect();
+
+    if (r.width === 0 && r.height === 0) {
+        return;
+    }
+
+    const clone = cardEl.cloneNode(true);
+    clone.classList.remove('active', 'dimmed', 'dnd-ghost');
+    clone.style.visibility = 'visible';
+    clone.style.position = 'fixed';
+    clone.style.margin = '0';
+    clone.style.left = `${r.left}px`;
+    clone.style.top = `${r.top}px`;
+    clone.style.width = `${r.width}px`;
+    clone.style.height = `${r.height}px`;
+    clone.style.pointerEvents = 'none';
+    clone.style.willChange = 'transform';
+    clone.style.transformOrigin = 'center';
+    clone.style.transition = 'none';
+    layer.appendChild(clone);
+
+    cardEl.style.visibility = 'hidden';
+
+    const dx = from.x - (r.left + r.width / 2);
+    const dy = from.y - (r.top + r.height / 2);
+
+    const start = performance.now() + delay;
+    const dur = 360;
+    let done = false;
+
+    function land() {
+        if (done) {
+            return;
+        }
+
+        done = true;
+        cardEl.style.visibility = '';
+        clone.remove();
+    }
+
+    function step(now) {
+        if (token !== animToken) {
+            land();
+            return;
+        }
+
+        const t = (now - start) / dur;
+
+        if (t < 0) {
+            requestAnimationFrame(step);
+            return;
+        }
+
+        const p = t >= 1 ? 1 : ease(t);
+        const pop = t >= 1 ? 1 : easeOutBack(t);
+        const x = dx * (1 - p);
+        const y = dy * (1 - p);
+        const scale = 0.6 + 0.4 * pop;
+        const rot = (1 - p) * -8;
+        clone.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${scale})`;
+
+        if (t < 1) {
+            requestAnimationFrame(step);
+        } else {
+            land();
+        }
+    }
+
+    requestAnimationFrame(step);
+}
+
+function clearAnim() {
+    animToken++;
+
+    if (animLayer) {
+        animLayer.remove();
+        animLayer = null;
+    }
+}
+
+function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function rectOf(el) {
+    if (!el) {
+        return null;
+    }
+
+    const r = el.getBoundingClientRect();
+
+    if (r.width === 0 && r.height === 0) {
+        return null;
+    }
+
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+function badge(gameIndex) {
+    return root.querySelector(`.player[data-player-index="${gameIndex}"]`);
+}
+
+function faceCard(rank, suit) {
+    const el = document.createElement('div');
+    el.className = 'anim-card anim-card-face';
+
+    const red = suit === 1 || suit === 2;
+    if (red) {
+        el.classList.add('red');
+    }
+
+    el.textContent = `${rankText(rank)}${suitText(suit)}`;
+    return el;
+}
+
+function backCard() {
+    const el = document.createElement('div');
+    el.className = 'anim-card anim-card-back';
+    return el;
+}
+
+function rankText(rank) {
+    switch (rank) {
+        case 11: return 'J';
+        case 12: return 'Q';
+        case 13: return 'K';
+        case 14: return 'A';
+        default: return String(rank);
+    }
+}
+
+function suitText(suit) {
+    switch (suit) {
+        case 0: return '♣';
+        case 1: return '♦';
+        case 2: return '♥';
+        case 3: return '♠';
+        default: return '?';
+    }
+}
+
+function ease(t) {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+function easeOutBack(t) {
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 }
