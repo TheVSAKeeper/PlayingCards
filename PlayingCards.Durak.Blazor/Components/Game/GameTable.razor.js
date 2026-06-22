@@ -441,6 +441,25 @@ export function animate(diff) {
         }
     }
 
+    if (budget > 0 && diff.covers && diff.covers.length) {
+        let k = 0;
+
+        for (const c of diff.covers) {
+            if (budget <= 0) {
+                break;
+            }
+
+            const slot = root.querySelector(`.field-card[data-field-index="${c.fieldIndex}"]`);
+            const from = rectOf(badge(c.defenderIndex));
+
+            if (slot && from) {
+                flyCover(layer, token, slot, from, k * 70);
+                budget--;
+                k++;
+            }
+        }
+    }
+
     if (budget > 0 && diff.draws && diff.draws.length) {
         const deck = rectOf(root.querySelector('[data-deck-anchor]'));
 
@@ -555,9 +574,7 @@ function flyBetween(layer, token, node, fromX, fromY, toX, toY, delay, fadeOut) 
     requestAnimationFrame(step);
 }
 
-function flyThrowIn(layer, token, slot, from, delay) {
-    const cardEl = slot.querySelector('.attack-card');
-
+function flyCardOnto(layer, token, cardEl, from, delay, endRot) {
     if (!cardEl) {
         return;
     }
@@ -568,15 +585,20 @@ function flyThrowIn(layer, token, slot, from, delay) {
         return;
     }
 
+    const w = cardEl.offsetWidth || r.width;
+    const h = cardEl.offsetHeight || r.height;
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+
     const clone = cardEl.cloneNode(true);
     clone.classList.remove('active', 'dimmed', 'dnd-ghost');
     clone.style.visibility = 'visible';
     clone.style.position = 'fixed';
     clone.style.margin = '0';
-    clone.style.left = `${r.left}px`;
-    clone.style.top = `${r.top}px`;
-    clone.style.width = `${r.width}px`;
-    clone.style.height = `${r.height}px`;
+    clone.style.left = `${cx - w / 2}px`;
+    clone.style.top = `${cy - h / 2}px`;
+    clone.style.width = `${w}px`;
+    clone.style.height = `${h}px`;
     clone.style.pointerEvents = 'none';
     clone.style.willChange = 'transform';
     clone.style.transformOrigin = 'center';
@@ -585,8 +607,8 @@ function flyThrowIn(layer, token, slot, from, delay) {
 
     cardEl.style.visibility = 'hidden';
 
-    const dx = from.x - (r.left + r.width / 2);
-    const dy = from.y - (r.top + r.height / 2);
+    const dx = from.x - cx;
+    const dy = from.y - cy;
 
     const start = performance.now() + delay;
     const dur = 360;
@@ -620,7 +642,7 @@ function flyThrowIn(layer, token, slot, from, delay) {
         const x = dx * (1 - p);
         const y = dy * (1 - p);
         const scale = 0.6 + 0.4 * pop;
-        const rot = (1 - p) * -8;
+        const rot = -8 * (1 - p) + endRot * p;
         clone.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${scale})`;
 
         if (t < 1) {
@@ -633,6 +655,14 @@ function flyThrowIn(layer, token, slot, from, delay) {
     requestAnimationFrame(step);
 }
 
+function flyThrowIn(layer, token, slot, from, delay) {
+    flyCardOnto(layer, token, slot.querySelector('.attack-card'), from, delay, 0);
+}
+
+function flyCover(layer, token, slot, from, delay) {
+    flyCardOnto(layer, token, slot.querySelector('.defence-card'), from, delay, 7);
+}
+
 function clearAnim() {
     animToken++;
 
@@ -642,8 +672,12 @@ function clearAnim() {
     }
 }
 
+const reducedMotionMql = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)')
+    : null;
+
 function prefersReducedMotion() {
-    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return !!reducedMotionMql && reducedMotionMql.matches;
 }
 
 function rectOf(el) {

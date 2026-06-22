@@ -46,7 +46,8 @@
                     var attackCss = "attack-card"
                         + (clickable ? "" : " static")
                         + (dim ? " dimmed" : "");
-                    <div class="field-card" data-field-index="@idx">
+
+                    <div class="field-card" data-field-index="@idx" @key="(fc.AttackCard!.Rank * 4 + fc.AttackCard.Suit)">
                         <CardView Card="fc.AttackCard!"
                                   CssClass="@attackCss"
                                   Active="_fieldActive.Contains(idx)"
@@ -66,13 +67,16 @@
                 @for (var i = 0; i < (_view.MyCards?.Length ?? 0); i++)
                 {
                     var idx = i;
+                    var card = _view.MyCards![idx];
                     var selectable = _handSelectable.Contains(idx);
                     var selected = _handActive.Contains(idx);
                     var handCss = !selectable && !Session.NoHints ? "dimmed" : "";
+
                     <div class="hand-slot"
                          data-hand-index="@idx"
-                         data-playable="@(selectable ? "true" : "false")">
-                        <CardView Card="_view.MyCards![idx]"
+                         data-playable="@(selectable ? "true" : "false")"
+                         @key="(card.Rank * 4 + card.Suit)">
+                        <CardView Card="card"
                                   CssClass="@handCss"
                                   Active="selected"
                                   OnClick="() => ToggleHand(idx)" />
@@ -519,7 +523,7 @@
         int Deck,
         int Discard,
         string[] FieldAttacks,
-        string[] FieldDefences,
+        string?[] FieldDefences,
         int? ActiveIndex,
         int? DefenceIndex,
         int MyIndex,
@@ -531,8 +535,8 @@
         public static BoardSnapshot From(TableModel v)
         {
             var cards = v.Cards ?? [];
-            var attacks = cards.Where(c => c.AttackCard != null).Select(c => Key(c.AttackCard)).ToArray();
-            var defences = cards.Where(c => c.DefenceCard != null).Select(c => Key(c.DefenceCard)).ToArray();
+            var attacks = cards.Select(c => Key(c.AttackCard)).ToArray();
+            var defences = cards.Select(c => c.DefenceCard != null ? Key(c.DefenceCard) : null).ToArray();
             var my = (v.MyCards ?? []).Select(Key).ToArray();
 
             var counts = new Dictionary<int, int>();
@@ -564,16 +568,20 @@
 
     private sealed record ThrowIn(int Rank, int Suit, int FieldIndex, int ThrowerIndex);
 
+    /// <summary>Карта защиты, легшая на слот <paramref name="FieldIndex"/>, летит от бейджа защищающегося.</summary>
+    private sealed record Cover(int Rank, int Suit, int FieldIndex, int DefenderIndex);
+
     private sealed record DrawTo(string ToType, int BadgeIndex, int Count);
 
     private sealed record BoardDiff(
         List<ThrowIn> ThrowIns,
+        List<Cover> Covers,
         List<DrawTo> Draws,
         int TakeTarget,
         List<CardFace> TakeCards,
         List<CardFace> BeatCards)
     {
-        public bool IsEmpty => ThrowIns.Count == 0 && Draws.Count == 0 && TakeCards.Count == 0 && BeatCards.Count == 0;
+        public bool IsEmpty => ThrowIns.Count == 0 && Covers.Count == 0 && Draws.Count == 0 && TakeCards.Count == 0 && BeatCards.Count == 0;
 
         /// <summary>
         /// Плоская camelCase-проекция для JS (GameTable.razor.js#animate). Имена фиксируем явно,
@@ -582,6 +590,7 @@
         public object ToPayload() => new
         {
             throwIns = ThrowIns.Select(t => new { rank = t.Rank, suit = t.Suit, fieldIndex = t.FieldIndex, throwerIndex = t.ThrowerIndex }),
+            covers = Covers.Select(c => new { rank = c.Rank, suit = c.Suit, fieldIndex = c.FieldIndex, defenderIndex = c.DefenderIndex }),
             draws = Draws.Select(d => new { toType = d.ToType, badgeIndex = d.BadgeIndex, count = d.Count }),
             takeTarget = TakeTarget,
             takeCards = TakeCards.Select(c => new { rank = c.Rank, suit = c.Suit }),
@@ -599,6 +608,7 @@
         public static BoardDiff Compute(BoardSnapshot? prev, BoardSnapshot next, HashSet<string> justPlayedByMe)
         {
             var throwIns = new List<ThrowIn>();
+            var covers = new List<Cover>();
             var draws = new List<DrawTo>();
             var takeCards = new List<CardFace>();
             var beatCards = new List<CardFace>();
@@ -606,7 +616,7 @@
 
             if (prev == null || prev.MyIndex != next.MyIndex)
             {
-                return new BoardDiff(throwIns, draws, takeTarget, takeCards, beatCards);
+                return new BoardDiff(throwIns, covers, draws, takeTarget, takeCards, beatCards);
             }
 
             var prevAttackSet = new HashSet<string>(prev.FieldAttacks);
@@ -630,9 +640,26 @@
                 }
             }
 
+            if (next.DefenceIndex is { } defender)
+            {
+                for (var i = 0; i < next.FieldDefences.Length; i++)
+                {
+                    var def = next.FieldDefences[i];
+                    var prevDef = i < prev.FieldDefences.Length ? prev.FieldDefences[i] : null;
+
+                    if (def == null || prevDef != null || justPlayedByMe.Contains(def))
+                    {
+                        continue;
+                    }
+
+                    var face = Face(def);
+                    covers.Add(new Cover(face.Rank, face.Suit, i, defender));
+                }
+            }
+
             if (prevFieldCount > 0 && nextFieldCount == 0)
             {
-                var faces = prev.FieldAttacks.Concat(prev.FieldDefences).Select(Face).ToList();
+                var faces = prev.FieldAttacks.Concat(prev.FieldDefences.OfType<string>()).Select(Face).ToList();
 
                 if (next.Discard > prev.Discard)
                 {
@@ -675,7 +702,7 @@
                 }
             }
 
-            return new BoardDiff(throwIns, draws, takeTarget, takeCards, beatCards);
+            return new BoardDiff(throwIns, covers, draws, takeTarget, takeCards, beatCards);
         }
     }
 }
