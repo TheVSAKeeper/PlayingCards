@@ -186,7 +186,7 @@ public class Table
 
         if (Game.DefencePlayer != tablePlayer.Player)
         {
-            throw new BusinessException("you are not defence player");
+            throw new BusinessException("Забирать карты может только защищающийся");
         }
 
         if (Game.Cards.Count == 0)
@@ -201,8 +201,8 @@ public class Table
         Version++;
     }
 
-    /// <summary>Реплики атакующего, объявляющего «Бито».</summary>
-    private static readonly string[] ReplyPhrases = ["Бито", "Бито!", "Закрываю"];
+    /// <summary>Реплики атакующего, объявляющего «Бито». Единый источник — и для людей, и для ботов.</summary>
+    public static readonly string[] ReplyPhrases = ["Бито", "Бито!", "Закрываю"];
 
     /// <summary>
     /// «Бито»: атакующий объявляет, что больше не подкидывает (issue F5). Раунд закрывается досрочно,
@@ -336,6 +336,7 @@ public class Table
                 SetDefencePlayerAfkStartTime();
                 StopRoundBeginDate = null;
                 StopRoundStatus = null;
+                ClearBeatVotes();
                 break;
 
             case SRS.Take:
@@ -385,7 +386,7 @@ public class Table
     {
         if (Game.Status != GameStatus.InProcess)
         {
-            throw new BusinessException("game not in process");
+            throw new BusinessException("Игра не в процессе");
         }
     }
 
@@ -393,7 +394,7 @@ public class Table
     {
         if (StopRoundBeginDate != null)
         {
-            throw new BusinessException("stop round in process");
+            throw new BusinessException("Идёт остановка раунда");
         }
 
         StopRoundBeginDate = DateTime.UtcNow;

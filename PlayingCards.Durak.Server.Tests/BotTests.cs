@@ -51,7 +51,7 @@ public class BotTests
         holder.Join(table.Id, "s1", "Bob");
 
         var ex = Assert.Throws<BusinessException>(() => holder.AddBot(table.Id, "s1"));
-        Assert.That(ex!.Message, Is.EqualTo("only owner can add bot"));
+        Assert.That(ex!.Message, Is.EqualTo("Добавлять ботов может только владелец стола"));
     }
 
     [Test]
@@ -60,7 +60,7 @@ public class BotTests
         var holder = new TableHolder();
 
         var ex = Assert.Throws<BusinessException>(() => holder.AddBot(Guid.NewGuid(), "s0"));
-        Assert.That(ex!.Message, Is.EqualTo("table not found"));
+        Assert.That(ex!.Message, Is.EqualTo("Стол не найден"));
     }
 
     [Test]

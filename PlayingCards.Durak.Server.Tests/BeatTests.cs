@@ -59,7 +59,41 @@ public class BeatTests
             Assert.That(table.StopRoundBeginDate, Is.Null);
             Assert.That(table.Game.DiscardCardsCount, Is.EqualTo(2), "отбитая пара ушла в бито");
             Assert.That(attacker.Reply, Is.Not.Null.And.Not.Empty, "над атакующим всплыла реплика");
+            Assert.That(Table.ReplyPhrases, Does.Contain(attacker.Reply), "реплика из общего пула фраз");
             Assert.That(attacker.ReplyDate, Is.Not.Null);
+        });
+    }
+
+    [Test]
+    public void BackgroundProcess_StaleReply_ClearedAndBumpsVersion()
+    {
+        var holder = new TableHolder();
+        var table = holder.CreateTable();
+        table.Game = new Game { Deck = new(new SortedDeckCardGenerator([Attacker, Defender], Trump)) };
+        holder.Join(table.Id, "s0", "Owner");
+        holder.Join(table.Id, "s1", "Bob");
+        table.StartGame();
+
+        var p0 = table.Players.Single(x => x.AuthSecret == "s0").Player;
+        var p1 = table.Players.Single(x => x.AuthSecret == "s1").Player;
+
+        table.PlayCards("s0", [ServerTestHelper.HandIndex(p0, "8♠")]);
+        table.PlayCards("s1", [ServerTestHelper.HandIndex(p1, "9♠")], 0);
+        table.Beat("s0");
+
+        var attacker = table.Players.Single(x => x.AuthSecret == "s0");
+        Assert.That(attacker.Reply, Is.Not.Null, "реплика только что выставлена");
+
+        attacker.ReplyDate = DateTime.UtcNow.AddSeconds(-(TableHolder.REPLY_SECONDS + 1));
+        var versionBefore = table.Version;
+
+        holder.BackgroundProcess();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(attacker.Reply, Is.Null, "протухшая реплика погашена");
+            Assert.That(attacker.ReplyDate, Is.Null);
+            Assert.That(table.Version, Is.GreaterThan(versionBefore), "push для перерисовки бейджа");
         });
     }
 
@@ -96,6 +130,38 @@ public class BeatTests
         {
             Assert.That(table.StopRoundStatus, Is.Null, "все атакующие сказали «Бито» — раунд закрыт");
             Assert.That(table.Game.DiscardCardsCount, Is.EqualTo(2), "отбитая пара ушла в бито");
+        });
+    }
+
+    [Test]
+    public void Beat_ThenThrowIn_ResetsBeatVotes()
+    {
+        var holder = new TableHolder();
+        var table = holder.CreateTable();
+        table.Game = new Game { Deck = new(new SortedDeckCardGenerator([Attacker, Defender, SecondAttacker], Trump)) };
+        holder.Join(table.Id, "s0", "Owner");
+        holder.Join(table.Id, "s1", "Bob");
+        holder.Join(table.Id, "s2", "Cat");
+        table.StartGame();
+
+        var p0 = table.Players.Single(x => x.AuthSecret == "s0").Player;
+        var p1 = table.Players.Single(x => x.AuthSecret == "s1").Player;
+        var p2 = table.Players.Single(x => x.AuthSecret == "s2").Player;
+
+        table.PlayCards("s0", [ServerTestHelper.HandIndex(p0, "8♠")]);
+        table.PlayCards("s1", [ServerTestHelper.HandIndex(p1, "9♠")], 0);
+        Assert.That(table.StopRoundStatus, Is.EqualTo(StopRoundStatus.SuccessDefence));
+
+        table.Beat("s0");
+        Assert.That(table.Players.Single(x => x.AuthSecret == "s0").SaidBeat, Is.True, "голос проставлен");
+
+        table.PlayCards("s2", [ServerTestHelper.HandIndex(p2, "8♣")]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(table.StopRoundBeginDate, Is.Null, "подкид сбросил окно остановки раунда");
+            Assert.That(table.StopRoundStatus, Is.Null);
+            Assert.That(table.Players.Single(x => x.AuthSecret == "s0").SaidBeat, Is.False, "подкид сбросил голоса «Бито»");
         });
     }
 

@@ -119,7 +119,7 @@ public class TableHolder
             }
             else
             {
-                throw new BusinessException("table not found");
+                throw new BusinessException("Стол не найден");
             }
         }
     }
@@ -137,13 +137,13 @@ public class TableHolder
         {
             if (_tables.TryGetValue(tableId, out var table) == false)
             {
-                throw new BusinessException("table not found");
+                throw new BusinessException("Стол не найден");
             }
 
             var caller = table.Players.FirstOrDefault(x => x.AuthSecret == playerSecret)?.Player;
             if (caller == null || table.Owner != caller)
             {
-                throw new BusinessException("only owner can add bot");
+                throw new BusinessException("Добавлять ботов может только владелец стола");
             }
 
             var botSecret = Guid.NewGuid().ToString();
@@ -194,7 +194,7 @@ public class TableHolder
         {
             if (_tables.TryGetValue(tableId, out var table) == false)
             {
-                throw new BusinessException("table not found");
+                throw new BusinessException("Стол не найден");
             }
 
             var caller = table.Players.FirstOrDefault(x => x.AuthSecret == callerSecret)?.Player;
@@ -330,6 +330,42 @@ public class TableHolder
             CheckAfkPlayers();
             CheckBotBeats();
             CheckBots();
+            ClearStaleReplies();
+        }
+    }
+
+    /// <summary>
+    /// Гасит «протухшие» реплики («Бито!») старше <see cref="REPLY_SECONDS" />: обнуляет их и делает
+    /// <see cref="Table.Version" />++, чтобы push-фронт (Blazor) гарантированно перерисовал бейдж и убрал
+    /// баббл. Без этого реплика «залипала» бы в DOM до следующего события стола, ведь
+    /// <see cref="TableViewBuilder" /> отсекает её лишь при перестроении вида (issue F5). Под общим
+    /// <see cref="_sync" />.
+    /// </summary>
+    private void ClearStaleReplies()
+    {
+        var now = DateTime.UtcNow;
+        var ttl = TimeSpan.FromSeconds(REPLY_SECONDS);
+
+        foreach (var table in _tables.Values.ToArray())
+        {
+            var changed = false;
+
+            foreach (var tablePlayer in table.Players)
+            {
+                if (tablePlayer.Reply == null || tablePlayer.ReplyDate is not { } at || now - at < ttl)
+                {
+                    continue;
+                }
+
+                tablePlayer.Reply = null;
+                tablePlayer.ReplyDate = null;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                table.Version++;
+            }
         }
     }
 

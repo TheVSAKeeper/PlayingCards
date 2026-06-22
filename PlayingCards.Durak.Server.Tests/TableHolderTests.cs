@@ -59,7 +59,7 @@ public class TableHolderTests
     public void Join_UnknownTable_Throws()
     {
         var ex = Assert.Throws<BusinessException>(() => _holder.Join(Guid.NewGuid(), "s1", "Alice"));
-        Assert.That(ex!.Message, Is.EqualTo("table not found"));
+        Assert.That(ex!.Message, Is.EqualTo("Стол не найден"));
     }
 
     [Test]

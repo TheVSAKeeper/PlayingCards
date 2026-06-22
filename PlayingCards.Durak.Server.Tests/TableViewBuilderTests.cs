@@ -73,6 +73,33 @@ public class TableViewBuilderTests
     }
 
     [Test]
+    public void BuildTable_FreshReplyShown_StaleHidden()
+    {
+        var opponent = _table.Players[1];
+
+        _me.Reply = "Закрываю";
+        _me.ReplyDate = DateTime.UtcNow;
+        opponent.Reply = "Бито!";
+        opponent.ReplyDate = DateTime.UtcNow;
+
+        var fresh = TableViewBuilder.BuildTable(_table, _me);
+
+        var stale = DateTime.UtcNow.AddSeconds(-(TableHolder.REPLY_SECONDS + 1));
+        _me.ReplyDate = stale;
+        opponent.ReplyDate = stale;
+
+        var staleVm = TableViewBuilder.BuildTable(_table, _me);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fresh.MyReply, Is.EqualTo("Закрываю"), "своя свежая реплика");
+            Assert.That(fresh.Players[0].Reply, Is.EqualTo("Бито!"), "свежая реплика соперника");
+            Assert.That(staleVm.MyReply, Is.Null, "своя протухшая реплика скрыта");
+            Assert.That(staleVm.Players[0].Reply, Is.Null, "протухшая реплика соперника скрыта");
+        });
+    }
+
+    [Test]
     public void BuildLobby_ReturnsTableWithPlayerNames()
     {
         var result = TableViewBuilder.BuildLobby([_table]);

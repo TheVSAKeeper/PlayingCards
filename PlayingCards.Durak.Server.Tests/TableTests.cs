@@ -71,7 +71,7 @@ public class TableTests
         _table.PlayCards(_p0.AuthSecret, [HandIndex(_p0.Player, "A♠")]);
 
         var ex = Assert.Throws<BusinessException>(() => _table.Take(_p0.AuthSecret));
-        Assert.That(ex!.Message, Is.EqualTo("you are not defence player"));
+        Assert.That(ex!.Message, Is.EqualTo("Забирать карты может только защищающийся"));
     }
 
     [Test]
@@ -113,6 +113,6 @@ public class TableTests
         };
 
         var ex = Assert.Throws<BusinessException>(() => table.PlayCards("s0", [0]));
-        Assert.That(ex!.Message, Is.EqualTo("game not in process"));
+        Assert.That(ex!.Message, Is.EqualTo("Игра не в процессе"));
     }
 }
