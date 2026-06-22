@@ -1,4 +1,10 @@
-﻿<div class="play-card @(Active ? "active" : "") @CssClass" @onclick="OnClickInternal">
+﻿<div class="play-card @(Active ? "active" : "") @CssClass"
+     role="@(Interactive ? "button" : null)"
+     tabindex="@(Interactive ? 0 : null)"
+     aria-pressed="@AriaPressed"
+     aria-label="@Label"
+     @onclick="OnClickInternal"
+     @onkeydown="OnKeyDown">
     <div class="card-index card-index-tl @(IsRed ? "red" : "")">
         <span class="card-rank">@RankText</span>
         <span class="card-suit">@SuitText</span>
@@ -16,12 +22,26 @@
     [Parameter] public string? CssClass { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
 
-    private bool IsRed => Card.Suit is 1 or 2;
-    private string SuitText => Card.Suit switch { 0 => "♣", 1 => "♦", 2 => "♥", 3 => "♠", _ => "?" };
-    private string RankText => Card.Rank switch
-    {
-        11 => "J", 12 => "Q", 13 => "K", 14 => "A", _ => Card.Rank.ToString(),
-    };
+    private bool Interactive => OnClick.HasDelegate;
+    private bool IsRed => CardGlyph.IsRed(Card.Suit);
+    private string SuitText => CardGlyph.Suit(Card.Suit);
+    private string RankText => CardGlyph.Rank(Card.Rank);
+    private string Label => $"{RankText} {CardGlyph.SuitName(Card.Suit)}";
+    private string? AriaPressed => Interactive ? (Active ? "true" : "false") : null;
 
-    private async Task OnClickInternal() => await OnClick.InvokeAsync();
+    private async Task OnClickInternal()
+    {
+        if (Interactive)
+        {
+            await OnClick.InvokeAsync();
+        }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (Interactive && e.Key is "Enter" or " " or "Spacebar")
+        {
+            await OnClick.InvokeAsync();
+        }
+    }
 }
