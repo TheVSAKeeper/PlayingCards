@@ -1,33 +1,56 @@
-﻿@implements IDisposable
-@using System.Timers
+﻿@inject IJSRuntime JS
+@implements IAsyncDisposable
 
-<label class="speak-text">@_text</label>
+<label class="speak-text" @ref="_label"></label>
 
 @code {
     [Parameter, EditorRequired] public DateTime EndTime { get; set; }
-    [Parameter, EditorRequired] public Func<int, string> Format { get; set; } = default!;
 
-    private System.Timers.Timer? _timer;
-    private string _text = string.Empty;
+    /// <summary>Вид отсчёта: "afk" | "take" | "beat" — задаёт шаблон и склонение в countdown.js.</summary>
+    [Parameter, EditorRequired] public string Kind { get; set; } = default!;
 
-    protected override void OnInitialized()
+    private ElementReference _label;
+    private IJSObjectReference? _module;
+    private DateTime? _appliedEnd;
+    private string? _appliedKind;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        Tick();
-        _timer = new System.Timers.Timer(1000);
-        _timer.Elapsed += (_, _) => InvokeAsync(() => { Tick(); StateHasChanged(); });
-        _timer.AutoReset = true;
-        _timer.Start();
+        if (_appliedEnd == EndTime && _appliedKind == Kind)
+        {
+            return;
+        }
+
+        _appliedEnd = EndTime;
+        _appliedKind = Kind;
+
+        var endMs = new DateTimeOffset(DateTime.SpecifyKind(EndTime, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
+
+        try
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Game/countdown.js");
+            await _module.InvokeVoidAsync("start", _label, endMs, Kind);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+        }
     }
 
-    private void Tick()
+    public async ValueTask DisposeAsync()
     {
-        var seconds = (int)Math.Round((EndTime - DateTime.UtcNow).TotalSeconds);
-        _text = Format(Math.Max(seconds, 0));
-    }
-
-    public void Dispose()
-    {
-        _timer?.Stop();
-        _timer?.Dispose();
+        if (_module != null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("stop", _label);
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
     }
 }

@@ -31,12 +31,11 @@
         }
         @if (IsDefence && StopRoundEndDate is { } stopEnd && StopRoundStatus is { } srs)
         {
-            <Countdown EndTime="stopEnd"
-                       Format="@(s => srs == 0 ? $"я забираю через {s} {SecAcc(s)}" : $"отбито через {s} {SecAcc(s)}")" />
+            <Countdown EndTime="stopEnd" Kind="@(srs == (int)Server.StopRoundStatus.Take ? "take" : "beat")" />
         }
         @if (AfkEndTime is { } afk)
         {
-            <Countdown EndTime="afk" Format="@(s => $"осталось {s} {SecNom(s)}")" />
+            <Countdown EndTime="afk" Kind="afk" />
         }
     </div>
     <img src="/images/player.png" />
@@ -96,24 +95,4 @@
     [Parameter] public int? StopRoundStatus { get; set; }
 
     [Parameter] public DateTime? StopRoundEndDate { get; set; }
-
-    private static string SecAcc(int n)
-    {
-        var d100 = n % 100;
-        var d10 = n % 10;
-        if (d100 is >= 11 and <= 14) return "секунд";
-        if (d10 == 1) return "секунду";
-        if (d10 is >= 2 and <= 4) return "секунды";
-        return "секунд";
-    }
-
-    private static string SecNom(int n)
-    {
-        var d100 = n % 100;
-        var d10 = n % 10;
-        if (d100 is >= 11 and <= 14) return "секунд";
-        if (d10 == 1) return "секунда";
-        if (d10 is >= 2 and <= 4) return "секунды";
-        return "секунд";
-    }
 }
