@@ -3,7 +3,7 @@
     {
         <label>@p.Name</label>
     }
-    @if (Model.Status != 2 && Model.Players.Length < 6)
+    @if (Model.Status != (int)GameStatus.InProcess && Model.Players.Length < 6)
     {
         <button class="btn btn-info" @onclick="() => OnJoin.InvokeAsync(Model.Id)">Подсесть</button>
     }
