@@ -48,11 +48,11 @@
                         + (dim ? " dimmed" : "")
                         + (IsFresh(fc.AttackCard) ? " pre-fly" : "");
 
-                    <div class="field-card" data-field-index="@idx" @key="(fc.AttackCard!.Rank * 4 + fc.AttackCard.Suit)">
+                    <div class="field-card" data-field-index="@idx" data-card-key="@BoardSnapshot.Key(fc.AttackCard)" @key="(fc.AttackCard!.Rank * 4 + fc.AttackCard.Suit)">
                         <CardView Card="fc.AttackCard!"
                                   CssClass="@attackCss"
-                                  Active="_fieldActive.Contains(idx)"
-                                  OnClick="() => ToggleField(idx)" />
+                                  Active="_fieldActive.Contains(BoardSnapshot.Key(fc.AttackCard))"
+                                  OnClick="() => ToggleField(fc.AttackCard)" />
                         @if (fc.DefenceCard != null)
                         {
                             var defenceCss = "defence-card" + (IsFresh(fc.DefenceCard) ? " pre-fly" : "");
@@ -71,7 +71,7 @@
                     var idx = i;
                     var card = _view.MyCards![idx];
                     var selectable = _handSelectable.Contains(idx);
-                    var selected = _handActive.Contains(idx);
+                    var selected = _handActive.Contains(BoardSnapshot.Key(card));
                     var handCss = (!selectable && !Session.NoHints ? "dimmed" : "")
                         + (IsFresh(card) ? " pre-fly" : "");
 
@@ -83,7 +83,7 @@
                         <CardView Card="card"
                                   CssClass="@handCss"
                                   Active="selected"
-                                  OnClick="() => ToggleHand(idx)" />
+                                  OnClick="() => ToggleHand(card)" />
                     </div>
                 }
             </div>
@@ -140,8 +140,13 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private TableModel? _view;
-    private readonly HashSet<int> _handActive = [];
-    private readonly HashSet<int> _fieldActive = [];
+    /// <summary>
+    /// Выделение хранится ключом карты (<see cref="BoardSnapshot.Key"/>), а не индексом: рука пересортировывается
+    /// сервером при доборе и смене режима сортировки, и индекс начал бы указывать на другую карту.
+    /// В индексы протокола выделение переводится по актуальной руке прямо перед ходом.
+    /// </summary>
+    private readonly HashSet<string> _handActive = [];
+    private readonly HashSet<string> _fieldActive = [];
     private HashSet<int> _handSelectable = [];
     private HashSet<int> _fieldSelectable = [];
     private string? _contextHint;
@@ -296,8 +301,17 @@
         var next = BoardSnapshot.From(view);
 
         _view = view;
-        _handActive.RemoveWhere(i => i >= (_view.MyCards?.Length ?? 0));
-        _fieldActive.RemoveWhere(i => i >= (_view.Cards?.Length ?? 0));
+
+        if (prev != null
+            && (prev.FieldAttacks.Length > 0 && next.FieldAttacks.Length == 0
+                || prev.ActiveIndex != next.ActiveIndex
+                || prev.DefenceIndex != next.DefenceIndex))
+        {
+            ClearSelection();
+        }
+
+        _handActive.IntersectWith(next.MyCards);
+        _fieldActive.RemoveWhere(key => IndexOfOpenAttack(key) < 0);
         UpdateSelectables();
 
         var diff = BoardDiff.Compute(prev, next, _justPlayedByMe);
@@ -313,9 +327,28 @@
     private void UpdateSelectables()
     {
         if (_view == null) return;
-        _handSelectable = PlayLogic.GetPlayableHandIndexes(_view, _handActive, _fieldActive);
-        _fieldSelectable = PlayLogic.GetBeatableFieldIndexes(_view, _handActive);
+        var hand = new HashSet<int>(SelectedHandIndexes());
+        _handSelectable = PlayLogic.GetPlayableHandIndexes(_view, hand, [.. SelectedFieldIndexes()]);
+        _fieldSelectable = PlayLogic.GetBeatableFieldIndexes(_view, hand);
         _contextHint = PlayLogic.GetContextHint(_view);
+    }
+
+    private int IndexOfHandCard(string key) =>
+        Array.FindIndex(_view?.MyCards ?? [], c => BoardSnapshot.Key(c) == key);
+
+    private int IndexOfOpenAttack(string key) =>
+        Array.FindIndex(_view?.Cards ?? [], c => c.DefenceCard == null && BoardSnapshot.Key(c.AttackCard) == key);
+
+    private int[] SelectedHandIndexes() =>
+        [.. _handActive.Select(IndexOfHandCard).Where(i => i >= 0).Order()];
+
+    private int[] SelectedFieldIndexes() =>
+        [.. _fieldActive.Select(IndexOfOpenAttack).Where(i => i >= 0).Order()];
+
+    private void ClearSelection()
+    {
+        _handActive.Clear();
+        _fieldActive.Clear();
     }
 
     private bool CanStart => _view!.Status != (int)GameStatus.InProcess
@@ -330,23 +363,28 @@
         && _view.MyPlayerIndex == _view.DefencePlayerIndex
         && _view.Cards.Any(c => c.DefenceCard == null);
 
-    private bool CanPlay => PlayLogic.CanPlayCards(_view!, [.. _handActive], [.. _fieldActive]);
+    private bool CanPlay => PlayLogic.CanPlayCards(_view!, SelectedHandIndexes(), SelectedFieldIndexes());
 
-    private void ToggleHand(int i)
+    private void ToggleHand(CardModel card)
     {
+        var key = BoardSnapshot.Key(card);
+        var i = IndexOfHandCard(key);
+        if (i < 0) return;
         if (_view!.Status == (int)GameStatus.InProcess && !_handSelectable.Contains(i)) return;
 
-        if (!_handActive.Add(i)) _handActive.Remove(i);
+        if (!_handActive.Add(key)) _handActive.Remove(key);
         UpdateSelectables();
     }
 
-    private void ToggleField(int i)
+    private void ToggleField(CardModel? attackCard)
     {
-        if (_view!.Cards![i].DefenceCard != null) return;
-        if (_view.DefencePlayerIndex != _view.MyPlayerIndex) return;
+        var key = BoardSnapshot.Key(attackCard);
+        var i = IndexOfOpenAttack(key);
+        if (i < 0) return;
+        if (_view!.DefencePlayerIndex != _view.MyPlayerIndex) return;
         if (_view.Status == (int)GameStatus.InProcess && !_fieldSelectable.Contains(i)) return;
 
-        if (!_fieldActive.Add(i)) _fieldActive.Remove(i);
+        if (!_fieldActive.Add(key)) _fieldActive.Remove(key);
         UpdateSelectables();
     }
 
@@ -362,13 +400,14 @@
 
     private async Task Play()
     {
-        var hand = _handActive.OrderBy(x => x).ToArray();
-        var field = _fieldActive.OrderBy(x => x).ToArray();
+        Rebuild();
+
+        var hand = SelectedHandIndexes();
+        var field = SelectedFieldIndexes();
         int? attackIndex = field.Length > 0 ? field[0] : null;
 
         await Guard(() => Table.PlayCards(Me.AuthSecret, hand, attackIndex));
-        _handActive.Clear();
-        _fieldActive.Clear();
+        ClearSelection();
         UpdateSelectables();
     }
 
@@ -392,16 +431,17 @@
     }
 
     /// <summary>
-    /// Зоны сброса для карты руки <paramref name="handIndex"/>: поле (атака/подкид)
+    /// Зоны сброса для карты руки с ключом <paramref name="cardKey"/>: поле (атака/подкид)
     /// и/или индексы неотбитых атакующих карт, которые эта карта побьёт (отбой).
     /// Вызывается из GameTable.razor.js в момент захвата — один раз за перетаскивание.
     /// </summary>
     [JSInvokable]
-    public DropTargets GetDropTargets(int handIndex)
+    public DropTargets GetDropTargets(string cardKey)
     {
+        var handIndex = IndexOfHandCard(cardKey);
+
         if (_view?.MyCards == null
             || handIndex < 0
-            || handIndex >= _view.MyCards.Length
             || !_handSelectable.Contains(handIndex))
         {
             return new DropTargets(false, []);
@@ -427,14 +467,20 @@
     }
 
     /// <summary>
-    /// Карту из руки бросили на зону: -1 — поле (атака/подкид), иначе индекс атакующей
-    /// карты (отбой). Возвращает true при успешном ходе — JS играет снап и искры; при
+    /// Карту руки <paramref name="cardKey"/> бросили на зону: <c>null</c> — поле (атака/подкид), иначе
+    /// ключ атакующей карты (отбой). Индексы ищутся по актуальной руке и полю: push во время
+    /// перетаскивания мог их сдвинуть. Возвращает true при успешном ходе — JS играет снап и искры; при
     /// false — упругий возврат карты в руку.
     /// </summary>
     [JSInvokable]
-    public async Task<bool> OnCardDropped(int handIndex, int fieldIndex)
+    public async Task<bool> OnCardDropped(string cardKey, string? attackKey)
     {
-        if (_view == null)
+        Rebuild();
+
+        var handIndex = IndexOfHandCard(cardKey);
+        var fieldIndex = attackKey != null ? IndexOfOpenAttack(attackKey) : -1;
+
+        if (_view == null || handIndex < 0 || attackKey != null && fieldIndex < 0)
         {
             return false;
         }
@@ -461,8 +507,7 @@
             return false;
         }
 
-        _handActive.Clear();
-        _fieldActive.Clear();
+        ClearSelection();
         UpdateSelectables();
         await OnChanged.InvokeAsync();
         return true;
@@ -472,6 +517,8 @@
 
     private async Task Take()
     {
+        ClearSelection();
+        UpdateSelectables();
         await Guard(() => Table.Take(Me.AuthSecret));
     }
 

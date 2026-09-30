@@ -39,6 +39,13 @@ public static class PlayLogic
     public static bool CanPlayCards(TableModel table, int[] handIndexes, int[] fieldIndexes)
     {
         var tableCardsCount = table.Cards?.Length ?? 0;
+        var handCount = table.MyCards?.Length ?? 0;
+
+        if (handIndexes.Any(i => i < 0 || i >= handCount)
+            || fieldIndexes.Any(i => i < 0 || i >= tableCardsCount || table.Cards![i].AttackCard == null))
+        {
+            return false;
+        }
 
         var isStartAttacking = handIndexes.Length > 0
             && table.ActivePlayerIndex == table.MyPlayerIndex

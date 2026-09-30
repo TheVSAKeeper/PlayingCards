@@ -107,6 +107,29 @@ public class PlayLogicTests
         return PlayLogic.CanPlayCards(table, [0], [0]);
     }
 
+    [TestCase(0, 1, -1)]
+    [TestCase(0, -1, -1)]
+    [TestCase(1, 1, 0)]
+    [TestCase(1, 0, 1)]
+    [TestCase(1, 0, -2)]
+    public void CanPlayCards_IndexOutOfRange_False(int myIndex, int handIndex, int fieldIndex)
+    {
+        var table = new TableModel
+        {
+            Players = [],
+            MyPlayerIndex = myIndex,
+            ActivePlayerIndex = 0,
+            DefencePlayerIndex = 1,
+            Cards = [new TableCardModel { AttackCard = Card(7, 0) }],
+            MyCards = [Card(14, 0)],
+            Trump = Card(6, 1),
+        };
+
+        int[] field = fieldIndex == -1 ? [] : [fieldIndex];
+
+        Assert.That(PlayLogic.CanPlayCards(table, [handIndex], field), Is.False);
+    }
+
     [Test]
     public void CanPlayCards_NothingSelected_False()
     {

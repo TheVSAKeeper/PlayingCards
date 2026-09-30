@@ -4,6 +4,7 @@
     position: relative;
     z-index: 0;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto 1fr auto;
     gap: 1rem;
     min-height: min(70vh, 620px);
@@ -336,5 +337,24 @@
 
     .opponents {
         min-height: 6rem;
+    }
+
+    .hand {
+        gap: 0;
+    }
+
+    .hand-slot {
+        flex: 0 1 4.4rem;
+        min-width: 1.15rem;
+    }
+
+    .hand-slot:last-child {
+        flex-shrink: 0;
+    }
+
+    .hand-slot ::deep .play-card.dimmed,
+    .hand-slot ::deep .play-card.dimmed:hover {
+        opacity: 1;
+        filter: grayscale(0.4) brightness(0.62);
     }
 }

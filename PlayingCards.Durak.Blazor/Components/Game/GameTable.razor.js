@@ -84,7 +84,7 @@ function onPointerDown(e) {
     drag = {
         pointerId: e.pointerId,
         card,
-        handIndex: parseInt(slot.dataset.handIndex, 10),
+        cardKey: slot.dataset.cardKey,
         startX: e.clientX,
         startY: e.clientY,
         px: e.clientX,
@@ -154,15 +154,13 @@ async function onPointerUp(e) {
     suppressNextClick();
 
     const zone = drag.hoverZone;
-    const fieldIndex = zone
-        ? (drag.mode === 'defence' ? parseInt(zone.dataset.fieldIndex, 10) : -1)
-        : null;
+    const attackKey = drag.mode === 'defence' && zone ? zone.dataset.cardKey : null;
 
-    if (zone && fieldIndex !== null) {
+    if (zone) {
         let ok = false;
 
         try {
-            ok = await dnet.invokeMethodAsync('OnCardDropped', drag.handIndex, fieldIndex);
+            ok = await dnet.invokeMethodAsync('OnCardDropped', drag.cardKey, attackKey);
         } catch {
             ok = false;
         }
@@ -204,7 +202,7 @@ function startDragging() {
     drag.lastT = 0;
     drag.raf = requestAnimationFrame(tick);
 
-    dnet.invokeMethodAsync('GetDropTargets', drag.handIndex).then(t => {
+    dnet.invokeMethodAsync('GetDropTargets', drag.cardKey).then(t => {
         if (!drag) {
             return;
         }
