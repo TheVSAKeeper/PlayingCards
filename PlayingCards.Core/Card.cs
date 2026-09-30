@@ -1,4 +1,4 @@
-﻿namespace PlayingCards.Durak;
+﻿namespace PlayingCards.Core;
 
 /// <summary>
 /// Игральная карта.

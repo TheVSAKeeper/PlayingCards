@@ -1,3 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <ItemGroup>
+    <ProjectReference Include="..\PlayingCards.Core\PlayingCards.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="PlayingCards.Core" />
+  </ItemGroup>
+
 </Project>

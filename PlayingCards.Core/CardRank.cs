@@ -1,12 +1,12 @@
-﻿namespace PlayingCards.Durak;
+﻿namespace PlayingCards.Core;
 
 /// <summary>
-/// Масть.
+/// Старшинство карты.
 /// </summary>
-public class CardSuit : IEquatable<CardSuit>
+public class CardRank : IEquatable<CardRank>
 {
     /// <summary>
-    /// Масть.
+    /// Старшинство карты
     /// </summary>
     /// <param name="value">
     ///     <see cref="Value" />
@@ -14,47 +14,45 @@ public class CardSuit : IEquatable<CardSuit>
     /// <param name="name">
     ///     <see cref="Name" />
     /// </param>
-    /// <param name="iconChar">
-    ///     <see cref="IconChar" />
-    /// </param>
-    public CardSuit(int value, string name, char iconChar)
+    public CardRank(int value, string name)
     {
         Value = value;
         Name = name;
-        IconChar = iconChar;
+        ShortName = name == "10" ? "10" : name[..1];
     }
 
     /// <summary>
-    /// Значение.
+    /// Значение старшинства.
     /// </summary>
-    /// <remarks>Например, 0 - черви, 1 - пики.</remarks>
+    /// <remarks>
+    /// Как правило, чем больше, тем мощнее.
+    /// </remarks>
     public int Value { get; }
 
     /// <summary>
     /// Наименование.
     /// </summary>
     /// <remarks>
-    /// Например: Черви, Буби.
+    /// Например, дама/queen, 9/девятка.
     /// </remarks>
     public string Name { get; }
 
     /// <summary>
-    /// Сокращённое наименование.
+    /// Короткое наименование.
     /// </summary>
-    /// <remarks>♥/♦/♣/♠</remarks>
-    public char IconChar { get; }
+    public string ShortName { get; }
 
     public override string ToString()
     {
-        return IconChar.ToString();
+        return Name;
     }
 
-    public static implicit operator int(CardSuit suit)
+    public static implicit operator int(CardRank rank)
     {
-        return suit.Value;
+        return rank.Value;
     }
 
-    public bool Equals(CardSuit? other)
+    public bool Equals(CardRank? other)
     {
         if (ReferenceEquals(null, other))
         {
@@ -86,7 +84,7 @@ public class CardSuit : IEquatable<CardSuit>
             return false;
         }
 
-        return Equals((CardSuit)obj);
+        return Equals((CardRank)obj);
     }
 
     public override int GetHashCode()
@@ -94,12 +92,12 @@ public class CardSuit : IEquatable<CardSuit>
         return Value;
     }
 
-    public static bool operator ==(CardSuit? left, CardSuit? right)
+    public static bool operator ==(CardRank? left, CardRank? right)
     {
         return Equals(left, right);
     }
 
-    public static bool operator !=(CardSuit? left, CardSuit? right)
+    public static bool operator !=(CardRank? left, CardRank? right)
     {
         return !Equals(left, right);
     }

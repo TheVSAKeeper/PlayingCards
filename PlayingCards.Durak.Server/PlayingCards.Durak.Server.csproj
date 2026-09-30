@@ -15,4 +15,8 @@
     <EmbeddedResource Include="names.txt" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Using Include="PlayingCards.Core" />
+  </ItemGroup>
+
 </Project>

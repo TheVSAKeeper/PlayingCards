@@ -118,8 +118,14 @@
         "resolved": "1.6.0",
         "contentHash": "COC1aiAJjCoA5GBF+QKL2uLqEBew4JsCkQmoHKbN3TlOZKa2fKLz5CpiRQKDz0RsAOEGsVKqOD5bomsXq/4STQ=="
       },
-      "playingcards.durak": {
+      "playingcards.core": {
         "type": "Project"
+      },
+      "playingcards.durak": {
+        "type": "Project",
+        "dependencies": {
+          "PlayingCards.Core": "[1.0.0, )"
+        }
       },
       "playingcards.durak.server": {
         "type": "Project",

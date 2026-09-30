@@ -80,8 +80,14 @@
         "resolved": "8.0.0",
         "contentHash": "c9xLpVz6PL9lp/djOWtk5KPDZq3cSYpmXoJQY524EOtuFl5z9ZtsotpsyrDW40U1DRnQSYvcPKEUV0X//u6gkQ=="
       },
-      "playingcards.durak": {
+      "playingcards.core": {
         "type": "Project"
+      },
+      "playingcards.durak": {
+        "type": "Project",
+        "dependencies": {
+          "PlayingCards.Core": "[1.0.0, )"
+        }
       }
     }
   }
