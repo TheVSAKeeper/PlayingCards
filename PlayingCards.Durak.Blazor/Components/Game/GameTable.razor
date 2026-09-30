@@ -41,8 +41,9 @@
                     var idx = i;
                     var fc = _view.Cards![idx];
                     var covered = fc.DefenceCard != null;
+                    var fieldSelected = _fieldActive.Contains(BoardSnapshot.Key(fc.AttackCard));
                     var clickable = amDefender && !covered;
-                    var dim = !Session.NoHints && clickable && !_fieldSelectable.Contains(idx);
+                    var dim = !Session.NoHints && clickable && !fieldSelected && !_fieldSelectable.Contains(idx);
                     var attackCss = "attack-card"
                         + (clickable ? "" : " static")
                         + (dim ? " dimmed" : "")
@@ -51,7 +52,7 @@
                     <div class="field-card" data-field-index="@idx" data-card-key="@BoardSnapshot.Key(fc.AttackCard)" @key="(fc.AttackCard!.Rank * 4 + fc.AttackCard.Suit)">
                         <CardView Card="fc.AttackCard!"
                                   CssClass="@attackCss"
-                                  Active="_fieldActive.Contains(BoardSnapshot.Key(fc.AttackCard))"
+                                  Active="fieldSelected"
                                   OnClick="() => ToggleField(fc.AttackCard)" />
                         @if (fc.DefenceCard != null)
                         {
@@ -72,7 +73,7 @@
                     var card = _view.MyCards![idx];
                     var selectable = _handSelectable.Contains(idx);
                     var selected = _handActive.Contains(BoardSnapshot.Key(card));
-                    var handCss = (!selectable && !Session.NoHints ? "dimmed" : "")
+                    var handCss = (!selectable && !selected && !Session.NoHints ? "dimmed" : "")
                         + (IsFresh(card) ? " pre-fly" : "");
 
                     <div class="hand-slot"
@@ -370,9 +371,13 @@
         var key = BoardSnapshot.Key(card);
         var i = IndexOfHandCard(key);
         if (i < 0) return;
-        if (_view!.Status == (int)GameStatus.InProcess && !_handSelectable.Contains(i)) return;
 
-        if (!_handActive.Add(key)) _handActive.Remove(key);
+        if (!_handActive.Remove(key))
+        {
+            if (_view!.Status == (int)GameStatus.InProcess && !_handSelectable.Contains(i)) return;
+            _handActive.Add(key);
+        }
+
         UpdateSelectables();
     }
 
@@ -381,10 +386,14 @@
         var key = BoardSnapshot.Key(attackCard);
         var i = IndexOfOpenAttack(key);
         if (i < 0) return;
-        if (_view!.DefencePlayerIndex != _view.MyPlayerIndex) return;
-        if (_view.Status == (int)GameStatus.InProcess && !_fieldSelectable.Contains(i)) return;
 
-        if (!_fieldActive.Add(key)) _fieldActive.Remove(key);
+        if (!_fieldActive.Remove(key))
+        {
+            if (_view!.DefencePlayerIndex != _view.MyPlayerIndex) return;
+            if (_view.Status == (int)GameStatus.InProcess && !_fieldSelectable.Contains(i)) return;
+            _fieldActive.Add(key);
+        }
+
         UpdateSelectables();
     }
 
@@ -406,6 +415,7 @@
         var field = SelectedFieldIndexes();
         int? attackIndex = field.Length > 0 ? field[0] : null;
 
+        MarkPlayedByMe(hand);
         await Guard(() => Table.PlayCards(Me.AuthSecret, hand, attackIndex));
         ClearSelection();
         UpdateSelectables();
