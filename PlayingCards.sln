@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PlayingCards.Durak.Server.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlayingCards.Core", "PlayingCards.Core\PlayingCards.Core.csproj", "{3BAD944A-C784-4E7B-98B0-B9711B4AED64}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlayingCards.Server.Core", "PlayingCards.Server.Core\PlayingCards.Server.Core.csproj", "{29884326-6BB8-4316-BDF1-15998065EDD8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -117,6 +119,18 @@ Global
 		{3BAD944A-C784-4E7B-98B0-B9711B4AED64}.Release|x64.Build.0 = Release|Any CPU
 		{3BAD944A-C784-4E7B-98B0-B9711B4AED64}.Release|x86.ActiveCfg = Release|Any CPU
 		{3BAD944A-C784-4E7B-98B0-B9711B4AED64}.Release|x86.Build.0 = Release|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Debug|x64.Build.0 = Debug|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Debug|x86.Build.0 = Debug|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Release|x64.ActiveCfg = Release|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Release|x64.Build.0 = Release|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Release|x86.ActiveCfg = Release|Any CPU
+		{29884326-6BB8-4316-BDF1-15998065EDD8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

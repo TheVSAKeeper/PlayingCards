@@ -7,22 +7,12 @@ namespace PlayingCards.Durak.Server;
 /// <summary>
 /// Игровой стол.
 /// </summary>
-public class Table
+public class Table : TableBase<TablePlayer>
 {
-    /// <summary>
-    /// Идентификатор.
-    /// </summary>
-    public Guid Id { get; set; }
-
     /// <summary>
     /// Игра.
     /// </summary>
     public Game Game { get; set; } = null!;
-
-    /// <summary>
-    /// Секреты игроков, чтоб понять, кто есть кто.
-    /// </summary>
-    public List<TablePlayer> Players { get; set; } = null!;
 
     /// <summary>
     /// Хозяин стола.
@@ -48,38 +38,6 @@ public class Table
     /// Индекс игрока, покинувшего игру.
     /// </summary>
     public int? LeavePlayerIndex { get; set; }
-
-    private int _version;
-
-    /// <summary>
-    /// Номер версии данных, на любой чих мы его повышаем.
-    /// </summary>
-    public int Version
-    {
-        get => _version;
-        set
-        {
-            _version = value;
-            Changed?.Invoke();
-        }
-    }
-
-    /// <summary>
-    /// Событие любого изменения стола (для push в UI).
-    /// </summary>
-    public event Action? Changed;
-
-    /// <summary>
-    /// Порядковый номер стола.
-    /// </summary>
-    public int Number { get; set; }
-
-    /// <summary>
-    /// Лочит все мутации этого стола: клиентские вызовы (PlayCards/Take/Beat/...) и фоновый тик
-    /// (<see cref="TableHolder" />) конкурируют за один и тот же <see cref="Game" />/<see cref="Players" />
-    /// без синхронизации иначе. Порядок захвата всегда TableHolder._sync снаружи → SyncRoot внутри.
-    /// </summary>
-    internal readonly object SyncRoot = new();
 
     public void SetActivePlayerAfkStartTime()
     {

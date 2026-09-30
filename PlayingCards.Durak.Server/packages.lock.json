@@ -88,6 +88,9 @@
         "dependencies": {
           "PlayingCards.Core": "[1.0.0, )"
         }
+      },
+      "playingcards.server.core": {
+        "type": "Project"
       }
     }
   }

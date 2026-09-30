@@ -36,8 +36,12 @@
         "type": "Project",
         "dependencies": {
           "NLog": "[5.3.2, )",
-          "PlayingCards.Durak": "[1.0.0, )"
+          "PlayingCards.Durak": "[1.0.0, )",
+          "PlayingCards.Server.Core": "[1.0.0, )"
         }
+      },
+      "playingcards.server.core": {
+        "type": "Project"
       },
       "NLog.Extensions.Logging": {
         "type": "CentralTransitive",

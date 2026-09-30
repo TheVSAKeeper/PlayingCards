@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PlayingCards.Durak\PlayingCards.Durak.csproj" />
+    <ProjectReference Include="..\PlayingCards.Server.Core\PlayingCards.Server.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +18,7 @@
 
   <ItemGroup>
     <Using Include="PlayingCards.Core" />
+    <Using Include="PlayingCards.Server.Core" />
   </ItemGroup>
 
 </Project>
