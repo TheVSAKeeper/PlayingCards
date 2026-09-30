@@ -73,6 +73,63 @@ public class TableHolderTests
         Assert.That(ex!.Message, Is.EqualTo("Вы уже сидите за столиком"));
     }
 
+    [TestCase(" ", "Введите имя")]
+    [TestCase("Абвгдеёжзийклмнопрстуфхц1", "Имя длиннее 24 символов. Выйдите и войдите под именем покороче")]
+    public void Join_InvalidName_Throws(string name, string expected)
+    {
+        var table = _holder.CreateTable();
+
+        var ex = Assert.Throws<BusinessException>(() => _holder.Join(table.Id, "s1", name));
+        Assert.Multiple(() =>
+        {
+            Assert.That(ex!.Message, Is.EqualTo(expected));
+            Assert.That(table.Players, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Join_NameOfMaxLength_Joins()
+    {
+        var table = _holder.CreateTable();
+        var name = new string('Я', TableHolder.MAX_PLAYER_NAME_LENGTH);
+
+        _holder.Join(table.Id, "s1", name);
+
+        Assert.That(table.Owner.Name, Is.EqualTo(name));
+    }
+
+    [Test]
+    public void CreateTableForPlayer_SeatsCreatorAsOwner()
+    {
+        var table = _holder.CreateTable("s1", "Alice");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(table.Owner.Name, Is.EqualTo("Alice"));
+            Assert.That(_holder.GetBySecret("s1", out _), Is.SameAs(table));
+            Assert.That(_holder.GetTables(), Has.Length.EqualTo(1));
+        });
+    }
+
+    [TestCase("s1", "Alice", "Вы уже сидите за столиком")]
+    [TestCase("", "Bob", "Авторизуйтесь")]
+    [TestCase("s2", "", "Введите имя")]
+    [TestCase("s2", "Абвгдеёжзийклмнопрстуфхц1", "Имя длиннее 24 символов. Выйдите и войдите под именем покороче")]
+    public void CreateTableForPlayer_JoinFails_LeavesNoEmptyTable(string secret, string name, string expected)
+    {
+        var seated = _holder.CreateTable("s1", "Alice");
+        var numberBefore = _holder.TableNumber;
+
+        var ex = Assert.Throws<BusinessException>(() => _holder.CreateTable(secret, name));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ex!.Message, Is.EqualTo(expected));
+            Assert.That(_holder.GetTables(), Is.EqualTo(new[] { seated }));
+            Assert.That(_holder.TableNumber, Is.EqualTo(numberBefore));
+        });
+    }
+
     [Test]
     public void Leave_LastPlayer_RemovesTable()
     {

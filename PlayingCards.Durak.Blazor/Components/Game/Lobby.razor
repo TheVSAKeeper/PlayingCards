@@ -2,7 +2,7 @@
 @implements IDisposable
 
 <div class="table-main">
-    <button class="btn btn-success" @onclick="CreateTable">Создать стол</button>
+    <button class="btn btn-success" @onclick="CreateTable" disabled="@_busy">Создать стол</button>
 
     @if (_error != null || ExternalError != null)
     {
@@ -12,7 +12,7 @@
     <div class="tables">
         @foreach (var t in _tables)
         {
-            <TableCard Model="t" OnJoin="Join" />
+            <TableCard Model="t" OnJoin="Join" Busy="_busy" />
         }
     </div>
 </div>
@@ -26,6 +26,7 @@
 
     private TableModel[] _tables = [];
     private string? _error;
+    private bool _busy;
 
     protected override void OnParametersSet() => ReloadTables();
 
@@ -45,32 +46,32 @@
 
     private void ReloadTables() => _tables = TableViewBuilder.BuildLobby(TableHolder.GetTables());
 
-    private async Task CreateTable()
-    {
-        try
-        {
-            var table = TableHolder.CreateTable();
-            TableHolder.Join(table.Id, PlayerSecret, PlayerName);
-            _error = null;
-            await OnChanged.InvokeAsync();
-        }
-        catch (BusinessException ex)
-        {
-            _error = ex.Message;
-        }
-    }
+    private Task CreateTable() => RunExclusive(() => TableHolder.CreateTable(PlayerSecret, PlayerName));
 
-    private async Task Join(Guid tableId)
+    private Task Join(Guid tableId) => RunExclusive(() => TableHolder.Join(tableId, PlayerSecret, PlayerName));
+
+    private async Task RunExclusive(Action action)
     {
+        if (_busy)
+        {
+            return;
+        }
+
+        _busy = true;
+
         try
         {
-            TableHolder.Join(tableId, PlayerSecret, PlayerName);
+            action();
             _error = null;
             await OnChanged.InvokeAsync();
         }
         catch (BusinessException ex)
         {
             _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
         }
     }
 

@@ -1,11 +1,11 @@
 ﻿<div class="table">
     @foreach (var p in Model.Players)
     {
-        <label>@p.Name</label>
+        <label title="@p.Name">@p.Name</label>
     }
     @if (Model.Status != (int)GameStatus.InProcess && Model.Players.Length < 6)
     {
-        <button class="btn btn-info" @onclick="() => OnJoin.InvokeAsync(Model.Id)">Подсесть</button>
+        <button class="btn btn-info" @onclick="() => OnJoin.InvokeAsync(Model.Id)" disabled="@Busy">Подсесть</button>
     }
     <InvitePopup Table="Model.Id" />
 </div>
@@ -13,4 +13,5 @@
 @code {
     [Parameter, EditorRequired] public TableModel Model { get; set; } = default!;
     [Parameter] public EventCallback<Guid> OnJoin { get; set; }
+    [Parameter] public bool Busy { get; set; }
 }

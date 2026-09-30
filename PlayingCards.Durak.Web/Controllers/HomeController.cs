@@ -16,10 +16,7 @@ public class HomeController(TableHolder tableHolder) : Controller
     [HttpPost]
     public Guid CreateTable([FromBody] CreateTableModel model)
     {
-        var table = tableHolder.CreateTable();
-        tableHolder.Join(table.Id, model.PlayerSecret, model.PlayerName);
-
-        return table.Id;
+        return tableHolder.CreateTable(model.PlayerSecret, model.PlayerName).Id;
     }
 
     [HttpPost]

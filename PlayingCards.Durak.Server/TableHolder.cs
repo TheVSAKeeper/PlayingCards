@@ -25,6 +25,11 @@ public class TableHolder : TableHolderBase<Table, TablePlayer>
     public const int AFK_SECONDS = 60;
 
     /// <summary>
+    /// Предельная длина имени игрока: длиннее не помещается в карточку стола и бейдж.
+    /// </summary>
+    public const int MAX_PLAYER_NAME_LENGTH = 24;
+
+    /// <summary>
     /// Счётчик для имён болванчиков («Бот N»).
     /// </summary>
     private int _botNumber = 1;
@@ -57,11 +62,49 @@ public class TableHolder : TableHolderBase<Table, TablePlayer>
         }
     }
 
+    /// <summary>
+    /// Создать стол и сразу посадить за него создателя. Если сесть не удалось, стол не остаётся пустым в лобби.
+    /// </summary>
+    /// <param name="playerSecret">Секрет создателя.</param>
+    /// <param name="playerName">Имя создателя.</param>
+    /// <exception cref="BusinessException">Не авторизован / уже сидит за столом / недопустимое имя.</exception>
+    public Table CreateTable(string playerSecret, string playerName)
+    {
+        lock (Sync)
+        {
+            var table = CreateTable();
+
+            try
+            {
+                Join(table.Id, playerSecret, playerName);
+            }
+            catch
+            {
+                Tables.Remove(table.Id);
+                TableNumber--;
+                TablesVersion++;
+                throw;
+            }
+
+            return table;
+        }
+    }
+
     public void Join(Guid tableId, string playerSecret, string playerName)
     {
         if (string.IsNullOrEmpty(playerSecret))
         {
             throw new BusinessException("Авторизуйтесь");
+        }
+
+        if (string.IsNullOrWhiteSpace(playerName))
+        {
+            throw new BusinessException("Введите имя");
+        }
+
+        if (playerName.Length > MAX_PLAYER_NAME_LENGTH)
+        {
+            throw new BusinessException($"Имя длиннее {MAX_PLAYER_NAME_LENGTH} символов. Выйдите и войдите под именем покороче");
         }
 
         lock (Sync)
