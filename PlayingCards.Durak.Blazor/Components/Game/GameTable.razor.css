@@ -360,11 +360,13 @@
         height: 5.1rem;
     }
 
-    .hand-slot ::deep .card-index-tl {
+    .hand-slot ::deep .card-index-tl,
+    .hand-float ::deep .card-index-tl {
         left: 0.16rem;
     }
 
-    .hand-slot ::deep .card-rank {
+    .hand-slot ::deep .card-rank,
+    .hand-float ::deep .card-rank {
         font-size: 0.9rem;
         letter-spacing: -0.1em;
     }

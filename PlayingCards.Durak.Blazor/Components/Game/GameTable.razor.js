@@ -6,9 +6,13 @@ const THRESHOLD = 6;
 
 let animToken = 0;
 let animLayer = null;
+let playToken = 0;
+let playLayer = null;
+let droppedKeys = new Set();
 const ANIM_MAX_CLONES = 14;
 
 let handRects = new Map();
+let handCenters = new Map();
 let freshSlots = [];
 let dealDur = 0;
 let handObserver = null;
@@ -32,6 +36,7 @@ export function init(rootEl, dotNetRef) {
     root = rootEl;
     dnet = dotNetRef;
     root.addEventListener('pointerdown', onPointerDown);
+    root.addEventListener('keydown', measureHand, true);
 
     // MutationObserver ловит любую вставку карты (рука/поле) синхронно, микротаском сразу после
     // DOM-патча Blazor, до пейнта. afterRender() же приходит только после RTT сервер-клиент
@@ -49,6 +54,7 @@ function onBoardMutated() {
 export function dispose() {
     if (root) {
         root.removeEventListener('pointerdown', onPointerDown);
+        root.removeEventListener('keydown', measureHand, true);
     }
 
     if (handObserver) {
@@ -59,7 +65,10 @@ export function dispose() {
     detachWindow();
     cleanup();
     clearAnim();
+    clearPlayAnim();
     handRects = new Map();
+    handCenters = new Map();
+    droppedKeys = new Set();
     freshSlots = [];
     armedPreFly = new WeakSet();
     root = null;
@@ -70,6 +79,8 @@ function onPointerDown(e) {
     if (e.pointerType === 'mouse' && e.button !== 0) {
         return;
     }
+
+    measureHand();
 
     const slot = e.target.closest('.hand-slot[data-playable="true"]');
     if (!slot || drag) {
@@ -166,6 +177,7 @@ async function onPointerUp(e) {
         }
 
         if (ok) {
+            droppedKeys.add(drag.cardKey);
             await snapToZone(zone);
             cleanup();
             return;
@@ -182,6 +194,7 @@ function startDragging() {
     const a = drag.card.cloneNode(true);
     a.classList.add('card-drag-avatar');
     a.classList.remove('active', 'dimmed');
+    adoptHandStyles(a);
 
     const r = drag.originRect;
     a.style.position = 'fixed';
@@ -428,6 +441,75 @@ function clamp(v, lo, hi) {
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
+// Клон карты руки живёт в body, вне .hand-slot, и теряет мобильные правила руки из scoped
+// GameTable.razor.css. Атрибут скоупа GameTable + класс hand-float возвращают их (см. .hand-float).
+function adoptHandStyles(clone) {
+    const scope = root ? Array.from(root.attributes).find(a => a.name.startsWith('b-')) : null;
+
+    if (scope) {
+        clone.setAttribute(scope.name, '');
+    }
+
+    clone.classList.add('hand-float');
+}
+
+function measureHand() {
+    if (!root) {
+        return;
+    }
+
+    const next = new Map();
+
+    for (const slot of root.querySelectorAll('.hand-slot[data-card-key]')) {
+        const r = (slot.querySelector('.play-card') || slot).getBoundingClientRect();
+        next.set(slot.dataset.cardKey, {
+            x: r.left + r.width / 2 + window.scrollX,
+            y: r.top + r.height / 2 + window.scrollY,
+            w: r.width,
+        });
+    }
+
+    handCenters = next;
+}
+
+function flyPlayedFromHand(handKeys) {
+    if (prefersReducedMotion()) {
+        return;
+    }
+
+    let layer = null;
+    let k = 0;
+    const token = playToken;
+    const alive = () => token === playToken;
+
+    for (const [key, at] of handCenters) {
+        if (handKeys.has(key) || droppedKeys.has(key) || (drag && drag.cardKey === key)) {
+            continue;
+        }
+
+        const attack = root.querySelector(`.field-card[data-card-key="${key}"] .attack-card`);
+        const target = attack || root.querySelector(`.field-card[data-defence-key="${key}"] .defence-card`);
+
+        if (!target) {
+            continue;
+        }
+
+        layer = layer || ensurePlayLayer();
+        const from = { x: at.x - window.scrollX, y: at.y - window.scrollY, w: at.w };
+
+        flyCardOnto(layer, alive, target, from, k * 70, attack ? 0 : 7, () => {
+            if (!target.isConnected) {
+                return;
+            }
+
+            const r = target.getBoundingClientRect();
+            sparkle(r.left + r.width / 2, r.top + r.height / 2);
+        });
+
+        k++;
+    }
+}
+
 export function afterRender(diff) {
     if (!root) {
         return;
@@ -472,14 +554,23 @@ function syncHand() {
         }
     }
 
+    flyPlayedFromHand(next);
+
+    for (const key of droppedKeys) {
+        if (!next.has(key)) {
+            droppedKeys.delete(key);
+        }
+    }
+
+    measureHand();
     handRects = next;
     freshSlots = prevEmpty ? [] : fresh;
 }
 
 // Единая точка страховки для ЛЮБОЙ карты, помеченной сервером классом pre-fly (рука/поле,
-// visibility:hidden в CardView.razor.css) — чтобы не мелькнуть в финальной позиции до прилёта
+// visibility:hidden в CardView.razor.css) – чтобы не мелькнуть в финальной позиции до прилёта
 // клона (flyCardOnto → land() снимает класс раньше срока). Если анимация не случилась (budget
-// ANIM_MAX_CLONES исчерпан, обрыв связи, reduced-motion) — снимаем сами по таймауту, иначе
+// ANIM_MAX_CLONES исчерпан, обрыв связи, reduced-motion) – снимаем сами по таймауту, иначе
 // карта останется невидимой навсегда. armedPreFly не даёт переставить таймер повторно на
 // том же элементе при последующих мутациях.
 function armPreFly() {
@@ -509,10 +600,7 @@ function releasePreFly(card) {
 function animate(diff) {
     clearAnim();
     const token = ++animToken;
-    const layer = document.createElement('div');
-    layer.className = 'board-anim-layer';
-    document.body.appendChild(layer);
-    animLayer = layer;
+    const layer = ensureAnimLayer();
 
     let budget = ANIM_MAX_CLONES;
 
@@ -641,7 +729,7 @@ function flyDrawsToHand(layer, token, count, deck, budget) {
             continue;
         }
 
-        flyCardOnto(layer, token, card, deck, k * 80, 0);
+        flyCardOnto(layer, () => token === animToken, card, deck, k * 80, 0);
         budget--;
         k++;
     }
@@ -705,7 +793,7 @@ function flyBetween(layer, token, node, fromX, fromY, toX, toY, delay, fadeOut, 
     requestAnimationFrame(step);
 }
 
-function flyCardOnto(layer, token, cardEl, from, delay, endRot) {
+function flyCardOnto(layer, alive, cardEl, from, delay, endRot, onLand = null) {
     if (!cardEl) {
         return;
     }
@@ -723,6 +811,11 @@ function flyCardOnto(layer, token, cardEl, from, delay, endRot) {
 
     const clone = cardEl.cloneNode(true);
     clone.classList.remove('active', 'dimmed', 'dnd-ghost', 'pre-fly');
+
+    if (cardEl.closest('.hand-slot')) {
+        adoptHandStyles(clone);
+    }
+
     clone.style.visibility = 'visible';
     clone.style.position = 'fixed';
     clone.style.margin = '0';
@@ -738,8 +831,9 @@ function flyCardOnto(layer, token, cardEl, from, delay, endRot) {
     const dx = from.x - cx;
     const dy = from.y - cy;
     const rot0 = clamp(-dx * 0.04, -14, 14);
+    const s0 = from.w ? from.w / w : 0.6;
 
-    clone.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot0}deg) scale(0.6)`;
+    clone.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot0}deg) scale(${s0})`;
     layer.appendChild(clone);
 
     cardEl.style.visibility = 'hidden';
@@ -760,7 +854,7 @@ function flyCardOnto(layer, token, cardEl, from, delay, endRot) {
     }
 
     function step(now) {
-        if (token !== animToken) {
+        if (!alive()) {
             land();
             return;
         }
@@ -777,7 +871,7 @@ function flyCardOnto(layer, token, cardEl, from, delay, endRot) {
         const lift = t >= 1 ? 0 : Math.sin(Math.PI * p) * arc;
         const x = dx * (1 - p);
         const y = dy * (1 - p) - lift;
-        const scale = 0.6 + 0.4 * pop;
+        const scale = s0 + (1 - s0) * pop;
         const rot = rot0 * (1 - p) + endRot * p;
         clone.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${scale})`;
 
@@ -785,6 +879,10 @@ function flyCardOnto(layer, token, cardEl, from, delay, endRot) {
             requestAnimationFrame(step);
         } else {
             land();
+
+            if (onLand) {
+                onLand();
+            }
         }
     }
 
@@ -792,11 +890,34 @@ function flyCardOnto(layer, token, cardEl, from, delay, endRot) {
 }
 
 function flyThrowIn(layer, token, slot, from, delay) {
-    flyCardOnto(layer, token, slot.querySelector('.attack-card'), from, delay, 0);
+    flyCardOnto(layer, () => token === animToken, slot.querySelector('.attack-card'), from, delay, 0);
 }
 
 function flyCover(layer, token, slot, from, delay) {
-    flyCardOnto(layer, token, slot.querySelector('.defence-card'), from, delay, 7);
+    flyCardOnto(layer, () => token === animToken, slot.querySelector('.defence-card'), from, delay, 7);
+}
+
+function newAnimLayer() {
+    const layer = document.createElement('div');
+    layer.className = 'board-anim-layer';
+    document.body.appendChild(layer);
+    return layer;
+}
+
+function ensureAnimLayer() {
+    if (!animLayer) {
+        animLayer = newAnimLayer();
+    }
+
+    return animLayer;
+}
+
+function ensurePlayLayer() {
+    if (!playLayer) {
+        playLayer = newAnimLayer();
+    }
+
+    return playLayer;
 }
 
 function clearAnim() {
@@ -805,6 +926,15 @@ function clearAnim() {
     if (animLayer) {
         animLayer.remove();
         animLayer = null;
+    }
+}
+
+function clearPlayAnim() {
+    playToken++;
+
+    if (playLayer) {
+        playLayer.remove();
+        playLayer = null;
     }
 }
 

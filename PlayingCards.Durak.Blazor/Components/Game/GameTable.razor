@@ -49,7 +49,7 @@
                         + (dim ? " dimmed" : "")
                         + (IsFresh(fc.AttackCard) ? " pre-fly" : "");
 
-                    <div class="field-card" data-field-index="@idx" data-card-key="@BoardSnapshot.Key(fc.AttackCard)" @key="(fc.AttackCard!.Rank * 4 + fc.AttackCard.Suit)">
+                    <div class="field-card" data-field-index="@idx" data-card-key="@BoardSnapshot.Key(fc.AttackCard)" data-defence-key="@(covered ? BoardSnapshot.Key(fc.DefenceCard) : null)" @key="(fc.AttackCard!.Rank * 4 + fc.AttackCard.Suit)">
                         <CardView Card="fc.AttackCard!"
                                   CssClass="@attackCss"
                                   Active="fieldSelected"
@@ -154,17 +154,17 @@
     private string? _error;
     private Table? _subscribed;
 
-    /// <summary>Я — владелец стола: показываем кик соперникам и кнопку «Начать».</summary>
+    /// <summary>Я – владелец стола: показываем кик соперникам и кнопку «Начать».</summary>
     private bool AmOwner => _view is { } v && v.MyPlayerIndex == v.OwnerIndex;
 
     private BoardSnapshot? _prevSnapshot;
     private BoardDiff? _pendingDiff;
 
     /// <summary>
-    /// Ключи карт, впервые появившихся в этом рендере (добор в руку, подкид, отбой) — из
+    /// Ключи карт, впервые появившихся в этом рендере (добор в руку, подкид, отбой) – из
     /// <see cref="BoardDiff.FreshKeys"/>. Рендерятся классом <c>pre-fly</c> (visibility:hidden в
     /// CardView.razor.css), чтобы карта не мелькнула в финальной позиции до того, как JS (после
-    /// RTT до клиента) спрячет её и запустит анимацию прилёта. Живёт ровно один рендер —
+    /// RTT до клиента) спрячет её и запустит анимацию прилёта. Живёт ровно один рендер –
     /// очищается в <see cref="OnAfterRenderAsync"/> вместе с забором <c>_pendingDiff</c>.
     /// </summary>
     private HashSet<string> _freshKeys = [];
@@ -206,7 +206,7 @@
     });
 
     /// <summary>
-    /// Шлёт <see cref="Table.SetSortMode"/> только при реальной смене режима — не на каждый push.
+    /// Шлёт <see cref="Table.SetSortMode"/> только при реальной смене режима – не на каждый push.
     /// Клиент НЕ переупорядочивает руку сам: протокол адресует карты индексом в серверном порядке,
     /// поэтому достаточно дёрнуть серверный ресорт, а его push перерисует новый порядок.
     /// </summary>
@@ -322,7 +322,7 @@
         _prevSnapshot = next;
     }
 
-    /// <summary>Карта появилась в этом рендере впервые (см. <see cref="_freshKeys"/>) — пометить <c>pre-fly</c>.</summary>
+    /// <summary>Карта появилась в этом рендере впервые (см. <see cref="_freshKeys"/>) – пометить <c>pre-fly</c>.</summary>
     private bool IsFresh(CardModel? card) => card != null && _freshKeys.Contains(BoardSnapshot.Key(card));
 
     private void UpdateSelectables()
@@ -443,7 +443,7 @@
     /// <summary>
     /// Зоны сброса для карты руки с ключом <paramref name="cardKey"/>: поле (атака/подкид)
     /// и/или индексы неотбитых атакующих карт, которые эта карта побьёт (отбой).
-    /// Вызывается из GameTable.razor.js в момент захвата — один раз за перетаскивание.
+    /// Вызывается из GameTable.razor.js в момент захвата – один раз за перетаскивание.
     /// </summary>
     [JSInvokable]
     public DropTargets GetDropTargets(string cardKey)
@@ -477,10 +477,10 @@
     }
 
     /// <summary>
-    /// Карту руки <paramref name="cardKey"/> бросили на зону: <c>null</c> — поле (атака/подкид), иначе
+    /// Карту руки <paramref name="cardKey"/> бросили на зону: <c>null</c> – поле (атака/подкид), иначе
     /// ключ атакующей карты (отбой). Индексы ищутся по актуальной руке и полю: push во время
-    /// перетаскивания мог их сдвинуть. Возвращает true при успешном ходе — JS играет снап и искры; при
-    /// false — упругий возврат карты в руку.
+    /// перетаскивания мог их сдвинуть. Возвращает true при успешном ходе – JS играет снап и искры; при
+    /// false – упругий возврат карты в руку.
     /// </summary>
     [JSInvokable]
     public async Task<bool> OnCardDropped(string cardKey, string? attackKey)
@@ -534,8 +534,8 @@
 
     /// <summary>
     /// «Бито»: атакующий объявляет, что больше не подкидывает (issue F5). Раунд закроется, когда
-    /// «Бито» скажут все атакующие, иначе — по общему таймеру. Кнопка видна только пока <c>CanBeat</c>,
-    /// поэтому отказ сервера здесь — всегда гонка (окно закрылось таймером/другим голосом между рендером
+    /// «Бито» скажут все атакующие, иначе – по общему таймеру. Кнопка видна только пока <c>CanBeat</c>,
+    /// поэтому отказ сервера здесь – всегда гонка (окно закрылось таймером/другим голосом между рендером
     /// и кликом), а не ошибка пользователя: тихо игнорируем, без ErrorToast (issue #12).
     /// </summary>
     private async Task Beat()
@@ -552,7 +552,7 @@
     }
 
     /// <summary>
-    /// Выгнать соперника (бота или человека) по его игровому индексу — доступно только владельцу,
+    /// Выгнать соперника (бота или человека) по его игровому индексу – доступно только владельцу,
     /// в лобби и в игре. Нарушения (не владелец/неверная цель) серверный <see cref="TableHolder.Kick"/>
     /// кидает <see cref="BusinessException"/>, которую Guard сольёт в ErrorToast.
     /// </summary>
