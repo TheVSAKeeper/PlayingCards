@@ -2,7 +2,7 @@
 
 namespace PlayingCards.Durak.Server;
 
-public class TableHolder
+public class TableHolder : TableHolderBase<Table, TablePlayer>
 {
     /// <summary>
     /// Время на окончание раунда при удачной защите (даём время на подкид).
@@ -24,35 +24,10 @@ public class TableHolder
     /// </summary>
     public const int AFK_SECONDS = 60;
 
-    private readonly Dictionary<Guid, Table> _tables = new();
-
-    /// <summary>
-    /// Защищает <see cref="_tables" /> и счётчики от гонок между фоновым таймером и запросами игроков.
-    /// </summary>
-    private readonly object _sync = new();
-
-    private int _tablesVersion;
-
     /// <summary>
     /// Счётчик для имён болванчиков («Бот N»).
     /// </summary>
     private int _botNumber = 1;
-
-    public int TablesVersion
-    {
-        get => _tablesVersion;
-        set
-        {
-            _tablesVersion = value;
-            Changed?.Invoke();
-        }
-    }
-
-    /// <summary>
-    /// Событие изменения списка столов / лобби (для push в UI).
-    /// </summary>
-    public event Action? Changed;
-    public int TableNumber = 1;
 
     /// <summary>
     /// Время на окончание раунда в зависимости от причины остановки.
@@ -68,11 +43,11 @@ public class TableHolder
 
     public Table CreateTable()
     {
-        lock (_sync)
+        lock (Sync)
         {
             var table = new Table { Id = Guid.NewGuid(), Number = TableNumber, Game = new(), Players = new() };
             table.Version = 0;
-            _tables.Add(table.Id, table);
+            Tables.Add(table.Id, table);
             TableNumber++;
 
             WriteLog(table, null, "create table");
@@ -89,9 +64,9 @@ public class TableHolder
             throw new BusinessException("Авторизуйтесь");
         }
 
-        lock (_sync)
+        lock (Sync)
         {
-            foreach (var table2 in _tables.Values)
+            foreach (var table2 in Tables.Values)
             {
                 if (table2.Players.Any(x => x.AuthSecret == playerSecret))
                 {
@@ -99,7 +74,7 @@ public class TableHolder
                 }
             }
 
-            if (_tables.TryGetValue(tableId, out var table))
+            if (Tables.TryGetValue(tableId, out var table))
             {
                 lock (table.SyncRoot)
                 {
@@ -137,9 +112,9 @@ public class TableHolder
     /// <exception cref="BusinessException">Стол не найден / не владелец / идёт игра / нет мест.</exception>
     public void AddBot(Guid tableId, string playerSecret)
     {
-        lock (_sync)
+        lock (Sync)
         {
-            if (_tables.TryGetValue(tableId, out var table) == false)
+            if (Tables.TryGetValue(tableId, out var table) == false)
             {
                 throw new BusinessException("Стол не найден");
             }
@@ -198,9 +173,9 @@ public class TableHolder
     /// <exception cref="BusinessException">Стол не найден / не владелец / неверная цель / попытка выгнать себя.</exception>
     public void Kick(string callerSecret, Guid tableId, int targetGameIndex)
     {
-        lock (_sync)
+        lock (Sync)
         {
-            if (_tables.TryGetValue(tableId, out var table) == false)
+            if (Tables.TryGetValue(tableId, out var table) == false)
             {
                 throw new BusinessException("Стол не найден");
             }
@@ -239,7 +214,7 @@ public class TableHolder
 
     public void Leave(string playerSecret)
     {
-        lock (_sync)
+        lock (Sync)
         {
             var table = GetBySecret(playerSecret, out var tablePlayer);
 
@@ -255,7 +230,7 @@ public class TableHolder
 
     public void Leave(Table table, TablePlayer tablePlayer)
     {
-        lock (_sync)
+        lock (Sync)
         {
             lock (table.SyncRoot)
             {
@@ -281,7 +256,7 @@ public class TableHolder
 
                 if (table.Players.All(x => x.IsBot))
                 {
-                    _tables.Remove(table.Id);
+                    Tables.Remove(table.Id);
                 }
                 else
                 {
@@ -296,56 +271,8 @@ public class TableHolder
             }
 
             // Ушедший мог быть единственным несказавшим атакующим — пересчитать вне table.SyncRoot,
-            // т.к. TryCloseAfterRosterChange сам его берёт (и это уже реентрантно относительно _sync).
+            // т.к. TryCloseAfterRosterChange сам его берёт (и это уже реентрантно относительно Sync).
             table.TryCloseAfterRosterChange();
-        }
-    }
-
-    public Table Get(Guid tableId)
-    {
-        lock (_sync)
-        {
-            return _tables[tableId];
-        }
-    }
-
-    public Table? GetBySecret(string playerSecret, out TablePlayer? player)
-    {
-        lock (_sync)
-        {
-            player = null;
-
-            foreach (var table in _tables.Values)
-            {
-                player = table.Players.FirstOrDefault(x => x.AuthSecret == playerSecret);
-
-                if (player != null)
-                {
-                    return table;
-                }
-            }
-
-            return null;
-        }
-    }
-
-    public Table[] GetTables()
-    {
-        lock (_sync)
-        {
-            return _tables.Values.ToArray();
-        }
-    }
-
-    public void BackgroundProcess()
-    {
-        lock (_sync)
-        {
-            CheckStopRound();
-            CheckAfkPlayers();
-            CheckBotBeats();
-            CheckBots();
-            ClearStaleReplies();
         }
     }
 
@@ -354,14 +281,14 @@ public class TableHolder
     /// <see cref="Table.Version" />++, чтобы push-фронт (Blazor) гарантированно перерисовал бейдж и убрал
     /// баббл. Без этого реплика «залипала» бы в DOM до следующего события стола, ведь
     /// <see cref="TableViewBuilder" /> отсекает её лишь при перестроении вида (issue F5). Под общим
-    /// <see cref="_sync" />.
+    /// <see cref="Sync" />.
     /// </summary>
     private void ClearStaleReplies()
     {
         var now = DateTime.UtcNow;
         var ttl = TimeSpan.FromSeconds(REPLY_SECONDS);
 
-        foreach (var table in _tables.Values.ToArray())
+        foreach (var table in Tables.Values.ToArray())
         {
             var changed = false;
 
@@ -390,11 +317,11 @@ public class TableHolder
     /// Бот, у которого ещё есть подходящий подкид, молчит: его ход исполнит <see cref="CheckBots" /> на этом же
     /// тике. НЕ БОЛЕЕ ОДНОГО голоса за тик на стол (как <see cref="CheckBots" />) — иначе все боты без карт
     /// озвучивают «Бито» в один и тот же тик открытия окна, что мгновенно выдаёт человеку отсутствие подкида.
-    /// Под общим <see cref="_sync" />. Голос «Бито» сбрасывается на каждом новом окне остановки раунда.
+    /// Под общим <see cref="Sync" />. Голос «Бито» сбрасывается на каждом новом окне остановки раунда.
     /// </summary>
     private void CheckBotBeats()
     {
-        foreach (var table in _tables.Values.ToArray())
+        foreach (var table in Tables.Values.ToArray())
         {
             if (table.Game.Status != GameStatus.InProcess
                 || table.StopRoundBeginDate == null
@@ -442,11 +369,11 @@ public class TableHolder
 
     /// <summary>
     /// Драйвер болванчиков: за тик исполняет НЕ БОЛЕЕ ОДНОГО хода бота на каждом столе в InProcess
-    /// (естественная пауза ~1 с, чтобы ходы были видны). Под общим <see cref="_sync" />.
+    /// (естественная пауза ~1 с, чтобы ходы были видны). Под общим <see cref="Sync" />.
     /// </summary>
     private void CheckBots()
     {
-        foreach (var table in _tables.Values.ToArray())
+        foreach (var table in Tables.Values.ToArray())
         {
             if (table.Game.Status != GameStatus.InProcess)
             {
@@ -546,7 +473,7 @@ public class TableHolder
 
     private void CheckStopRound()
     {
-        foreach (var table in _tables.Values.ToArray())
+        foreach (var table in Tables.Values.ToArray())
         {
             if (table.StopRoundBeginDate == null)
             {
@@ -585,26 +512,20 @@ public class TableHolder
         }
     }
 
-    private void CheckAfkPlayers()
+    protected override int AfkSeconds => AFK_SECONDS;
+
+    protected override void ProcessTables()
     {
-        foreach (var table in _tables.Values.ToArray())
-        {
-            for (var i = 0; i < table.Players.Count; i++)
-            {
-                var tablePlayer = table.Players[i];
+        CheckStopRound();
+        KickAfkPlayers();
+        CheckBotBeats();
+        CheckBots();
+        ClearStaleReplies();
+    }
 
-                if (tablePlayer.AfkStartTime != null)
-                {
-                    var finishTime = tablePlayer.AfkStartTime.Value.AddSeconds(AFK_SECONDS);
-
-                    if (DateTime.UtcNow >= finishTime)
-                    {
-                        Leave(table, tablePlayer);
-                        i--;
-                    }
-                }
-            }
-        }
+    protected override void KickAfk(Table table, TablePlayer player)
+    {
+        Leave(table, player);
     }
 
     private void WriteLog(Table table, string? playerSecret, string message)
