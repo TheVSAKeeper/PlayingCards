@@ -5,7 +5,7 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-<PageTitle>Дурач☻к</PageTitle>
+<PageTitle>@Title</PageTitle>
 
 @if (!_loaded)
 {
@@ -24,10 +24,12 @@ else
 
     @if (_currentTable == null)
     {
+        <h1 class="visually-hidden">Столы</h1>
         <Lobby PlayerSecret="@(Session.Secret!)" PlayerName="@(Session.Name!)" ExternalError="@_joinError" OnChanged="Refresh" />
     }
     else
     {
+        <h1 class="visually-hidden">Стол №@_currentTable.Number</h1>
         <GameTable Table="_currentTable" Me="_me!" OnChanged="Refresh" />
     }
 }
@@ -44,6 +46,11 @@ else
     private Table? _currentTable;
     private TablePlayer? _me;
     private string? _joinError;
+
+    private string Title => !_loaded ? "Дурач☻к"
+        : !Session.IsAuthenticated ? "Вход – Дурач☻к"
+        : _currentTable == null ? "Столы – Дурач☻к"
+        : $"Стол №{_currentTable.Number} – Дурач☻к";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

@@ -10,7 +10,7 @@
                     class="icon-btn settings-toggle @(_settingsOpen ? "is-open" : null)"
                     title="Настройки"
                     aria-label="Настройки"
-                    aria-expanded="@_settingsOpen"
+                    aria-expanded="@(_settingsOpen ? "true" : "false")"
                     @onclick="ToggleSettings">
                 <span class="gear" aria-hidden="true">⚙</span>
             </button>
