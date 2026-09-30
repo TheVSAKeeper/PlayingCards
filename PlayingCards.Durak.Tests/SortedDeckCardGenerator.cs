@@ -48,7 +48,7 @@ public class SortedDeckCardGenerator : RandomDeckCardGenerator
 
             foreach (var card in cards)
             {
-                var deckCard = GetCard(deckCards, card);
+                var deckCard = CardNotation.TakeCard(deckCards, card);
                 hand.Add(deckCard);
                 playerHands[i] = hand;
             }
@@ -65,12 +65,12 @@ public class SortedDeckCardGenerator : RandomDeckCardGenerator
         if (_deckValues != null)
         {
             var cards = _deckValues.Split(' ');
-            List<Card> newDeckCards = [..cards.Select(card => GetCard(deckCards, card))];
+            List<Card> newDeckCards = [..cards.Select(card => CardNotation.TakeCard(deckCards, card))];
             returnCards.InsertRange(0, newDeckCards);
         }
         else
         {
-            var trumpCard = _trumpValue == null ? null : GetCard(deckCards, _trumpValue);
+            var trumpCard = _trumpValue == null ? null : CardNotation.TakeCard(deckCards, _trumpValue);
 
             if (_skipCardCount > 0)
             {
@@ -86,34 +86,5 @@ public class SortedDeckCardGenerator : RandomDeckCardGenerator
         }
 
         return returnCards;
-    }
-
-    private Card GetCard(List<Card> deckCards, string card)
-    {
-        var suit = card.Substring(card.Length - 1, 1)[0];
-        var rank = card[..^1];
-
-        if (int.TryParse(rank, out var rankValue) == false)
-        {
-            rankValue = rank switch
-            {
-                "A" => 14,
-                "K" => 13,
-                "Q" => 12,
-                "J" => 11,
-                _ => throw new($"{rank} rank undefined"),
-            };
-        }
-
-        var deckCard = deckCards.FirstOrDefault(x => x.Rank.Value == rankValue && x.Suit.IconChar == suit);
-
-        if (deckCard == null)
-        {
-            throw new($"{card} not found");
-        }
-
-        deckCards.Remove(deckCard);
-
-        return deckCard;
     }
 }
