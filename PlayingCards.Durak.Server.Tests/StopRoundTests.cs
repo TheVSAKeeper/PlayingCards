@@ -4,7 +4,7 @@ using static PlayingCards.Durak.Server.Tests.ServerTestHelper;
 namespace PlayingCards.Durak.Server.Tests;
 
 /// <summary>
-/// Issue #5: при «беру» подкидывать особо некому — отсчёт короче (5с), при удачной защите остаётся 10с.
+/// Issue #5: при «беру» подкидывать особо некому – отсчёт короче (5с), при удачной защите остаётся 10с.
 /// </summary>
 [TestFixture]
 public class StopRoundTests

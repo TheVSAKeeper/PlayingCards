@@ -8,8 +8,8 @@ namespace PlayingCards.Durak.Server.Tests;
 internal static class ServerTestHelper
 {
     /// <summary>
-    /// Стол с уже начатой игрой из фиксированных рук. Секреты игроков — "s0", "s1", ...,
-    /// владелец и (при нужном козыре) ходящий — первый игрок.
+    /// Стол с уже начатой игрой из фиксированных рук. Секреты игроков – "s0", "s1", ...,
+    /// владелец и (при нужном козыре) ходящий –первый игрок.
     /// </summary>
     public static Table BuildStartedTable(string[] hands, string trump, out TablePlayer[] players)
     {

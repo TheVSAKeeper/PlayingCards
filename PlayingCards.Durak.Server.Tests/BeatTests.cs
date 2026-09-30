@@ -5,7 +5,7 @@ using PlayingCards.Durak.Tests;
 namespace PlayingCards.Durak.Server.Tests;
 
 /// <summary>
-/// «Бито» — атакующие вручную закрывают раунд при удачной защите (issue F5). Пришло на смену
+/// «Бито» –атакующие вручную закрывают раунд при удачной защите (issue F5). Пришло на смену
 /// авто-таймеру «никто не может ходить»: раунд закрывается досрочно, лишь когда «Бито» сказали ВСЕ
 /// атакующие, иначе остаётся общий таймер. Над сказавшим всплывает реплика, и сервер больше не
 /// выдаёт отсутствие карт у других досрочным завершением.
@@ -128,7 +128,7 @@ public class BeatTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(table.StopRoundStatus, Is.Null, "все атакующие сказали «Бито» — раунд закрыт");
+            Assert.That(table.StopRoundStatus, Is.Null, "все атакующие сказали «Бито» –раунд закрыт");
             Assert.That(table.Game.DiscardCardsCount, Is.EqualTo(2), "отбитая пара ушла в бито");
         });
     }
@@ -176,7 +176,7 @@ public class BeatTests
         Assert.That(ex!.Message, Is.EqualTo("Сейчас нельзя закрыть раунд"));
     }
 
-    /// <summary>«Бито» теперь работает и в окне «беру» (issue #10) — атакующим больше нечего подкинуть.</summary>
+    /// <summary>«Бито» теперь работает и в окне «беру» (issue #10) –атакующим больше нечего подкинуть.</summary>
     [Test]
     public void Beat_DuringTake_ClosesRoundEarly()
     {
@@ -191,7 +191,7 @@ public class BeatTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(table.StopRoundStatus, Is.Null, "единственный атакующий сказал «Бито» — ждать некого");
+            Assert.That(table.StopRoundStatus, Is.Null, "единственный атакующий сказал «Бито» –ждать некого");
             Assert.That(table.StopRoundBeginDate, Is.Null);
         });
     }
@@ -224,7 +224,7 @@ public class BeatTests
         p0.Hand.Clear();
 
         var ex = Assert.Throws<BusinessException>(() => table.Beat("s0"));
-        Assert.That(ex!.Message, Is.EqualTo("Нечего подкидывать — голос не нужен"));
+        Assert.That(ex!.Message, Is.EqualTo("Нечего подкидывать – голос не нужен"));
     }
 
     [Test]
@@ -261,7 +261,7 @@ public class BeatTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(table.StopRoundStatus, Is.Null, "единственный атакующий без карт — ждать некого");
+            Assert.That(table.StopRoundStatus, Is.Null, "единственный атакующий без карт –ждать некого");
             Assert.That(table.StopRoundBeginDate, Is.Null);
             Assert.That(table.Game.DiscardCardsCount, Is.EqualTo(2), "отбитая пара ушла в бито");
         });
@@ -290,6 +290,6 @@ public class BeatTests
 
         holder.Leave("s2");
 
-        Assert.That(table.StopRoundStatus, Is.Null, "ушедший был единственным несказавшим — раунд закрылся сразу");
+        Assert.That(table.StopRoundStatus, Is.Null, "ушедший был единственным несказавшим –раунд закрылся сразу");
     }
 }

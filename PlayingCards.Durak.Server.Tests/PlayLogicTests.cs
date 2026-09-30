@@ -261,7 +261,7 @@ public class PlayLogicTests
             MyPlayerIndex = 0, ActivePlayerIndex = 0, DefencePlayerIndex = 1, Cards = [],
         };
 
-        Assert.That(PlayLogic.GetContextHint(table), Is.EqualTo("Ваш ход — выберите карту для атаки"));
+        Assert.That(PlayLogic.GetContextHint(table), Is.EqualTo("Ваш ход – выберите карту для атаки"));
     }
 
     [Test]

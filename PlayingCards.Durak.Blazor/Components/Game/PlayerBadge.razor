@@ -79,10 +79,10 @@
 
     [Parameter] public bool IsLeaver { get; set; }
 
-    /// <summary>Игрок управляется ИИ — рисуем значок у имени.</summary>
+    /// <summary>Игрок управляется ИИ – рисуем значок у имени.</summary>
     [Parameter] public bool IsBot { get; set; }
 
-    /// <summary>Свежая реплика игрока («Бито!») — баббл над бейджем (issue F5).</summary>
+    /// <summary>Свежая реплика игрока («Бито!») –баббл над бейджем (issue F5).</summary>
     [Parameter] public string? Reply { get; set; }
 
     /// <summary>Показывать кнопку «выгнать» (только владельцу стола, не на «крысе»).</summary>
@@ -99,12 +99,12 @@
 
     [Parameter] public DateTime? AfkEndTime { get; set; }
 
-    /// <summary>Статус остановки раунда (0 — «беру», 1 — «отбито»); отсчёт рисуется над защищающимся.</summary>
+    /// <summary>Статус остановки раунда (0 –«беру», 1 –«отбито»); отсчёт рисуется над защищающимся.</summary>
     [Parameter] public int? StopRoundStatus { get; set; }
 
     [Parameter] public DateTime? StopRoundEndDate { get; set; }
 
-    /// <summary>Показать индикатор голосования «Бито» — вызывающая сторона решает, атакующий ли это с картами (issue #11).</summary>
+    /// <summary>Показать индикатор голосования «Бито» –вызывающая сторона решает, атакующий ли это с картами (issue #11).</summary>
     [Parameter] public bool ShowBeatVote { get; set; }
 
     /// <summary>Голос «Бито» уже засчитан.</summary>

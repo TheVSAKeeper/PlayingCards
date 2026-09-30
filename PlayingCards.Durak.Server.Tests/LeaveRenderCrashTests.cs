@@ -6,7 +6,7 @@ namespace PlayingCards.Durak.Server.Tests;
 /// <summary>
 /// Регресс на «висит» из боя: выход игрока во время партии ронял Blazor-circuit
 /// необработанным <see cref="IndexOutOfRangeException" /> при рендере кольца соперников.
-/// Корень — вид глазами игрока, которого уже нет в <c>game.Players</c> (MyPlayerIndex == -1).
+/// Корень – вид глазами игрока, которого уже нет в <c>game.Players</c> (MyPlayerIndex == -1).
 /// </summary>
 [TestFixture]
 public class LeaveRenderCrashTests
@@ -21,7 +21,7 @@ public class LeaveRenderCrashTests
     /// <summary>
     /// Окно гонки выхода: <see cref="TableHolder.Leave(Table, TablePlayer)" /> чистит
     /// <c>game.Players</c> и <c>table.Players</c> не атомарно для незалоченного рендера.
-    /// Если рендер успел между ними — игрок ещё «за столом», но уже не в партии. По этому
+    /// Если рендер успел между ними –игрок ещё «за столом», но уже не в партии. По этому
     /// признаку (MyPlayerIndex &lt; 0) <c>GameTable.Rebuild</c> обязан НЕ строить доску.
     /// </summary>
     [Test]
@@ -38,7 +38,7 @@ public class LeaveRenderCrashTests
 
     /// <summary>
     /// AFK-засечки больше не падают на <c>First</c>, если ходящего/защищающегося уже нет за
-    /// столом (раньше — «Sequence contains no matching element» → краш circuit).
+    /// столом (раньше –«Sequence contains no matching element» → краш circuit).
     /// </summary>
     [Test]
     public void SetAfkStartTime_ActiveOrDefenceNotSeated_DoesNotThrow()
@@ -58,7 +58,7 @@ public class LeaveRenderCrashTests
     /// <summary>
     /// Зеркало алгоритма <c>PlayersRing.RingPlayers</c> из Blazor (отдельного тест-проекта на
     /// фронт нет). Держим его на реальных видах из <see cref="TableViewBuilder.BuildTable" />
-    /// после выхода в партии — включая вид самого вышедшего (MyPlayerIndex == -1), на котором
+    /// после выхода в партии –включая вид самого вышедшего (MyPlayerIndex == -1), на котором
     /// прежний код уходил в <c>others[-1]</c>. ВАЖНО: держать в синхроне с PlayersRing.razor.
     /// </summary>
     [Test]

@@ -5,7 +5,7 @@ namespace PlayingCards.Durak.Blazor.Services;
 
 /// <summary>
 /// Сессия игрока (имя + secret) и его персональные настройки, хранятся в браузере.
-/// Имя/secret — аналог cookie auth_name/auth_secret; настройки — подсказки и режим сортировки руки.
+/// Имя/secret – аналог cookie auth_name/auth_secret; настройки –подсказки и режим сортировки руки.
 /// </summary>
 public class PlayerSession(ProtectedLocalStorage storage)
 {
@@ -21,14 +21,14 @@ public class PlayerSession(ProtectedLocalStorage storage)
     /// <summary>Отключить подсказки по ходам (личная настройка). По умолчанию подсказки включены.</summary>
     public bool NoHints { get; private set; }
 
-    /// <summary>Режим сортировки карт в руке (личная настройка). По умолчанию — как было до выбора режима.</summary>
+    /// <summary>Режим сортировки карт в руке (личная настройка). По умолчанию –как было до выбора режима.</summary>
     public HandSortMode HandSort { get; private set; } = HandSortMode.ByRankTrumpInline;
 
     /// <summary>Срабатывает при любом изменении <see cref="NoHints"/> или <see cref="HandSort"/>.</summary>
     public event Action? SettingsChanged;
 
     /// <summary>
-    /// Загрузить сессию и настройки из хранилища (вызывать в OnAfterRenderAsync, firstRender —
+    /// Загрузить сессию и настройки из хранилища (вызывать в OnAfterRenderAsync, firstRender –
     /// ProtectedLocalStorage доступен только после первого рендера).
     /// </summary>
     public async Task LoadAsync()

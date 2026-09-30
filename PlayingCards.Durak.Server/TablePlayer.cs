@@ -11,7 +11,7 @@ public class TablePlayer : TablePlayerBase
     public Player Player { get; set; } = null!;
 
     /// <summary>
-    /// Последняя реплика игрока («Бито!» при закрытии раунда) — всплывает над бейджем (issue F5).
+    /// Последняя реплика игрока («Бито!» при закрытии раунда) – всплывает над бейджем (issue F5).
     /// </summary>
     public string? Reply { get; set; }
 

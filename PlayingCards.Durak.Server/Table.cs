@@ -57,7 +57,7 @@ public class Table : TableBase<TablePlayer>
 
     /// <summary>
     /// Проставить AFK-засечку игроку по его игровому <see cref="Player" />. Если такого за столом уже
-    /// нет (только что вышел/кикнут) или указатель хода пуст — тихо пропускаем: незалоченный рендер
+    /// нет (только что вышел/кикнут) или указатель хода пуст –тихо пропускаем: незалоченный рендер
     /// или ход не должен ронять circuit на <c>First</c> («Sequence contains no matching element»).
     /// </summary>
     private void SetAfk(Player? gamePlayer, DateTime? value)
@@ -178,13 +178,13 @@ public class Table : TableBase<TablePlayer>
         }
     }
 
-    /// <summary>Реплики атакующего, объявляющего «Бито». Единый источник — и для людей, и для ботов.</summary>
+    /// <summary>Реплики атакующего, объявляющего «Бито». Единый источник –и для людей, и для ботов.</summary>
     public static readonly string[] ReplyPhrases = ["Бито", "Бито!", "Закрываю"];
 
     /// <summary>
     /// «Бито»: атакующий объявляет, что больше не подкидывает (issue F5). Раунд закрывается досрочно,
     /// только когда «Бито» сказали ВСЕ атакующие; иначе по-прежнему ждём общий таймер. Работает и в окне
-    /// удачной защиты, и в окне «беру» — защищающийся не обязан ждать полный <see cref="TableHolder.STOP_ROUND_TAKE_SECONDS" />,
+    /// удачной защиты, и в окне «беру» –защищающийся не обязан ждать полный <see cref="TableHolder.STOP_ROUND_TAKE_SECONDS" />,
     /// если подкидывать всё равно некому (issue #10). Пришло на смену авто-таймеру «никто не может ходить»,
     /// который выдавал отсутствие карт у других. Над сказавшим всплывает реплика.
     /// </summary>
@@ -208,7 +208,7 @@ public class Table : TableBase<TablePlayer>
 
             if (tablePlayer.Player.Hand.Cards.Count == 0)
             {
-                throw new BusinessException("Нечего подкидывать — голос не нужен");
+                throw new BusinessException("Нечего подкидывать – голос не нужен");
             }
 
             if (tablePlayer.SaidBeat)
@@ -229,9 +229,9 @@ public class Table : TableBase<TablePlayer>
 
     /// <summary>
     /// Закрыть окно остановки раунда (удачная защита ИЛИ «беру»), когда «Бито» сказали все атакующие
-    /// с картами (или таких атакующих не осталось вовсе — эндшпиль не должен ждать полный таймер).
+    /// с картами (или таких атакующих не осталось вовсе –эндшпиль не должен ждать полный таймер).
     /// Вызывается и из <see cref="Beat" />, и сразу после того, как окно открылось (<see cref="Defence" />,
-    /// <see cref="Take" />), и после изменения состава игроков (<see cref="TryCloseAfterRosterChange" />) —
+    /// <see cref="Take" />), и после изменения состава игроков (<see cref="TryCloseAfterRosterChange" />) –
     /// состав/голоса могли уже сойтись без нового «Бито».
     /// </summary>
     private void TryCloseStopRound()
@@ -254,7 +254,7 @@ public class Table : TableBase<TablePlayer>
 
     /// <summary>
     /// Пересчитать досрочное закрытие после того, как за столом изменился состав игроков (Leave/Kick/AFK-кик).
-    /// Ушедший мог быть единственным несказавшим атакующим — без пересчёта раунд висел бы до таймера.
+    /// Ушедший мог быть единственным несказавшим атакующим –без пересчёта раунд висел бы до таймера.
     /// </summary>
     internal void TryCloseAfterRosterChange()
     {
@@ -291,7 +291,7 @@ public class Table : TableBase<TablePlayer>
         return true;
     }
 
-    /// <summary>Сбросить голоса «Бито» — на каждом новом окне остановки раунда и новой партии.</summary>
+    /// <summary>Сбросить голоса «Бито» –на каждом новом окне остановки раунда и новой партии.</summary>
     private void ClearBeatVotes()
     {
         foreach (var tablePlayer in Players)
@@ -304,7 +304,7 @@ public class Table : TableBase<TablePlayer>
     /// Сменить режим сортировки руки игрока (по его секрету) и уведомить клиентов (issue F3).
     /// </summary>
     /// <remarks>
-    /// Пересортировка меняет порядок (и индексы) карт, поэтому обязателен <see cref="Version" />++ —
+    /// Пересортировка меняет порядок (и индексы) карт, поэтому обязателен <see cref="Version" />++ –
     /// иначе очередной клик игрока разрешится против устаревшего порядка и сыграет не ту карту.
     /// </remarks>
     public void SetSortMode(string playerSecret, HandSortMode mode)
@@ -319,7 +319,7 @@ public class Table : TableBase<TablePlayer>
 
     /// <summary>
     /// Найти игрока по секрету. <see cref="Enumerable.Single{TSource}" /> кидает InvalidOperationException,
-    /// если секрет протух (игрок вышел/кикнут в гонке между отправкой запроса и обработкой) — это не
+    /// если секрет протух (игрок вышел/кикнут в гонке между отправкой запроса и обработкой) –это не
     /// BusinessException, поэтому не гасится Guard-обвязкой UI и валит circuit/500. Ловим здесь для всех
     /// мутирующих методов стола.
     /// </summary>

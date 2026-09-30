@@ -6,29 +6,29 @@
 public enum BotMoveKind
 {
     /// <summary>
-    /// Ходить нечем — пропуск.
+    /// Ходить нечем – пропуск.
     /// </summary>
-    None,
+    None = 0,
 
     /// <summary>
     /// Начать раунд атакой (стол пуст).
     /// </summary>
-    StartAttack,
+    StartAttack = 1,
 
     /// <summary>
     /// Подкинуть карту в уже открытый раунд.
     /// </summary>
-    Attack,
+    Attack = 2,
 
     /// <summary>
     /// Отбиться от неотбитой карты на столе.
     /// </summary>
-    Defence,
+    Defence = 3,
 
     /// <summary>
     /// Взять карты (отбиться нечем).
     /// </summary>
-    Take,
+    Take = 4,
 }
 
 /// <summary>
@@ -54,7 +54,7 @@ public readonly record struct BotMove(BotMoveKind Kind, int[] CardIndexes, int? 
 public static class BotBrain
 {
     /// <summary>
-    /// Выбрать один ход для болванчика. Не мутирует состояние — только решает.
+    /// Выбрать один ход для болванчика. Не мутирует состояние –только решает.
     /// </summary>
     /// <param name="game">Игра.</param>
     /// <param name="bot">Игрок-болванчик.</param>
@@ -234,7 +234,7 @@ public static class BotBrain
     }
 
     /// <summary>
-    /// «Дешевле» для защиты: не-козырь выгоднее козыря, среди равнозначных — меньший ранг.
+    /// «Дешевле» для защиты: не-козырь выгоднее козыря, среди равнозначных –меньший ранг.
     /// </summary>
     private static bool IsCheaperDefence(Card candidate, Card current, CardSuit trumpSuit)
     {
@@ -250,7 +250,7 @@ public static class BotBrain
     }
 
     /// <summary>
-    /// «Дешевле» для атаки: не-козырь выгоднее козыря, среди равнозначных — меньший ранг.
+    /// «Дешевле» для атаки: не-козырь выгоднее козыря, среди равнозначных –меньший ранг.
     /// </summary>
     private static bool IsCheaperAttack(Card candidate, Card current, CardSuit trumpSuit)
     {

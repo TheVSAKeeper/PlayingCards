@@ -225,6 +225,6 @@ public class BotTests
         });
 
         table.Beat("s2");
-        Assert.That(table.StopRoundStatus, Is.Null, "все атакующие сказали «Бито» — раунд закрыт");
+        Assert.That(table.StopRoundStatus, Is.Null, "все атакующие сказали «Бито» – раунд закрыт");
     }
 }

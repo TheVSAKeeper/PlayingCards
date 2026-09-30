@@ -2,7 +2,7 @@
 
 /// <summary>
 /// Маппинг числовых rank/suit из view-модели (<c>CardModel</c>) в отображаемые глифы и названия.
-/// Единая точка для C#-компонентов (CardView, Deck, бейджи); клиентский дубль для анимаций — в
+/// Единая точка для C#-компонентов (CardView, Deck, бейджи); клиентский дубль для анимаций – в
 /// <c>GameTable.razor.js</c> (другой рантайм, импортировать C# нельзя).
 /// </summary>
 public static class CardGlyph
@@ -27,7 +27,7 @@ public static class CardGlyph
         _ => "неизвестная масть",
     };
 
-    /// <summary>Ранг числом → подпись (числа как есть, картинки — буквой).</summary>
+    /// <summary>Ранг числом → подпись (числа как есть, картинки –буквой).</summary>
     public static string Rank(int rank) => rank switch
     {
         11 => "J",
@@ -37,6 +37,6 @@ public static class CardGlyph
         _ => rank.ToString(),
     };
 
-    /// <summary>Красная масть (бубны/червы) — для подсветки.</summary>
+    /// <summary>Красная масть (бубны/червы) –для подсветки.</summary>
     public static bool IsRed(int suit) => suit is 1 or 2;
 }

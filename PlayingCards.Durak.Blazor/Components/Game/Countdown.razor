@@ -6,7 +6,7 @@
 @code {
     [Parameter, EditorRequired] public DateTime EndTime { get; set; }
 
-    /// <summary>Вид отсчёта: "afk" | "take" | "beat" — задаёт шаблон и склонение в countdown.js.</summary>
+    /// <summary>Вид отсчёта: "afk" | "take" | "beat" – задаёт шаблон и склонение в countdown.js.</summary>
     [Parameter, EditorRequired] public string Kind { get; set; } = default!;
 
     private ElementReference _label;

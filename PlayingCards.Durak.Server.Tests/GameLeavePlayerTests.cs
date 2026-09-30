@@ -3,7 +3,7 @@
 namespace PlayingCards.Durak.Server.Tests;
 
 /// <summary>
-/// Issue #6: если игрок без карт (уже вышедший из партии) покидает стол — игра остальных не прерывается.
+/// Issue #6: если игрок без карт (уже вышедший из партии) покидает стол – игра остальных не прерывается.
 /// </summary>
 [TestFixture]
 public class GameLeavePlayerTests

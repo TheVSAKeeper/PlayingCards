@@ -151,7 +151,7 @@ public class TableHolder : TableHolderBase<Table, TablePlayer>
     /// Уважает лимит 6 мест и статус (нельзя в идущую игру).
     /// </summary>
     /// <param name="tableId">Идентификатор стола.</param>
-    /// <param name="playerSecret">Секрет вызывающего — обязан быть владельцем.</param>
+    /// <param name="playerSecret">Секрет вызывающего – обязан быть владельцем.</param>
     /// <exception cref="BusinessException">Стол не найден / не владелец / идёт игра / нет мест.</exception>
     public void AddBot(Guid tableId, string playerSecret)
     {
@@ -210,7 +210,7 @@ public class TableHolder : TableHolderBase<Table, TablePlayer>
     /// и во время партии (issue F2). Реиспользует штатный <see cref="Leave(Table, TablePlayer)" />,
     /// поэтому корректно завершает/продолжает партию, ставит «крысу» и переназначает владельца.
     /// </summary>
-    /// <param name="callerSecret">Секрет вызывающего — обязан быть владельцем стола.</param>
+    /// <param name="callerSecret">Секрет вызывающего –обязан быть владельцем стола.</param>
     /// <param name="tableId">Идентификатор стола.</param>
     /// <param name="targetGameIndex">Игровой индекс цели (как клиент видит соперника в кольце).</param>
     /// <exception cref="BusinessException">Стол не найден / не владелец / неверная цель / попытка выгнать себя.</exception>
@@ -313,7 +313,7 @@ public class TableHolder : TableHolderBase<Table, TablePlayer>
                 table.Version++;
             }
 
-            // Ушедший мог быть единственным несказавшим атакующим — пересчитать вне table.SyncRoot,
+            // Ушедший мог быть единственным несказавшим атакующим –пересчитать вне table.SyncRoot,
             // т.к. TryCloseAfterRosterChange сам его берёт (и это уже реентрантно относительно Sync).
             table.TryCloseAfterRosterChange();
         }
@@ -355,10 +355,10 @@ public class TableHolder : TableHolderBase<Table, TablePlayer>
     }
 
     /// <summary>
-    /// Боты-атакующие, которым больше нечего подкинуть, говорят «Бито» в окне удачной защиты или «беру» —
+    /// Боты-атакующие, которым больше нечего подкинуть, говорят «Бито» в окне удачной защиты или «беру» –
     /// тогда раунд закрывается, как только отказались все атакующие, а не висит до общего таймера (issue F5, #10).
     /// Бот, у которого ещё есть подходящий подкид, молчит: его ход исполнит <see cref="CheckBots" /> на этом же
-    /// тике. НЕ БОЛЕЕ ОДНОГО голоса за тик на стол (как <see cref="CheckBots" />) — иначе все боты без карт
+    /// тике. НЕ БОЛЕЕ ОДНОГО голоса за тик на стол (как <see cref="CheckBots" />) –иначе все боты без карт
     /// озвучивают «Бито» в один и тот же тик открытия окна, что мгновенно выдаёт человеку отсутствие подкида.
     /// Под общим <see cref="Sync" />. Голос «Бито» сбрасывается на каждом новом окне остановки раунда.
     /// </summary>
@@ -437,7 +437,7 @@ public class TableHolder : TableHolderBase<Table, TablePlayer>
 
                 if (table.StopRoundBeginDate != null && tablePlayer.SaidBeat)
                 {
-                    // Уже сказал «Бито» в этом окне остановки раунда — CheckBotBeats это уже решил на этом
+                    // Уже сказал «Бито» в этом окне остановки раунда –CheckBotBeats это уже решил на этом
                     // же тике, повторный DecideMove для него бессмыслен (issue: двойной DecideMove за тик).
                     continue;
                 }
