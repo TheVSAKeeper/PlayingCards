@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace PlayingCards.Durak.Server;
+namespace PlayingCards.Server.Core;
 
-public class BackgroundExecutorService(ILogger<BackgroundExecutorService> logger, TableHolder tableHolder) : BackgroundService
+public class BackgroundExecutorService(ILogger<BackgroundExecutorService> logger, IEnumerable<IBackgroundProcessor> processors) : BackgroundService
 {
     private readonly PeriodicTimer _timer = new(TimeSpan.FromSeconds(1));
 
@@ -21,7 +21,10 @@ public class BackgroundExecutorService(ILogger<BackgroundExecutorService> logger
 
         while (await _timer.WaitForNextTickAsync(stoppingToken))
         {
-            tableHolder.BackgroundProcess();
+            foreach (var processor in processors)
+            {
+                processor.BackgroundProcess();
+            }
         }
     }
 }

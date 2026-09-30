@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using System.Text;
 
-namespace PlayingCards.Durak.Server;
+namespace PlayingCards.Server.Core;
 
 /// <summary>
 /// Пул тематических имён для ИИ-болванчиков, разобранный из встроенного ресурса <c>names.txt</c>

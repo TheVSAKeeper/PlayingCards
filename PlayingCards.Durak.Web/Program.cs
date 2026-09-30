@@ -3,6 +3,7 @@ using NLog.Web;
 using PlayingCards.Durak.Web;
 using PlayingCards.Durak.Server;
 using PlayingCards.Durak.Web.Middlewares;
+using PlayingCards.Server.Core;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -14,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddSingleton<TableHolder>();
+builder.Services.AddSingleton<IBackgroundProcessor>(sp => sp.GetRequiredService<TableHolder>());
 builder.Services.AddHostedService<BackgroundExecutorService>();
 
 builder.Logging.ClearProviders();

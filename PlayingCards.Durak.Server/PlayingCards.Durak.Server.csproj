@@ -2,18 +2,11 @@
 
   <ItemGroup>
     <PackageReference Include="NLog" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PlayingCards.Durak\PlayingCards.Durak.csproj" />
     <ProjectReference Include="..\PlayingCards.Server.Core\PlayingCards.Server.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Имена ботов (issue F8). Лежит в проекте, а не в корне репо — иначе не попадает в Docker-контекст. -->
-    <EmbeddedResource Include="names.txt" />
   </ItemGroup>
 
   <ItemGroup>

@@ -130,8 +130,6 @@
       "playingcards.durak.server": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.Hosting.Abstractions": "[8.0.0, )",
-          "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )",
           "NLog": "[5.3.2, )",
           "PlayingCards.Durak": "[1.0.0, )",
           "PlayingCards.Server.Core": "[1.0.0, )"
@@ -147,7 +145,11 @@
         }
       },
       "playingcards.server.core": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Hosting.Abstractions": "[8.0.0, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )"
+        }
       },
       "Microsoft.Extensions.Hosting.Abstractions": {
         "type": "CentralTransitive",

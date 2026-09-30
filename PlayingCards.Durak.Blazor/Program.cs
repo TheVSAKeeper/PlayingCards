@@ -3,6 +3,7 @@ using NLog.Web;
 using PlayingCards.Durak.Blazor.Components;
 using PlayingCards.Durak.Blazor.Services;
 using PlayingCards.Durak.Server;
+using PlayingCards.Server.Core;
 
 var logger = LogManager.Setup().LoadConfigurationFromFile("nlog.config").GetCurrentClassLogger();
 logger.Debug("init main");
@@ -13,6 +14,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<TableHolder>();
+builder.Services.AddSingleton<IBackgroundProcessor>(sp => sp.GetRequiredService<TableHolder>());
 builder.Services.AddSingleton<BuildInfo>();
 builder.Services.AddHostedService<BackgroundExecutorService>();
 builder.Services.AddScoped<PlayerSession>();
