@@ -1,18 +1,27 @@
-﻿namespace PlayingCards.Durak;
+﻿namespace PlayingCards.Core;
 
 /// <summary>
 /// Хранитель информации о картах.
 /// </summary>
 public static class CardsHolder
 {
-    private static List<Card>? _cards;
+    private static readonly Lazy<IReadOnlyList<Card>> LazyFullDeck = new(BuildFullDeck);
 
-    public static IEnumerable<Card> Cards => _cards ??= GetCards();
+    private static readonly Lazy<IReadOnlyList<Card>> LazySmallDeck =
+        new(() => LazyFullDeck.Value.Where(card => card.Rank.Value >= 6).ToList());
 
-    private static List<Card> GetCards()
+    public static IReadOnlyList<Card> FullDeck => LazyFullDeck.Value;
+
+    public static IReadOnlyList<Card> SmallDeck => LazySmallDeck.Value;
+
+    private static IReadOnlyList<Card> BuildFullDeck()
     {
         List<CardRank> ranks =
         [
+            new(2, "2"),
+            new(3, "3"),
+            new(4, "4"),
+            new(5, "5"),
             new(6, "6"),
             new(7, "7"),
             new(8, "8"),

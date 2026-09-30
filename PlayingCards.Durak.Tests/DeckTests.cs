@@ -8,7 +8,7 @@ public class DeckTests
     [Test]
     public void DeckCardsCountTest()
     {
-        Deck deck = new(new());
+        Deck deck = new(new(CardsHolder.SmallDeck));
         deck.Shuffle();
         List<Card> cards = [];
 
@@ -154,7 +154,7 @@ public class DeckTests
         int trumpCardIndex,
         bool isSuccess)
     {
-        var cards = CardsHolder.Cards.ToArray();
+        var cards = CardsHolder.SmallDeck.ToArray();
         var attackCard = cards[attackCardIndex];
         var defenceCard = cards[defenceCardIndex];
         var trumpCard = cards[trumpCardIndex];

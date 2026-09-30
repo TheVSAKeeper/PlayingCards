@@ -25,6 +25,7 @@ public class SortedDeckCardGenerator : RandomDeckCardGenerator
     /// Пример массива { "A♠ 10♠ 6♠ J♥ W♥ Q♦" }.
     /// </param>
     public SortedDeckCardGenerator(string[] cardValues, string? trumpValue = null, int skipCardCount = 0, string? deckValues = null)
+        : base(CardsHolder.SmallDeck)
     {
         _cardValues = cardValues;
         _trumpValue = trumpValue;
@@ -35,7 +36,7 @@ public class SortedDeckCardGenerator : RandomDeckCardGenerator
     public override List<Card> GetCards()
     {
         var playerCount = _cardValues.Length;
-        var deckCards = CardsHolder.Cards.ToList();
+        var deckCards = CardsHolder.SmallDeck.ToList();
         List<Card> returnCards = [];
         var playerHands = new List<Card>[playerCount];
 

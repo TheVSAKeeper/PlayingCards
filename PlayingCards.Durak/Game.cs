@@ -10,7 +10,7 @@ public class Game
     /// </summary>
     public Game()
     {
-        Deck = new(new());
+        Deck = new(new(CardsHolder.SmallDeck));
         Cards = [];
         Players = [];
         Status = GameStatus.WaitPlayers;
